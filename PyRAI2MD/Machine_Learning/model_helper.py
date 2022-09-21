@@ -121,7 +121,7 @@ class Multiregions:
 
     def update_xyz(self, xyz):
         xyz = np.array(xyz)
-        xyz[:, :, 0] += self.multiscale_index * self.flag
+        xyz[:, :, 0] += int(self.multiscale_index * self.flag)
         node_type = np.unique(xyz[:, :, 0]).astype(int).tolist()
         xyz = xyz.tolist()
 
