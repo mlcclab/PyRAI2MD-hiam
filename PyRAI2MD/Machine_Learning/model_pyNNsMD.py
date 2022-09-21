@@ -697,6 +697,7 @@ class Schnet:
             atoms = self.mr.partition_atoms(self.atoms[0])
             self.atoms = [atoms] * len(self.atoms)
             self.pred_atoms = [atoms] * len(self.pred_atoms)
+            self.atomic_numbers = self.mr.partition_atomic_numbers(self.atomic_numbers)
         else:
             self.mr = None
 
