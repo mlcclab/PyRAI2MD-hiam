@@ -129,26 +129,26 @@ class Multiregions:
 
     def partition_atoms(self, atoms):
         z = np.array([Atom(atom).name for atom in atoms])
-        z += self.multiscale_index * self.flag
+        z += int(self.multiscale_index * self.flag)
         atoms = [Atom(x).get_symbol() for x in z]
 
         return atoms
 
     def retrieve_atoms(self, atoms):
         z = np.array([Atom(atom).name for atom in atoms])
-        z -= self.multiscale_index * self.flag
+        z -= int(self.multiscale_index * self.flag)
         atoms = [Atom(x).get_symbol() for x in z]
 
         return atoms
 
     def partition_atomic_numbers(self, atomic_numbers):
         atomic_numbers = np.array(atomic_numbers)
-        atomic_numbers += self.multiscale_index * self.flag
+        atomic_numbers += int(self.multiscale_index * self.flag)
 
         return atomic_numbers.tolist()
 
     def retrieve_atomic_numbers(self, atomic_numbers):
         atomic_numbers = np.array(atomic_numbers)
-        atomic_numbers -= self.multiscale_index * self.flag
+        atomic_numbers -= int(self.multiscale_index * self.flag)
 
         return atomic_numbers.tolist()
