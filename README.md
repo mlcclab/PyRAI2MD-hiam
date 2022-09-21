@@ -175,5 +175,9 @@ Run test, this might take a while
 We are currently working on the user manual.
 
 # Cite us
-- Jingbai Li, Patrick Reiser, Benjamin R. Boswell, André Eberhard, Noah Z. Burns, Pascal Friederich, and Steven A. Lopez, "Automatic discovery of photoisomerization mechanisms with nanosecond machine learning photodynamics simulations", Chem. Sci. 2021, 12, 5302-5314. DOI: 10.1039/D0SC05610C
+- Jingbai Li, Patrick Reiser, Benjamin R. Boswell, André Eberhard, Noah Z. Burns, Pascal Friederich, and Steven A. Lopez, "Automatic discovery of photoisomerization mechanisms with nanosecond machine learning photodynamics simulations", Chem. Sci. 2021, 12, 5302-5314. DOI:10.1039/D0SC05610C
 - Jingbai Li, Rachel Stein, Daniel Adrion, Steven A. Lopez, "Machine-learning photodynamics simulations uncover the role of substituent effects on the photochemical formation of cubanes", J. Am. Chem. Soc. 2021, 143, 48, 20166–20175. DOI:10.1021/jacs.1c07725
+- Jingbai Li, Steven A. Lopez, “Excited-state distortions promote the reactivities and regioselectivities of photochemical 4π-electrocyclizations of fluorobenzenes”, Chem. A Eur J. 2022, 28, e202200651. DOI:10.1002/chem.202200651
+- Jingbai Li, Steven A. Lopez, “A Look Inside the Black Box of Machine Learning Photodynamics Simulations”, Acc. Chem. Res., 2022, 55, 1972–1984. DOI:10.1021/acs.accounts.2c00288
+
+
