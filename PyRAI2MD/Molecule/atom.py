@@ -199,7 +199,7 @@ class Atom:
                  2.00, 2.00, 2.00, 2.00, 2.00, 2.00, 2.00, 1.75, 1.66, 1.55,
                  1.96, 2.02, 2.07, 1.97, 2.02, 2.20]
 
-        if '_' in name:
+        if '_' in str(name):
             name = name.split('_')[0]
         self.name = periodic_table[name]
         self.fullname = fullname[self.name - 1]
