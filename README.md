@@ -74,7 +74,7 @@
 <pre>
  File/Folder Name                                  Description                                      
 ---------------------------------------------------------------------------------------------------
-  PyRAI2MD                                          source codes folder
+  PyRAI2MD                                         source codes folder
   |--pyrai2md.py                                   PyRAI2MD main function                         
   |--variables.py                                  PyRAI2MD input reader                           
   |--method.py                                     PyRAI2MD method manager                           
