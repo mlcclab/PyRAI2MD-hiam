@@ -112,7 +112,7 @@ class Multiregions:
     """
     def __init__(self, atoms, multiscale_list, flag=50):
         self.flag = flag
-        multiscale_index = np.zeros(len(atoms))
+        multiscale_index = np.zeros(len(atoms)).astype(int)
         for n, region in enumerate(multiscale_list):
             for indx in region:
                 multiscale_index[indx - 1] = n
@@ -121,7 +121,7 @@ class Multiregions:
 
     def update_xyz(self, xyz):
         xyz = np.array(xyz)
-        xyz[:, :, 0] += int(self.multiscale_index * self.flag)
+        xyz[:, :, 0] += self.multiscale_index * self.flag
         node_type = np.unique(xyz[:, :, 0]).astype(int).tolist()
         xyz = xyz.tolist()
 
@@ -129,26 +129,26 @@ class Multiregions:
 
     def partition_atoms(self, atoms):
         z = np.array([Atom(atom).name for atom in atoms])
-        z += int(self.multiscale_index * self.flag)
+        z += self.multiscale_index * self.flag
         atoms = [Atom(x).get_symbol() for x in z]
 
         return atoms
 
     def retrieve_atoms(self, atoms):
         z = np.array([Atom(atom).name for atom in atoms])
-        z -= int(self.multiscale_index * self.flag)
+        z -= self.multiscale_index * self.flag
         atoms = [Atom(x).get_symbol() for x in z]
 
         return atoms
 
     def partition_atomic_numbers(self, atomic_numbers):
         atomic_numbers = np.array(atomic_numbers)
-        atomic_numbers += int(self.multiscale_index * self.flag)
+        atomic_numbers += self.multiscale_index * self.flag
 
         return atomic_numbers.tolist()
 
     def retrieve_atomic_numbers(self, atomic_numbers):
         atomic_numbers = np.array(atomic_numbers)
-        atomic_numbers -= int(self.multiscale_index * self.flag)
+        atomic_numbers -= self.multiscale_index * self.flag
 
         return atomic_numbers.tolist()
