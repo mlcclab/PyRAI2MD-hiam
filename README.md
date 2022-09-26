@@ -153,7 +153,7 @@ Compile fssh library using **pyrai2md** command
 ## Test PyRAI2MD
 Go to the test folder
 
-    cp ./test
+    cd ./test
 
 Choose test jobs by editing test_case.py, set test_job = 1 to turn on the test or 0 to turn off the test
 
