@@ -100,7 +100,7 @@ class Trajectory(Molecule):
 
     """
 
-    __slots__ = ['gl_seed', 'initcond', 'excess', 'scale', 'target', 'graddesc', 'reset', 'resetstep',
+    __slots__ = ['gl_seed', 'initcond', 'excess', 'scale', 'target', 'graddesc', 'reset', 'resetstep', 'record_region',
                  'ninitcond', 'method', 'format', 'temp', 'step', 'size', 'root', 'attr', 'verbose', 'phasecheck',
                  'sfhp', 'gap', 'gapsoc', 'substep', 'integrate', 'deco', 'adjust', 'reflect', 'maxh', 'delt',
                  'last_state', 'state', 'last_a', 'last_h', 'last_d', 'a', 'h', 'd', 'dosoc', 'last_nac', 'last_soc',
@@ -143,7 +143,8 @@ class Trajectory(Molecule):
         self.dosoc = key_dict['dosoc']
         self.thermo = key_dict['thermo']
         self.thermodelay = key_dict['thermodelay']
-        self.length = key_dict['record']
+        self.record_region = key_dict['record']
+        self.length = key_dict['record_step']
         self.last_state = key_dict['root']
         self.state = key_dict['root']
         self.verbose = key_dict['verbose']
@@ -188,22 +189,40 @@ class Trajectory(Molecule):
             return self
 
         ## record trajectory history
-        self.history.append(
-            [self.itr,
-             self.state,
-             np.copy(self.atoms),
-             np.copy(self.coord),
-             np.copy(self.energy),
-             np.copy(self.grad),
-             np.copy(self.nac),
-             np.copy(self.soc),
-             np.copy(self.err_energy),
-             np.copy(self.err_grad),
-             np.copy(self.err_nac),
-             np.copy(self.err_soc),
-             np.copy(np.diag(np.real(self.a))),
-             ]
-        )
+        if self.record_region == 'qmmm':
+            self.history.append(
+                [self.itr,
+                 self.state,
+                 np.copy(self.qm_atoms),
+                 np.copy(self.qm_coord),
+                 np.copy(self.qm_energy),
+                 np.copy(self.qm_grad),
+                 np.copy(self.qm_nac),
+                 np.copy(self.qm_soc),
+                 np.copy(self.err_energy),
+                 np.copy(self.err_grad),
+                 np.copy(self.err_nac),
+                 np.copy(self.err_soc),
+                 np.copy(np.diag(np.real(self.a))),
+                 ]
+            )
+        else:
+            self.history.append(
+                [self.itr,
+                 self.state,
+                 np.copy(self.atoms),
+                 np.copy(self.coord),
+                 np.copy(self.energy),
+                 np.copy(self.grad),
+                 np.copy(self.nac),
+                 np.copy(self.soc),
+                 np.copy(self.err_energy),
+                 np.copy(self.err_grad),
+                 np.copy(self.err_nac),
+                 np.copy(self.err_soc),
+                 np.copy(np.diag(np.real(self.a))),
+                 ]
+            )
 
         ## keep the latest steps of trajectories to save memory if the length is longer than requested
         if len(self.history) > self.length:

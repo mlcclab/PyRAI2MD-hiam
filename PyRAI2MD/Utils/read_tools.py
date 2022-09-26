@@ -27,6 +27,7 @@ class ReadVal:
             's': self._string,
             'i': self._integer,
             'f': self._floatnum,
+            'sl': self._string_list,
             'il': self._integer_list,
             'fl': self._floatnum_list,
             'b': self._boolean,
@@ -44,6 +45,10 @@ class ReadVal:
     @staticmethod
     def _floatnum(x):
         return float(x[0])
+
+    @staticmethod
+    def _string_list(x):
+        return [str(f) for f in x]
 
     @staticmethod
     def _integer_list(x):
@@ -67,14 +72,16 @@ class ReadIndex:
     """ This class read individual or a group of index from a list or a file
         Parameters:          Type:
             index_type       str         index type
+            start            int         starting offset
             var              list        a list of string of index or file
 
         Return:              Type:
             index            list        index list
     """
 
-    def __init__(self, index_type='s'):
+    def __init__(self, index_type='s', start=0):
         self.type = index_type
+        self.start = start
 
     def __call__(self, var):
         if self.type != 'g':
@@ -82,14 +89,13 @@ class ReadIndex:
         else:
             return self._read_index_group(var)
 
-    @staticmethod
-    def _get_index(index):
+    def _get_index(self, index):
         ## This function read single, range, separate range index and convert them to a list
         index_list = []
         for i in index:
             if '-' in i:
                 a, b = i.split('-')
-                a, b = int(a), int(b)
+                a, b = int(a) - self.start, int(b) - self.start
                 index_list += range(a, b + 1)
             else:
                 index_list.append(int(i))

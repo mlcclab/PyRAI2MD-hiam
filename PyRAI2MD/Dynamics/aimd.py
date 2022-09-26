@@ -20,6 +20,7 @@ from PyRAI2MD.Dynamics.reset_velocity import reset_velo
 from PyRAI2MD.Utils.timing import what_is_time
 from PyRAI2MD.Utils.timing import how_long
 from PyRAI2MD.Utils.coordinates import print_coord
+from PyRAI2MD.Utils.coordinates import print_charge
 
 
 class AIMD:
@@ -149,6 +150,10 @@ class AIMD:
             log = open('%s/%s.md.velo' % (self.logpath, self.title), 'w')
             log.close()
             log = open('%s/%s.sh.velo' % (self.logpath, self.title), 'w')
+            log.close()
+            log = open('%s/%s.md.charge' % (self.logpath, self.title), 'w')
+            log.close()
+            log = open('%s/%s.sh.charge' % (self.logpath, self.title), 'w')
             log.close()
 
     def _propagate(self):
@@ -347,6 +352,10 @@ class AIMD:
             self.traj.kinetic,
             self.traj.energy[self.traj.last_state - 1] + self.traj.kinetic,
             pot)
+        if len(self.traj.qm2_charge) > 0:
+            charge_info = '%d\n%s\n%s' % (len(self.traj.qm2_charge), cmmt, print_charge(self.traj.qm2_charge))
+        else:
+            charge_info = ''
 
         ## prepare logfile info
         log_info = ' Iter: %8d  Ekin = %28.16f au T = %8.2f K dt = %10d CI: %3d\n Root chosen for geometry opt %3d\n' % (
@@ -405,7 +414,9 @@ class AIMD:
                 self.title,
                 energy_info,
                 xyz_info,
-                velo_info)
+                velo_info,
+                charge_info,
+            )
 
         ## checkpoint trajectory class to pkl
         if self.checkpoint > 0:
@@ -427,7 +438,9 @@ class AIMD:
                                log_info,
                                energy_info,
                                xyz_info,
-                               velo_info)
+                               velo_info,
+                               charge_info,
+                               )
 
     def _step_counter(self, counter, step):
         counter += 1
@@ -460,6 +473,13 @@ class AIMD:
 -------------------------------------------------------------------------------
 %s-------------------------------------------------------------------------------
 """ % (print_coord(np.concatenate((self.traj.atoms, self.traj.velo), axis=1)))
+
+        if len(self.traj.qm2_charge) > 0:
+            log_info += """
+  &external charges
+-------------------------------------------------------------------------------
+%s-------------------------------------------------------------------------------
+""" % (print_charge(self.traj.qm2_charge))
 
         for n in range(self.traj.nstate):
             try:
@@ -522,7 +542,7 @@ class AIMD:
         return log_info
 
     @staticmethod
-    def _dump_to_disk(logpath, title, log_info, energy_info, xyz_info, velo_info):
+    def _dump_to_disk(logpath, title, log_info, energy_info, xyz_info, velo_info, charge_info):
         ## output data to disk
         with open('%s/%s.log' % (logpath, title), 'a') as log:
             log.write(log_info)
@@ -536,8 +556,11 @@ class AIMD:
         with open('%s/%s.md.velo' % (logpath, title), 'a') as log:
             log.write(velo_info)
 
+        with open('%s/%s.md.charge' % (logpath, title), 'a') as log:
+            log.write(charge_info)
+
     @staticmethod
-    def _record_surface_hopping(logpath, title, energy_info, xyz_info, velo_info):
+    def _record_surface_hopping(logpath, title, energy_info, xyz_info, velo_info, charge_info):
         ## output data for surface hopping event to disk
         with open('%s/%s.sh.energies' % (logpath, title), 'a') as log:
             log.write(energy_info)
@@ -547,6 +570,9 @@ class AIMD:
 
         with open('%s/%s.sh.velo' % (logpath, title), 'a') as log:
             log.write(velo_info)
+
+        with open('%s/%s.sh.charge' % (logpath, title), 'a') as log:
+            log.write(charge_info)
 
     def run(self):
         warning = ''

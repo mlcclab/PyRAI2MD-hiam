@@ -25,8 +25,8 @@ def auto_boundary(coord, high, pbc):
 
     """
 
-    link = [coord]
-    boundary = [high]
+    link = []
+    boundary = []
 
     ## under construction ...
 
@@ -46,6 +46,8 @@ def compute_hcap(atoms, coord, boundary):
     """
 
     ## under construction ...
+    if len(boundary) == 0:
+        return [], 1
 
     scaling = {
         'C-C': 0.843,

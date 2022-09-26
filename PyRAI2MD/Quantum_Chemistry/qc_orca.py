@@ -282,7 +282,7 @@ cd $ORCA_WORKDIR
 
         ## pack energy and force
         s0 = 0
-        ex_energy = []
+        ex_energy = [0.0]
         gradient = []
         for n, line in enumerate(log):
             # find reference energy
@@ -297,7 +297,7 @@ cd $ORCA_WORKDIR
                 g = reverse_string2float(g)
                 gradient.append(g)
 
-        energy = np.array(ex_energy) + s0
+        energy = np.array(ex_energy)[: self.nstate] + s0
         gradient = [gradient[-1]] + gradient[: -1]  # orca tddft compute ground-state gradient in the end
         gradient = np.array(gradient)
         if self.activestate == 1:

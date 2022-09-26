@@ -37,7 +37,7 @@ def set_mlp_hyper_eg(hyp, unit, info):
     ## setup callbacks
     if hyp['use_step_callback']:
         hyp['callbacks'] = {
-            'class_name': 'StepWiseLearningScheduler',
+            'class_name': 'pyNNsMD>StepWiseLearningScheduler',
             'config': {
                 'epoch_step_reduction': hyp['epoch_step_reduction'],
                 'learning_rate_step': hyp['learning_rate_step'],
@@ -46,7 +46,7 @@ def set_mlp_hyper_eg(hyp, unit, info):
 
     elif hyp['use_linear_callback']:
         hyp['callbacks'] = {
-            'class_name': 'LinearLearningRateScheduler',
+            'class_name': 'pyNNsMD>LinearLearningRateScheduler',
             'config': {
                 'learning_rate_start': hyp['learning_rate_start'],
                 'learning_rate_stop': hyp['learning_rate_stop'],
@@ -57,7 +57,7 @@ def set_mlp_hyper_eg(hyp, unit, info):
 
     elif hyp['use_early_callback']:
         hyp['callbacks'] = {
-            'class_name': 'EarlyStopping',
+            'class_name': 'pyNNsMD>EarlyStopping',
             'config': {
                 'use': hyp['use_early_callback'],
                 'epomin': hyp['epomin'],
@@ -74,7 +74,7 @@ def set_mlp_hyper_eg(hyp, unit, info):
 
     elif hyp['use_exp_callback']:
         hyp['callbacks'] = {
-            'class_name': 'EarlyStopping',
+            'class_name': 'pyNNsMD>LinearWarmupExponentialLearningRateScheduler',
             'config': {
                 'epo_warmup': hyp['epomin'],
                 'decay_gamma': hyp['factor_lr'],
@@ -168,7 +168,7 @@ def set_mlp_hyper_nac(hyp, unit, info):
     ## setup callbacks
     if hyp['use_step_callback']:
         hyp['callbacks'] = {
-            'class_name': 'StepWiseLearningScheduler',
+            'class_name': 'pyNNsMD>StepWiseLearningScheduler',
             'config': {
                 'epoch_step_reduction': hyp['epoch_step_reduction'],
                 'learning_rate_step': hyp['learning_rate_step'],
@@ -177,7 +177,7 @@ def set_mlp_hyper_nac(hyp, unit, info):
 
     elif hyp['use_linear_callback']:
         hyp['callbacks'] = {
-            'class_name': 'LinearLearningRateScheduler',
+            'class_name': 'pyNNsMD>LinearLearningRateScheduler',
             'config': {
                 'learning_rate_start': hyp['learning_rate_start'],
                 'learning_rate_stop': hyp['learning_rate_stop'],
@@ -188,7 +188,7 @@ def set_mlp_hyper_nac(hyp, unit, info):
 
     elif hyp['use_early_callback']:
         hyp['callbacks'] = {
-            'class_name': 'EarlyStopping',
+            'class_name': 'pyNNsMD>EarlyStopping',
             'config': {
                 'use': hyp['use_early_callback'],
                 'epomin': hyp['epomin'],
@@ -205,7 +205,7 @@ def set_mlp_hyper_nac(hyp, unit, info):
 
     elif hyp['use_exp_callback']:
         hyp['callbacks'] = {
-            'class_name': 'EarlyStopping',
+            'class_name': 'pyNNsMD>LinearWarmupExponentialLearningRateScheduler',
             'config': {
                 'epo_warmup': hyp['epomin'],
                 'decay_gamma': hyp['factor_lr'],
@@ -298,7 +298,7 @@ def set_mlp_hyper_soc(hyp, unit, info):
     ## setup callbacks
     if hyp['use_step_callback']:
         hyp['callbacks'] = {
-            'class_name': 'StepWiseLearningScheduler',
+            'class_name': 'pyNNsMD>StepWiseLearningScheduler',
             'config': {
                 'epoch_step_reduction': hyp['epoch_step_reduction'],
                 'learning_rate_step': hyp['learning_rate_step'],
@@ -307,7 +307,7 @@ def set_mlp_hyper_soc(hyp, unit, info):
 
     elif hyp['use_linear_callback']:
         hyp['callbacks'] = {
-            'class_name': 'LinearLearningRateScheduler',
+            'class_name': 'pyNNsMD>LinearLearningRateScheduler',
             'config': {
                 'learning_rate_start': hyp['learning_rate_start'],
                 'learning_rate_stop': hyp['learning_rate_stop'],
@@ -318,7 +318,7 @@ def set_mlp_hyper_soc(hyp, unit, info):
 
     elif hyp['use_early_callback']:
         hyp['callbacks'] = {
-            'class_name': 'EarlyStopping',
+            'class_name': 'pyNNsMD>EarlyStopping',
             'config': {
                 'use': hyp['use_early_callback'],
                 'epomin': hyp['epomin'],
@@ -335,7 +335,7 @@ def set_mlp_hyper_soc(hyp, unit, info):
 
     elif hyp['use_exp_callback']:
         hyp['callbacks'] = {
-            'class_name': 'EarlyStopping',
+            'class_name': 'pyNNsMD>LinearWarmupExponentialLearningRateScheduler',
             'config': {
                 'epo_warmup': hyp['epomin'],
                 'decay_gamma': hyp['factor_lr'],
@@ -416,7 +416,7 @@ def set_sch_hyper_eg(hyp, unit, info):
     ## setup callbacks
     if hyp['use_step_callback']:
         hyp['callbacks'] = {
-            'class_name': 'StepWiseLearningScheduler',
+            'class_name': 'pyNNsMD>StepWiseLearningScheduler',
             'config': {
                 'epoch_step_reduction': hyp['epoch_step_reduction'],
                 'learning_rate_step': hyp['learning_rate_step'],
@@ -425,7 +425,7 @@ def set_sch_hyper_eg(hyp, unit, info):
 
     elif hyp['use_linear_callback']:
         hyp['callbacks'] = {
-            'class_name': 'LinearLearningRateScheduler',
+            'class_name': 'pyNNsMD>LinearLearningRateScheduler',
             'config': {
                 'learning_rate_start': hyp['learning_rate_start'],
                 'learning_rate_stop': hyp['learning_rate_stop'],
@@ -436,7 +436,7 @@ def set_sch_hyper_eg(hyp, unit, info):
 
     elif hyp['use_early_callback']:
         hyp['callbacks'] = {
-            'class_name': 'EarlyStopping',
+            'class_name': 'pyNNsMD>EarlyStopping',
             'config': {
                 'use': hyp['use_early_callback'],
                 'epomin': hyp['epomin'],
@@ -453,7 +453,7 @@ def set_sch_hyper_eg(hyp, unit, info):
 
     elif hyp['use_exp_callback']:
         hyp['callbacks'] = {
-            'class_name': 'EarlyStopping',
+            'class_name': 'pyNNsMD>LinearWarmupExponentialLearningRateScheduler',
             'config': {
                 'epo_warmup': hyp['epomin'],
                 'decay_gamma': hyp['factor_lr'],
@@ -555,7 +555,7 @@ def set_sch_hyper_nac(hyp, unit, info):
     ## setup callbacks
     if hyp['use_step_callback']:
         hyp['callbacks'] = {
-            'class_name': 'StepWiseLearningScheduler',
+            'class_name': 'pyNNsMD>StepWiseLearningScheduler',
             'config': {
                 'epoch_step_reduction': hyp['epoch_step_reduction'],
                 'learning_rate_step': hyp['learning_rate_step'],
@@ -564,7 +564,7 @@ def set_sch_hyper_nac(hyp, unit, info):
 
     elif hyp['use_linear_callback']:
         hyp['callbacks'] = {
-            'class_name': 'LinearLearningRateScheduler',
+            'class_name': 'pyNNsMD>LinearLearningRateScheduler',
             'config': {
                 'learning_rate_start': hyp['learning_rate_start'],
                 'learning_rate_stop': hyp['learning_rate_stop'],
@@ -575,7 +575,7 @@ def set_sch_hyper_nac(hyp, unit, info):
 
     elif hyp['use_early_callback']:
         hyp['callbacks'] = {
-            'class_name': 'EarlyStopping',
+            'class_name': 'pyNNsMD>EarlyStopping',
             'config': {
                 'use': hyp['use_early_callback'],
                 'epomin': hyp['epomin'],
@@ -592,7 +592,7 @@ def set_sch_hyper_nac(hyp, unit, info):
 
     elif hyp['use_exp_callback']:
         hyp['callbacks'] = {
-            'class_name': 'EarlyStopping',
+            'class_name': 'pyNNsMD>LinearWarmupExponentialLearningRateScheduler',
             'config': {
                 'epo_warmup': hyp['epomin'],
                 'decay_gamma': hyp['factor_lr'],
@@ -693,7 +693,7 @@ def set_sch_hyper_soc(hyp, unit, info):
     ## setup callbacks
     if hyp['use_step_callback']:
         hyp['callbacks'] = {
-            'class_name': 'StepWiseLearningScheduler',
+            'class_name': 'pyNNsMD>StepWiseLearningScheduler',
             'config': {
                 'epoch_step_reduction': hyp['epoch_step_reduction'],
                 'learning_rate_step': hyp['learning_rate_step'],
@@ -702,7 +702,7 @@ def set_sch_hyper_soc(hyp, unit, info):
 
     elif hyp['use_linear_callback']:
         hyp['callbacks'] = {
-            'class_name': 'LinearLearningRateScheduler',
+            'class_name': 'pyNNsMD>LinearLearningRateScheduler',
             'config': {
                 'learning_rate_start': hyp['learning_rate_start'],
                 'learning_rate_stop': hyp['learning_rate_stop'],
@@ -713,7 +713,7 @@ def set_sch_hyper_soc(hyp, unit, info):
 
     elif hyp['use_early_callback']:
         hyp['callbacks'] = {
-            'class_name': 'EarlyStopping',
+            'class_name': 'pyNNsMD>EarlyStopping',
             'config': {
                 'use': hyp['use_early_callback'],
                 'epomin': hyp['epomin'],
@@ -730,7 +730,7 @@ def set_sch_hyper_soc(hyp, unit, info):
 
     elif hyp['use_exp_callback']:
         hyp['callbacks'] = {
-            'class_name': 'EarlyStopping',
+            'class_name': 'pyNNsMD>LinearWarmupExponentialLearningRateScheduler',
             'config': {
                 'epo_warmup': hyp['epomin'],
                 'decay_gamma': hyp['factor_lr'],

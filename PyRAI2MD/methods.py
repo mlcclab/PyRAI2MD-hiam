@@ -12,6 +12,7 @@ from PyRAI2MD.Quantum_Chemistry.qc_molcas import Molcas
 from PyRAI2MD.Quantum_Chemistry.qc_molcas_tinker import MolcasTinker
 from PyRAI2MD.Quantum_Chemistry.qc_orca import Orca
 from PyRAI2MD.Quantum_Chemistry.qc_xtb import Xtb
+from PyRAI2MD.Quantum_Chemistry.qmqm2 import QMQM2
 from PyRAI2MD.Machine_Learning.model_NN import DNN
 from PyRAI2MD.Machine_Learning.model_helper import DummyModel
 
@@ -37,7 +38,8 @@ class QM:
         Parameters:          Type:
             qm               str         electronic structure method
             keywords         dict        input keywords
-            id               int         calculation ID
+            job_id           int         calculation ID
+            runtype          str         type of calculation, 'qm', 'qmmm', or 'qmmm_low'
 
         Attribute:           Type:
 
@@ -50,6 +52,7 @@ class QM:
     """
 
     def __init__(self, qm, keywords=None, job_id=None):
+        # methods available for single region calculation
         qm_list = {
             'molcas': Molcas,
             'mlctkr': MolcasTinker,
@@ -62,7 +65,28 @@ class QM:
             'e2n2': E2N2,
         }
 
-        self.method = qm_list[qm](keywords=keywords, job_id=job_id)  # This should pass hypers
+        # methods available for QM 1 region calculation
+        qm1_list = {
+            'molcas': Molcas,
+            'bagel': Bagel,
+            'orca': Orca,
+            'nn': DNN,
+            'mlp': MLP,
+            'schnet': Schnet,
+            'e2n2': E2N2,
+        }
+
+        # methods available for QM 2 region calculation
+        qm2_list = {
+            'xtb': Xtb,
+        }
+
+        if len(qm) == 1:
+            self.method = qm_list[qm[0]](keywords=keywords, job_id=job_id)  # This should pass hypers
+        else:
+            qm1 = qm1_list[qm[0]]
+            qm2 = qm2_list[qm[1]]
+            self.method = QMQM2(methods=[qm1, qm2], keywords=keywords, job_id=job_id)
 
     def train(self):
         metrics = self.method.train()

@@ -199,7 +199,12 @@ cd $BAGEL_WORKDIR
 
         ## default is to use template force setting, replace with the current state if requested
         if self.activestate == 1:
-            si_input['bagel'][2]['grads'] = [{'title': 'force', 'target': self.state - 1}]
+            grads = si_input['bagel'][2]['grads']
+            grads_new = [{'title': 'force', 'target': self.state - 1}]
+            for grad_dict in grads:
+                if grad_dict['title'] != 'force':
+                    grads_new.append(grad_dict)
+            si_input['bagel'][2]['grads'] = grads_new
 
         ## save xyz file
         with open('%s/%s.json' % (self.workdir, self.project), 'w') as out:

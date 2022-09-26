@@ -33,6 +33,7 @@ class Xtb:
             nproc            int	     number of CPUs for parallelization
             mpi              str	     path to mpi library
             use_hpc          int	     use HPC (1) for calculation or not(0), like SLURM.
+            charges          ndarray     mulliken charges to be used for qm 2 region in multiscale calculation
 
         Functions:           Returns:
             train            self        fake function
@@ -53,7 +54,7 @@ class Xtb:
         self.xtb = variables['xtb']
         self.nproc = variables['xtb_nproc']
         self.use_hpc = variables['use_hpc']
-
+        self.charges = np.zeros(0)
         ## check calculation folder
         ## add index when running in adaptive sampling
 
@@ -65,6 +66,9 @@ class Xtb:
 
         else:
             self.workdir = '%s/tmp_xtb' % self.workdir
+
+        if runtype == 'qmmm_low':
+            self.workdir = '%s2' % self.workdir
 
         ## initialize runscript
         self.runscript = """
@@ -163,6 +167,10 @@ cd $XTB_WORKDIR
         if not os.path.exists('%s/%s.engrad' % (self.workdir, self.project)):
             return [], np.zeros(1), np.zeros(1), np.zeros(1), np.zeros(1)
 
+        if os.path.exists('%s/charges' % self.workdir):
+            with open('%s/charges' % self.workdir) as out:
+                self.charges = np.loadtxt(out)
+
         with open('%s/%s.engrad' % (self.workdir, self.project), 'r') as out:
             log = out.read().splitlines()
 
@@ -212,11 +220,12 @@ cd $XTB_WORKDIR
 
         return energy, gradient, nac, soc
 
-    def _qm(self, traj, pc=False):
+    def _qm(self, traj, pc=True):
         ## run xTB for QM calculation
 
         xyz = np.concatenate((traj.atoms, traj.coord), axis=1)
         nxyz = len(xyz)
+
         if pc:
             charge = traj.qm2_charge
         else:
@@ -252,8 +261,9 @@ cd $XTB_WORKDIR
             energy, gradient, nac, soc = self._qm(traj)
         elif self.runtype == 'qmmm':
             energy, gradient, nac, soc = self._qmmm(traj)
-        elif self.runtype == 'qm_1':
-            energy, gradient, nac, soc = self._qm(traj, pc=True)
+        elif self.runtype == 'qmmm_low':
+            energy, gradient, nac, soc = self._qm(traj, pc=False)
+            traj.charges = np.concatenate((self.charges.reshape((-1, 1)), traj.coord), axis=1)
 
         if len(energy) == 1 and len(gradient) == 1:
             completion = 1
@@ -265,8 +275,8 @@ cd $XTB_WORKDIR
         # update trajectory
         traj.energy = np.copy(energy)
         traj.grad = np.copy(gradient)
-        traj.nac = np.zeros(nac)
-        traj.soc = np.zeros(soc)
+        traj.nac = np.array(nac)
+        traj.soc = np.array(soc)
         traj.err_energy = None
         traj.err_grad = None
         traj.err_nac = None

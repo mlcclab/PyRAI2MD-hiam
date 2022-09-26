@@ -14,6 +14,7 @@ import numpy as np
 from PyRAI2MD.Utils.timing import what_is_time
 from PyRAI2MD.Utils.timing import how_long
 from PyRAI2MD.Utils.coordinates import print_coord
+from PyRAI2MD.Utils.coordinates import print_charge
 
 
 class SinglePoint:
@@ -165,6 +166,13 @@ class SinglePoint:
 %s-------------------------------------------------------------------------------
 """ % (print_coord(np.concatenate((self.traj.atoms, self.traj.velo), axis=1)))
 
+        if len(self.traj.qm2_charge) > 0:
+            log_info += """
+  &external charges
+-------------------------------------------------------------------------------
+%s-------------------------------------------------------------------------------
+""" % (print_charge(self.traj.qm2_charge))
+            
         for n in range(self.traj.nstate):
             try:
                 grad = self.traj.grad[n]

@@ -18,10 +18,11 @@ def read_control(keywords, values):
         'title': ReadVal('s'),
         'ml_ncpu': ReadVal('i'),
         'qc_ncpu': ReadVal('i'),
+        'ms_ncpu': ReadVal('i'),
         'gl_seed': ReadVal('i'),
         'jobtype': ReadVal('s'),
-        'qm': ReadVal('s'),
-        'abinit': ReadVal('s'),
+        'qm': ReadVal('sl'),
+        'abinit': ReadVal('sl'),
         'refine': ReadVal('i'),
         'refine_num': ReadVal('i'),
         'refine_start': ReadVal('i'),
@@ -80,7 +81,7 @@ def read_molecule(keywords, values):
         'coupling': ReadIndex('g'),
         'qmmm_key': ReadVal('s'),
         'qmmm_xyz': ReadVal('s'),
-        'highlevel': ReadIndex('s'),
+        'highlevel': ReadIndex('s', start=1),
         'boundary': ReadIndex('g'),
         'freeze': ReadIndex('s'),
         'constrain': ReadIndex('g'),
@@ -245,7 +246,8 @@ def read_md(keywords, values):
         'verbose': ReadVal('i'),
         'direct': ReadVal('i'),
         'buffer': ReadVal('i'),
-        'record': ReadVal('i'),
+        'record': ReadVal('s'),
+        'record_step': ReadVal('i'),
         'checkpoint': ReadVal('i'),
         'restart': ReadVal('i'),
         'addstep': ReadVal('i'),
@@ -519,10 +521,11 @@ def read_input(ld_input):
         'title': None,
         'ml_ncpu': 1,
         'qc_ncpu': 1,
+        'ms_ncpu': 1,
         'gl_seed': 1,
         'jobtype': 'sp',
         'qm': 'nn',
-        'abinit': 'molcas',
+        'abinit': ['molcas'],
         'refine': 0,
         'refine_num': 4,
         'refine_start': 0,
@@ -670,7 +673,8 @@ def read_input(ld_input):
         'verbose': 0,
         'direct': 2000,
         'buffer': 500,
-        'record': 0,
+        'record': 'qm',
+        'record_step': 0,
         'checkpoint': 0,
         'restart': 0,
         'addstep': 0,
@@ -1275,8 +1279,9 @@ def start_info(variables_all):
   &control
 -------------------------------------------------------
   Title:                      %-10s
-  NCPU for ML:                %-10s
-  NCPU for QC:                %-10s
+  NPROCS for ML:              %-10s
+  NPROCS for QC:              %-10s
+  NPROCS for Multiscale:      %-10s 
   Seed:                       %-10s
   Job: 	                      %-10s
   QM:          	       	      %-10s
@@ -1287,10 +1292,11 @@ def start_info(variables_all):
         variables_control['title'],
         variables_control['ml_ncpu'],
         variables_control['qc_ncpu'],
+        variables_control['ms_ncpu'],
         variables_control['gl_seed'],
         variables_control['jobtype'],
-        variables_control['qm'],
-        variables_control['abinit']
+        ' '.join(variables_control['qm']),
+        ' '.join(variables_control['abinit'])
     )
 
     molecule_info = """
@@ -1362,7 +1368,7 @@ def start_info(variables_all):
 -------------------------------------------------------
 
 """ % (
-        variables_control['abinit'],
+        ' '.join(variables_control['abinit']),
         variables_control['load'],
         variables_control['transfer'],
         variables_control['maxiter'],
@@ -1437,6 +1443,7 @@ def start_info(variables_all):
   Print level:                %-10s
   Direct output:              %-10s
   Buffer output:              %-10s
+  Record MD data:             %-10s
   Record MD steps:            %-10s
   Checkpoint steps:           %-10s 
   Restart function:           %-10s
@@ -1464,6 +1471,7 @@ def start_info(variables_all):
         variables_md['direct'],
         variables_md['buffer'],
         variables_md['record'],
+        variables_md['record_step'],
         variables_md['checkpoint'],
         variables_md['restart'],
         variables_md['addstep']
@@ -2515,17 +2523,18 @@ def start_info(variables_all):
     jobtype = variables_all['control']['jobtype']
     qm = variables_control['qm']
     abinit = variables_control['abinit']
-
+    qm_info = ''.join([info_method[m] for m in qm])
+    ab_info = ''.join([info_method[m] for m in abinit])
     info_jobtype = {
-        'sp': control_info + molecule_info + info_method[qm],
-        'md': control_info + molecule_info + md_info + info_method[qm],
+        'sp': control_info + molecule_info + qm_info,
+        'md': control_info + molecule_info + md_info + qm_info,
         'hop': control_info + molecule_info + md_info,
-        'hybrid': control_info + molecule_info + md_info + info_method[qm] + info_method[abinit] + hybrid_info,
-        'adaptive': control_info + molecule_info + adaptive_info + md_info + info_method[qm] + info_method[abinit],
-        'train': control_info + molecule_info + info_method[qm],
-        'prediction': control_info + molecule_info + info_method[qm],
-        'predict': control_info + molecule_info + info_method[qm],
-        'search': control_info + molecule_info + info_method[qm] + search_info,
+        'hybrid': control_info + molecule_info + md_info + qm_info + ab_info + hybrid_info,
+        'adaptive': control_info + molecule_info + adaptive_info + md_info + qm_info + ab_info,
+        'train': control_info + molecule_info + qm_info,
+        'prediction': control_info + molecule_info + qm_info,
+        'predict': control_info + molecule_info + qm_info,
+        'search': control_info + molecule_info + qm_info + search_info,
     }
 
     log_info = info_jobtype[jobtype]

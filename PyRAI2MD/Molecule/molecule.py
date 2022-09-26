@@ -66,6 +66,11 @@ class Molecule:
             txyz             list        full tinker xyz file
             qm_atoms         ndarray     atom name in high level region
             qm_coord         ndarray     nuclear coordinates in high level region
+            qm_energy        ndarray     potential energy in the present step in high level region
+            qm_grad          ndarray     gradient in the present step in high level region
+            qm_nac           ndarray     non-adiabatic coupling vectors in Hartree/Bohr (numerator) in high level region
+            qm_soc           ndarray     spin-orbit coupling in cm-1 in high level region
+            charges          ndarray     total charges
             qm1_charge       ndarray     charges in qm 1 region
             qm2_charge       ndarray     charges in qm 2 region (external)
             Hcap_atoms       ndarray     atom name of capping H
@@ -93,7 +98,7 @@ class Molecule:
                  'energy', 'grad', 'nac', 'soc', 'err_energy', 'err_grad', 'err_nac', 'err_soc',
                  'qm_atoms', 'qm_coord', 'Hcap_atoms', 'Hcap_coord', 'Hcap_jacob', 'boundary', 'nhigh', 'nlow',
                  'highlevel', 'lowlevel', 'relax', 'freeze', 'constrain', 'primitive', 'lattice', 'status',
-                 'qm1_charge', 'qm2_charge']
+                 'charges', 'qm1_charge', 'qm2_charge', 'qm_energy', 'qm_grad', 'qm_nac', 'qm_soc']
 
     def __init__(self, mol, keywords=None):
         key_dict = keywords['molecule'].copy()
@@ -120,6 +125,11 @@ class Molecule:
         self.Hcap_jacob = np.zeros(0)
         self.qm_atoms = np.zeros(0)
         self.qm_coord = np.zeros(0)
+        self.qm_energy = np.zeros(0)
+        self.qm_grad = np.zeros(0)
+        self.qm_nac = np.zeros(0)
+        self.qm_soc = np.zeros(0)
+        self.charges = np.zeros(0)
         self.qm1_charge = np.zeros(0)
         self.qm2_charge = np.zeros(0)
         self.lowlevel = np.zeros(0)
@@ -196,7 +206,7 @@ class Molecule:
 
         ## auto generate qmmm boundary if the request has no qmmm key
         if len(self.boundary) == 0 and len(self.lowlevel) > 0:
-            self.link, self.boundary = auto_boundary(self.coord, self.highlevel, self.primitive)
+            self.link, self.boundary, self.primitive = auto_boundary(self.coord, self.highlevel, self.primitive)
 
         ## get additional molecule information
         self.ninac = len(self.inact)
@@ -238,6 +248,7 @@ class Molecule:
 
     def apply_pbc(self):
         self.coord = apply_pbc(self.coord, self.primitive)
+
         return self
 
     def apply_qmmm(self):
@@ -248,5 +259,9 @@ class Molecule:
         else:
             self.qm_atoms = self.atoms[self.highlevel]
             self.qm_coord = self.coord[self.highlevel]
+
+        if len(self.charges) > 0:
+            self.qm1_charge = self.charges[self.highlevel]
+            self.qm2_charge = self.charges[self.lowlevel]
 
         return self
