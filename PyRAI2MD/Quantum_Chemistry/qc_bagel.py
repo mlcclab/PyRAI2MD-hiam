@@ -149,13 +149,13 @@ cd $BAGEL_WORKDIR
         with open('%s/%s.sbatch' % (self.workdir, self.project), 'w') as out:
             out.write(submission)
 
-    def _setup_bagel(self, x):
+    def _setup_bagel(self, x, q=None):
         ## make calculation folder and input file
         if not os.path.exists(self.workdir):
             os.makedirs(self.workdir)
 
         ## prepare .json .archive files
-        self._write_coord(x)
+        self._write_coord(x, q)
 
         ## save .archive file
         if not os.path.exists('%s.archive' % self.project):
@@ -180,7 +180,7 @@ cd $BAGEL_WORKDIR
         if self.use_hpc == 1:
             self._setup_hpc()
 
-    def _write_coord(self, x):
+    def _write_coord(self, x, q=None):
         ## write coordinate file
 
         ## convert xyz from array to bagel format (Bohr)
@@ -189,6 +189,13 @@ cd $BAGEL_WORKDIR
         for n, line in enumerate(x):
             e, x, y, z = line
             jxyz.append({"atom": e, "xyz": [float(x) * a2b, float(y) * a2b, float(z) * a2b]})
+
+        ## convert point charge from array to bagel format
+        if isinstance(q, np.ndarray):
+            for charge in q:
+                jxyz.append(
+                    {"atom": "Q", "xyz": [float(charge[1]), float(charge[2]), float(charge[3])], "charge": charge[0]}
+                )
 
         ## Read input template from current directory
         with open('%s.bagel' % self.project, 'r') as template:
@@ -278,9 +285,10 @@ cd $BAGEL_WORKDIR
 
         xyz = np.concatenate((traj.qm_atoms, traj.qm_coord), axis=1)
         nxyz = len(xyz)
+        charge = traj.qm2_charge
 
         ## setup BAGEL calculation
-        self._setup_bagel(xyz)
+        self._setup_bagel(xyz, charge)
 
         ## run BAGEL calculation
         self._run_bagel()
@@ -300,9 +308,10 @@ cd $BAGEL_WORKDIR
 
         xyz = np.concatenate((traj.atoms, traj.coord), axis=1)
         nxyz = len(xyz)
+        charge = traj.qm2_charge
 
         ## setup BAGEL calculation
-        self._setup_bagel(xyz)
+        self._setup_bagel(xyz, charge)
 
         ## run BAGEL calculation
         self._run_bagel()
