@@ -84,8 +84,6 @@ def verlet_ii(traj):
             traj             class	 trajectory class
     """
 
-    ## TODO use	mol to define where to update trajectories
-
     itr = traj.itr
     mass = traj.mass
     grad = traj.grad

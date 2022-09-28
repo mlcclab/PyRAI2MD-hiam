@@ -31,6 +31,7 @@ register = {
     'qc_molcas_tinker': '/Quantum_Chemistry/qc_molcas_tinker.py',
     'qc_orca': '/Quantum_Chemistry/qc_orca.py',
     'qc_xtb': '/Quantum_Chemistry/qc_xtb.py',
+    'qmqm2': '/Quantum_Chemistry/qmqm2.py',
     'model_NN': '/Machine_Learning/model_NN.py',
     'model_pyNNsMD': '/Machine_Learning/model_pyNNsMD.py',
     'model_GCNNP': '/Machine_Learning/model_GCNNP.py',
@@ -101,7 +102,8 @@ def review(length, totline, totfile):
   |   |--qc_bagel.py                               BAGEL interface                             %8s
   |   |--qc_molcas_tinker                          OpenMolcas/Tinker interface                 %8s
   |   |--qc_orca                                   ORCA interface                              %8s
-  |    `-qc_xtb                                    GFN-xTB interface                           %8s
+  |   |--qc_xtb                                    GFN-xTB interface                           %8s
+  |    `-qmqm2                                     Multiscale calculation interface            %8s
   |
   |--Machine_Learning                              machine learning library interface folder
   |   |--model_NN.py                               native neural network interface             %8s
@@ -160,6 +162,7 @@ Total %4s/%4s files                                                             
        length['qc_molcas_tinker'],
        length['qc_orca'],
        length['qc_xtb'],
+       length['qmqm2'],
        length['model_NN'],
        length['model_pyNNsMD'],
        length['model_GCNNP'],

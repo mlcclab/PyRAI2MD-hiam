@@ -347,8 +347,8 @@ rm -r $MOLCAS_WORKDIR/$MOLCAS_PROJECT
         if len(self.soc_coupling) > 0 and len(soc_mtx) > 0:
             for pair in self.soc_coupling:
                 s1, s2 = pair
-                socme = float(soc_mtx[s1, s2 - self.ci[
-                    0] + sin_state])  # assume low spin is in front of high spin (maybe generalize later)
+                # assume low spin is in front of high spin (maybe generalize later)
+                socme = float(soc_mtx[s1, s2 - self.ci[0] + sin_state])
                 soc.append(socme)
 
         ## pack data
@@ -483,3 +483,9 @@ rm -r $MOLCAS_WORKDIR/$MOLCAS_PROJECT
         ## fake function
 
         return self
+
+    def read_data(self, natom):
+        ## function to read the logfile
+        coord, energy, gradient, nac, soc = self._read_data(natom)
+
+        return coord, energy, gradient, nac, soc

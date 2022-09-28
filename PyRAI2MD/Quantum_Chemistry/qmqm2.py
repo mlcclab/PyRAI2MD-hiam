@@ -9,6 +9,8 @@
 
 import multiprocessing
 import numpy as np
+from PyRAI2MD.Utils.coordinates import orca_coord
+from PyRAI2MD.Utils.coordinates import string2float
 
 class QMQM2:
     """ QMQM2 single point calculation interface
@@ -57,6 +59,8 @@ class QMQM2:
         self.qm1_low = qm2(keywords=keywords, job_id=job_id, runtype='qmmm')
         self.qm2_low = qm2(keywords=keywords, job_id=job_id, runtype='qmmm_low')
         self.nprocs = keywords['control']['ms_ncpu']
+        self.project = ''
+        self.workdir = ''
 
     def train(self):
         ## fake function
@@ -152,3 +156,43 @@ class QMQM2:
         traj.soc = traj_qm1_high.soc
 
         return traj
+
+    def read_data(self, natom):
+        ## function to read the PyRAI2MD logfile
+
+        with open('%s/%s.log' % (self.workdir, self.project), 'r') as out:
+            log = out.read().splitlines()
+
+        coord = []
+        energy = []
+        gradient = []
+        nac = []
+        soc = []
+        for i, line in enumerate(log):
+            if '  &coordinates in Angstrom' in line:
+                coord = orca_coord(log[i + 2: i + 2 + natom])
+
+            if '  Energy state ' in line:
+                e = float(line.split()[-1])
+                energy.append(e)
+
+            if '  &gradient state' in line:
+                g = log[i + 2: i + 2 + natom]
+                g = string2float(g)
+                gradient.append(g)
+
+            if '  &nonadiabatic coupling' in line:
+                n = log[i + 2: i + 2 + natom]
+                n = string2float(n)
+                nac.append(n)
+
+            if '  <H>=' in line:
+                socme = float(line.split()[1])
+                soc.append(socme)
+
+        energy = np.array(energy)
+        gradient = np.array(gradient)
+        nac = np.array(nac)
+        soc = np.array(soc)
+
+        return coord, energy, gradient, nac, soc

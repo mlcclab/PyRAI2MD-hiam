@@ -15,6 +15,7 @@ import numpy as np
 
 from PyRAI2MD.Utils.coordinates import print_coord
 from PyRAI2MD.Utils.coordinates import print_charge
+from PyRAI2MD.Utils.coordinates import orca_coord
 
 class Xtb:
     """ xTB single point calculation interface
@@ -163,9 +164,13 @@ cd $XTB_WORKDIR
 
     def _read_data(self, natom):
         ## read xTB output and pack data
+        with open('%s/%s.xyz' % (self.workdir, self.project), 'r') as inp:
+            inputs = inp.read().splitlines()
+
+        coord = orca_coord(inputs[2: 2 + natom])
 
         if not os.path.exists('%s/%s.engrad' % (self.workdir, self.project)):
-            return [], np.zeros(1), np.zeros(1), np.zeros(1), np.zeros(1)
+            return coord, np.zeros(1), np.zeros(1), np.zeros(1), np.zeros(1)
 
         if os.path.exists('%s/charges' % self.workdir):
             with open('%s/charges' % self.workdir) as out:
@@ -192,7 +197,7 @@ cd $XTB_WORKDIR
         nac = np.zeros(0)
         soc = np.zeros(0)
 
-        return energy, gradient, nac, soc
+        return coord, energy, gradient, nac, soc
 
     def _qmmm(self, traj):
         ## run xTB for QMMM calculation
@@ -211,7 +216,7 @@ cd $XTB_WORKDIR
         self._run_xtb()
 
         ## read xTB output files
-        energy, gradient, nac, soc = self._read_data(nxyz)
+        coord, energy, gradient, nac, soc = self._read_data(nxyz)
 
         ## project force and coupling
         jacob = traj.Hcap_jacob
@@ -238,7 +243,7 @@ cd $XTB_WORKDIR
         self._run_xtb()
 
         ## read xTB output files
-        energy, gradient, nac, soc = self._read_data(nxyz)
+        coord, energy, gradient, nac, soc = self._read_data(nxyz)
 
         return energy, gradient, nac, soc
 
@@ -294,3 +299,9 @@ cd $XTB_WORKDIR
         ## fake function
 
         return self
+
+    def read_data(self, natom):
+        ## function to read the logfile
+        coord, energy, gradient, nac, soc = self._read_data(natom)
+
+        return coord, energy, gradient, nac, soc

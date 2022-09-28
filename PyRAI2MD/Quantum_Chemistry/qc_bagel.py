@@ -376,3 +376,9 @@ cd $BAGEL_WORKDIR
         ## fake function
 
         return self
+
+    def read_data(self, natom):
+        ## function to read the logfile
+        coord, energy, gradient, nac, soc = self._read_data(natom)
+
+        return coord, energy, gradient, nac, soc

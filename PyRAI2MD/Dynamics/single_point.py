@@ -83,16 +83,16 @@ class SinglePoint:
  *---------------------------------------------------*
 
 
- State order:      %s
- Multiplicity:     %s
+  State order:      %s
+  Multiplicity:     %s
 
- QMMM key:         %s
- QMMM xyz:         %s
- Active atoms:     %s
- Inactive atoms:   %s
- Link atoms:       %s
- Highlevel atoms:  %s
- Lowlevel atoms:   %s
+  QMMM key:         %s
+  QMMM xyz:         %s
+  Active atoms:     %s
+  Inactive atoms:   %s
+  Link atoms:       %s
+  Highlevel atoms:  %s
+  Lowlevel atoms:   %s
  
 """ % (
             self.version,
@@ -111,7 +111,7 @@ class SinglePoint:
 
     def _chkpoint(self):
         ## prepare logfile info
-        log_info = '\n'.join([' State %2d: %28.16f' % (
+        log_info = '\n'.join(['  Energy state %2d: %28.16f' % (
             n + 1, x) for n, x in enumerate(self.traj.energy)]) + '\n'
 
         ## add verbose info

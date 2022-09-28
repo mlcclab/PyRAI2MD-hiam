@@ -261,8 +261,8 @@ class HopProb:
  *---------------------------------------------------*
 
 
- State order:  %s       
- Multiplicity: %s
+  State order:  %s       
+  Multiplicity: %s
  
 """ % (self.version, state_info, mult_info)
 
@@ -270,7 +270,7 @@ class HopProb:
 
     def _chkpoint(self):
         ## prepare logfile info
-        log_info = ' Trajectory properties:\n'
+        log_info = '  Trajectory properties:\n'
         for key, location in self.record.items():
             log_info += ' %-10s %s\n' % (key, location)
         ## add surface hopping information to xyz comment line

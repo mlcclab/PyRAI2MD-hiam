@@ -38,6 +38,9 @@ def TestBagel():
         'BLAS': 'VariableNotFound',
         'LAPACK': 'VariableNotFound',
         'BOOST': 'VariableNotFound',
+        'MPI': 'VariableNotFound',
+        'MKL': 'VariableNotFound',
+        'ARCH': 'VariableNotFound',
     }
 
     casscfpath = './bagel/bagel_data/c2h4-casscf.json'

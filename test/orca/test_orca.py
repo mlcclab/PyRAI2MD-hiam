@@ -21,9 +21,9 @@ except ModuleNotFoundError:
 
 
 def TestORCA():
-    """ xtb test
+    """ orca test
 
-    1. xtb energy and gradient
+    1. orca energy and gradient
 
     """
 
@@ -92,13 +92,13 @@ def TestORCA():
  %-10s --> %s/tddft.orca
  %-10s --> %s/sf_tddft.orca
 
- Run GFN-xTB:
+ Run ORCA:
 """ % ('coord', testdir,
        'coord', testdir,
        'coord', testdir,
-       record['dft'], testdir,
-       record['tddft'], testdir,
-       record['sf_tddft'], testdir)
+       'dft', testdir,
+       'tddft', testdir,
+       'sf_tddft', testdir)
 
     results, code = RunORCA_dft(testdir)
 

@@ -151,7 +151,7 @@ export MOLCAS_WORKDIR=$PWD
 
 $MOLCAS/bin/pymolcas -f $INPUT.inp -b 1
 rm -r $MOLCAS_PROJECT
-""" % (record['MOLCAS'])
+""" % record['MOLCAS']
 
     with open('%s/test_inp' % testdir, 'w') as out:
         out.write(ld_input)

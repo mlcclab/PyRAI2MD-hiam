@@ -84,7 +84,11 @@ def read_molecule(keywords, values):
         'highlevel': ReadIndex('s', start=1),
         'boundary': ReadIndex('g'),
         'freeze': ReadIndex('s'),
-        'constrain': ReadIndex('g'),
+        'constrain': ReadIndex('s'),
+        'shape': ReadVal('s'),
+        'factor': ReadVal('i'),
+        'cavity': ReadVal('fl'),
+        'center': ReadIndex('s'),
         'primitive': ReadIndex('g'),
         'lattice': ReadIndex('s'),
     }
@@ -575,6 +579,10 @@ def read_input(ld_input):
         'boundary': [],
         'freeze': [],
         'constrain': [],
+        'shape': 'ellipsoid',
+        'factor': 10,
+        'cavity': [],
+        'center': [],
         'primitive': [],
         'lattice': [],
     }
@@ -1311,6 +1319,10 @@ def start_info(variables_all):
   Boundary:                   %-10s ...
   Frozen atoms:               %-10s
   Constrained atoms:          %-10s
+  External potential shape:   %-10s
+  External potential factor:  %-10s
+  External potential radius:  %-10s
+  External potential center:  %-10s
   Primitive vectors:          %-10s
   Lattice constant:           %-10s
 -------------------------------------------------------
@@ -1325,6 +1337,10 @@ def start_info(variables_all):
         variables_molecule['boundary'][0:5],
         variables_molecule['freeze'],
         variables_molecule['constrain'],
+        variables_molecule['shape'],
+        variables_molecule['factor'],
+        variables_molecule['cavity'],
+        variables_molecule['center'],
         variables_molecule['primitive'],
         variables_molecule['lattice']
     )

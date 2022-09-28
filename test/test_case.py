@@ -7,20 +7,22 @@
 #
 ######################################################
 
-test_first_run = 1
-test_bagel = 1
-test_molcas = 1
-test_molcas_tinker = 1
-test_orca = 1
-test_xtb = 1
-test_fssh = 1
-test_gsh = 1
-test_nn = 1
-test_pynnsmd = 1
-test_grid_search = 1
-test_aimd = 1
-test_mixaimd = 1
-test_adaptive_sampling = 1
+test_first_run = 0
+test_bagel = 0
+test_molcas = 0
+test_molcas_tinker = 0
+test_orca = 0
+test_xtb = 0
+test_qmqm2 = 0
+test_fssh = 0
+test_gsh = 0
+test_nn = 0
+test_pynnsmd = 0
+test_grid_search = 0
+test_aimd = 0
+test_mixaimd = 0
+test_adaptive_sampling = 0
+test_md = 1
 
 import time
 import datetime
@@ -69,6 +71,7 @@ class TestCase:
             'molcas_tinker': test_molcas_tinker,
             'orca': test_orca,
             'xtb': test_xtb,
+            'qmqm2': test_qmqm2,
             'fssh': test_fssh,
             'gsh': test_gsh,
             'neural_network': test_nn,
@@ -105,6 +108,10 @@ class TestCase:
             from xtb.test_xtb import TestxTB
             self.test_func['xtb'] = TestxTB
 
+        if os.path.exists('./qmqm2/test_qmqm2.py'):
+            from qmqm2.test_qmqm2 import TestQMQM2
+            self.test_func['qmqm2'] = TestQMQM2
+
         if os.path.exists('./neural_network/test_nn.py'):
             from neural_network.test_nn import TestNN
             self.test_func['neural_network'] = TestNN
@@ -136,6 +143,10 @@ class TestCase:
         if os.path.exists('./adaptive_sampling/test_adaptive_sampling.py'):
             from adaptive_sampling.test_adaptive_sampling import TestAdaptiveSampling
             self.test_func['adaptive_sampling'] = TestAdaptiveSampling
+
+        if os.path.exists('./md/test_md.py'):
+            from md.test_md import TestMD
+            self.test_func['aimd'] = TestMD
 
     def run(self):
         heading = '''

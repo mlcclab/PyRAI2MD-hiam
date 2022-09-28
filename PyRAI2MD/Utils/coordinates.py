@@ -23,6 +23,16 @@ def molcas_coord(xyz):
 
     return coord
 
+def orca_coord(xyz):
+    ## This function convert Molcas coordinates to list
+
+    coord = []
+    for line in xyz:
+        a, x, y, z = line.split()[0:4]
+        coord.append([a, float(x), float(y), float(z)])
+
+    return coord
+
 def string2float(x):
     ## This function convert 1D string (e,x,y,z) list to 2D float array
 

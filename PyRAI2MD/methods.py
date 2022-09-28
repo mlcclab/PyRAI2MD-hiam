@@ -103,3 +103,7 @@ class QM:
     def evaluate(self, traj):
         traj = self.method.evaluate(traj)
         return traj
+
+    def read_data(self, natom):
+        data = self.method.read_data(natom)
+        return data

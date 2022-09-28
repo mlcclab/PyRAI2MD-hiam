@@ -16,6 +16,7 @@ import numpy as np
 from PyRAI2MD.Utils.coordinates import reverse_string2float
 from PyRAI2MD.Utils.coordinates import print_coord
 from PyRAI2MD.Utils.coordinates import print_charge
+from PyRAI2MD.Utils.coordinates import orca_coord
 
 class Orca:
     """ ORCA single point calculation interface
@@ -244,9 +245,16 @@ cd $ORCA_WORKDIR
 
     def _read_dft(self, natom):
         ## read ORCA output and pack data
+        with open('%s/%s.inp' % (self.workdir, self.project), 'r') as inp:
+            inputs = inp.read().splitlines()
+
+        coord = []
+        for n, line in enumerate(inputs):
+            if '* xyz ' in line:
+                coord = orca_coord(inputs[n + 1: n + 1 + natom])
 
         if not os.path.exists('%s/%s.engrad' % (self.workdir, self.project)):
-            return [], np.zeros(1), np.zeros(1), np.zeros(1), np.zeros(1)
+            return coord, np.zeros(1), np.zeros(1), np.zeros(1), np.zeros(1)
 
         with open('%s/%s.engrad' % (self.workdir, self.project), 'r') as out:
             log = out.read().splitlines()
@@ -269,13 +277,20 @@ cd $ORCA_WORKDIR
         nac = np.zeros(0)
         soc = np.zeros(0)
 
-        return energy, gradient, nac, soc
+        return coord, energy, gradient, nac, soc
 
     def _read_tddft(self, natom):
         ## read ORCA output and pack data
+        with open('%s/%s.inp' % (self.workdir, self.project), 'r') as inp:
+            inputs = inp.read().splitlines()
+
+        coord = []
+        for n, line in enumerate(inputs):
+            if '* xyz ' in line:
+                coord = orca_coord(inputs[n + 1: n + 1 + natom])
 
         if not os.path.exists('%s/%s.out' % (self.workdir, self.project)):
-            return [], np.zeros(1), np.zeros(1), np.zeros(1), np.zeros(1)
+            return coord, np.zeros(1), np.zeros(1), np.zeros(1), np.zeros(1)
 
         with open('%s/%s.out' % (self.workdir, self.project), 'r') as out:
             log = out.read().splitlines()
@@ -311,10 +326,17 @@ cd $ORCA_WORKDIR
         nac = np.zeros(0)
         soc = np.zeros(0)
 
-        return energy, gradient, nac, soc
+        return coord, energy, gradient, nac, soc
 
     def _read_sf_tddft(self, natom):
         ## read ORCA output and pack data
+        with open('%s/%s.inp' % (self.workdir, self.project), 'r') as inp:
+            inputs = inp.read().splitlines()
+
+        coord = []
+        for n, line in enumerate(inputs):
+            if '* xyz ' in line:
+                coord = orca_coord(inputs[n + 1: n + 1 + natom])
 
         if not os.path.exists('%s/%s.out' % (self.workdir, self.project)):
             return [], np.zeros(1), np.zeros(1), np.zeros(1), np.zeros(1)
@@ -365,7 +387,7 @@ cd $ORCA_WORKDIR
         nac = np.zeros(0)
         soc = np.zeros(0)
 
-        return energy, gradient, nac, soc
+        return coord, energy, gradient, nac, soc
 
     def _read_data(self, nxyz):
         ## read orca output
@@ -393,7 +415,7 @@ cd $ORCA_WORKDIR
         self._run_orca()
 
         ## read ORCA output files
-        energy, gradient, nac, soc = self._read_data(nxyz)
+        coord, energy, gradient, nac, soc = self._read_data(nxyz)
 
         ## project force and coupling
         jacob = traj.Hcap_jacob
@@ -416,7 +438,7 @@ cd $ORCA_WORKDIR
         self._run_orca()
 
         ## read ORCA output files
-        energy, gradient, nac, soc = self._read_data(nxyz)
+        coord, energy, gradient, nac, soc = self._read_data(nxyz)
 
         return energy, gradient, nac, soc
 
@@ -476,3 +498,9 @@ cd $ORCA_WORKDIR
         ## fake function
 
         return self
+
+    def read_data(self, natom):
+        ## function to read the logfile
+        coord, energy, gradient, nac, soc = self._read_data(natom)
+
+        return coord, energy, gradient, nac, soc

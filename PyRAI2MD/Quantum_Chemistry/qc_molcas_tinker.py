@@ -232,3 +232,9 @@ class MolcasTinker(Molcas):
         traj.status = completion
 
         return traj
+
+    def read_data(self, natom):
+        ## function to read the logfile
+        coord, energy, gradient, nac, soc = self._read_data(natom)
+
+        return coord, energy, gradient, nac, soc

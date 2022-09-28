@@ -21,6 +21,7 @@ from PyRAI2MD.Utils.timing import what_is_time
 from PyRAI2MD.Utils.timing import how_long
 from PyRAI2MD.Utils.coordinates import print_coord
 from PyRAI2MD.Utils.coordinates import print_charge
+from PyRAI2MD.Molecule.constraint import Constraint
 
 
 class AIMD:
@@ -91,6 +92,8 @@ class AIMD:
         else:
             self.logpath = os.getcwd()
 
+        ## create a constraint object
+        self.ext_pot = Constraint(keywords=keywords)
         ## create a trajectory object
         self.traj = trajectory
 
@@ -107,14 +110,8 @@ class AIMD:
             check_f6 = os.path.exists('%s/%s.sh.energies' % (self.logpath, self.title))
             check_f7 = os.path.exists('%s/%s.sh.xyz' % (self.logpath, self.title))
             check_f8 = os.path.exists('%s/%s.sh.velo' % (self.logpath, self.title))
-            checksignal = int(check_f1) \
-                          + int(check_f2)\
-                          + int(check_f3)\
-                          + int(check_f4)\
-                          + int(check_f5)\
-                          + int(check_f6)\
-                          + int(check_f7)\
-                          + int(check_f8)
+            checksignal = int(check_f1) + int(check_f2) + int(check_f3) + int(check_f4) + int(check_f5)\
+                + int(check_f6) + int(check_f7) + int(check_f8)
 
             if checksignal == 8:
                 with open('%s/%s.pkl' % (self.logpath, self.title), 'rb') as mdinfo:
@@ -194,11 +191,19 @@ class AIMD:
         if self.timing == 1:
             print('verlet', time.time())
 
+        # compute potential energy surface
         self.traj = self._potential_energies(self.traj)
+
+        # apply external potential energy if requested
+        self.traj = self.ext_pot.apply_potential(self.traj)
+
+        # freeze selected atom if requested
+        self.traj = self.ext_pot.freeze_atom(self.traj)
 
         if self.timing == 1:
             print('compute_egn', time.time())
 
+        ## update current velocity
         self.traj = verlet_ii(self.traj)
 
         if self.timing == 1:
@@ -271,16 +276,16 @@ class AIMD:
  *---------------------------------------------------*
 
 
- State order:      %s
- Multiplicity:     %s
+  State order:      %s
+  Multiplicity:     %s
 
- QMMM key:         %s
- QMMM xyz          %s
- Active atoms:     %s
- Inactive atoms:   %s
- Link atoms:       %s
- Highlevel atoms:  %s
- Lowlevel atoms:   %s
+  QMMM key:         %s
+  QMMM xyz          %s
+  Active atoms:     %s
+  Inactive atoms:   %s
+  Link atoms:       %s
+  Highlevel atoms:  %s
+  Lowlevel atoms:   %s
 
 """ % (
             self.version,
@@ -358,13 +363,15 @@ class AIMD:
             charge_info = ''
 
         ## prepare logfile info
-        log_info = ' Iter: %8d  Ekin = %28.16f au T = %8.2f K dt = %10d CI: %3d\n Root chosen for geometry opt %3d\n' % (
-            self.traj.itr,
-            self.traj.kinetic,
-            self.traj.temp,
-            self.traj.size,
-            self.traj.nstate,
-            self.traj.last_state)
+        log_info = \
+            ' Iter: %8d  Ekin = %28.16f au T = %8.2f K dt = %10d CI: %3d\n Root chosen for geometry opt %3d\n' % (
+                self.traj.itr,
+                self.traj.kinetic,
+                self.traj.temp,
+                self.traj.size,
+                self.traj.nstate,
+                self.traj.last_state
+            )
 
         log_info += '\n Gnuplot: %s %s %28.16f\n  **\n  **\n  **\n%s\n' % (
             pop,

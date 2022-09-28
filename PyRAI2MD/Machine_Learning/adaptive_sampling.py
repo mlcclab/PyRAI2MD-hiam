@@ -1009,7 +1009,7 @@ Thrshd(E: %8.4f %s %8.4f G: %8.4f %s %8.4f N: %8.4f %s %8.4f S: %8.4f %s %8.4f) 
  *---------------------------------------------------*
 
 
- Number of iterations:  %s
+  Number of iterations:  %s
 
 """ % (
             self.version,
