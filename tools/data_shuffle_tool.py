@@ -7,12 +7,13 @@
 #
 ######################################################
 
-import sys, json
+import sys
+import json
 import numpy as np
 from optparse import OptionParser
 
-def main():
 
+def main():
     usage = """
     PyRAI2MD training data shuffle tool
 
@@ -23,7 +24,7 @@ def main():
 
     description = ''
     parser = OptionParser(usage=usage, description=description)
-    parser.add_option('-s', dest='seed',       type=float,   nargs=1, help='random number seed', default = 1234)
+    parser.add_option('-s', dest='seed', type=float, nargs=1, help='random number seed', default=1234)
 
     (options, args) = parser.parse_args()
     seed = options.seed
@@ -44,6 +45,7 @@ def main():
 
     size = len(xyz)
     index = np.arange(size)
+    np.random.seed(seed)
     np.random.shuffle(index)
 
     xyz = np.array(xyz)[index].tolist()
@@ -53,19 +55,19 @@ def main():
     soc = np.array(soc)[index].tolist()
 
     newset = {
-        'natom'  : natom,
-        'nstate' : nstate,
-        'nnac'   : nnac,
-        'nsoc'   : nsoc,
-        'xyz'    : xyz,
-        'energy' : energy,
-        'grad'   : grad,
-        'nac'    : nac,
-        'soc'    : soc,
-        }
+        'natom': natom,
+        'nstate': nstate,
+        'nnac': nnac,
+        'nsoc': nsoc,
+        'xyz': xyz,
+        'energy': energy,
+        'grad': grad,
+        'nac': nac,
+        'soc': soc,
+    }
 
-    with open('%s-shuffled.json' % (title),'w') as outdata:
-        json.dump(newset,outdata)
+    with open('%s-shuffled.json' % title, 'w') as outdata:
+        json.dump(newset, outdata)
 
 
 if __name__ == '__main__':

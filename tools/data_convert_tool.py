@@ -7,52 +7,44 @@
 #
 ######################################################
 
-import sys, json
-import numpy as np
-from optparse import OptionParser
+import sys
+import json
 
 def main():
-
     usage = """
     PyRAI2MD training data shuffle tool
 
     Usage:
-        python3 data_shuffle_tool.py [input_file] [options]
+        python3 data_shuffle_tool.py [input_file]
 
     """
 
-    description = ''
-    parser = OptionParser(usage=usage, description=description)
-    (options, args) = parser.parse_args()
+    if len(sys.argv) <= 1:
+        exit(usage)
 
     title = sys.argv[1].split('.')[0]
     with open(sys.argv[1], 'r') as indata:
         dataset = json.load(indata)
 
-    natom,nstate,xyz,invrset,energy,grad,nac,civec,movecset=dataset
+    natom, nstate, xyz, invrset, energy, grad, nac, civec, movecset = dataset
 
     size = len(xyz)
-
-    xyz = np.array(xyz)[index].tolist()
-    energy = np.array(energy)[index].tolist()
-    grad = np.array(grad)[index].tolist()
-    nac = np.array(nac)[index].tolist()
-    soc = [[] for x in range(size)]
+    soc = [[] for _ in range(size)]
 
     newset = {
-        'natom'  : natom,
-        'nstate' : nstate,
-        'nnac'   : 1,
-        'nsoc'   : 0,
-        'xyz'    : xyz,
-        'energy' : energy,
-        'grad'   : grad,
-        'nac'    : nac,
-        'soc'    : soc,
-        }
+        'natom': natom,
+        'nstate': nstate,
+        'nnac': 1,
+        'nsoc': 0,
+        'xyz': xyz,
+        'energy': energy,
+        'grad': grad,
+        'nac': nac,
+        'soc': soc,
+    }
 
-    with open('%s-new.json' % (title),'w') as outdata:
-        json.dump(newset,outdata)
+    with open('%s-new.json' % title, 'w') as outdata:
+        json.dump(newset, outdata)
 
 
 if __name__ == '__main__':
