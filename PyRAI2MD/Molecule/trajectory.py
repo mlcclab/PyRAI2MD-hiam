@@ -83,6 +83,15 @@ class Trajectory(Molecule):
        	    kinetic2         float       kinetic energy in two step before
           * nac              ndarray     non-adiabatic coupling vectors in Hartree/Bohr (numerator)
           * soc              ndarray     spin-orbit coupling in cm-1
+          * qm_atoms         ndarray     atom name in high level region
+          * qm_coord         ndarray     nuclear coordinates in high level region
+          * qm_energy        ndarray     potential energy in the present step in high level region
+          * qm_grad          ndarray     gradient in the present step in high level region
+          * qm_nac           ndarray     non-adiabatic coupling vectors in Hartree/Bohr (numerator) in high level region
+          * qm_soc           ndarray     spin-orbit coupling in cm-1 in high level region
+          * charges          ndarray     total charges
+          * qm1_charge       ndarray     charges in qm 1 region
+          * qm2_charge       ndarray     charges in qm 2 region (external)
             vs               list        additional velocity information for thermostat array
             itr              int         current iteration
             itr_x            int         the last iteration in the excited state
@@ -189,12 +198,13 @@ class Trajectory(Molecule):
             return self
 
         ## record trajectory history
-        if self.record_region == 'qmmm':
+        if self.record_region == 'qm':
             self.history.append(
                 [self.itr,
                  self.state,
                  np.copy(self.qm_atoms),
                  np.copy(self.qm_coord),
+                 np.copy(self.qm2_charge),
                  np.copy(self.qm_energy),
                  np.copy(self.qm_grad),
                  np.copy(self.qm_nac),
@@ -212,6 +222,7 @@ class Trajectory(Molecule):
                  self.state,
                  np.copy(self.atoms),
                  np.copy(self.coord),
+                 np.copy(self.qm2_charge),
                  np.copy(self.energy),
                  np.copy(self.grad),
                  np.copy(self.nac),

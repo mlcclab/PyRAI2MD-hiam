@@ -91,15 +91,15 @@ class PYRAI2MD:
         return input_dict
 
     def _machine_learning(self):
-        train_data = self.keywords[self.qm]['train_data']
-        pred_data = self.keywords[self.qm]['pred_data']
+        train_data = self.keywords[self.qm[0]]['train_data']
+        pred_data = self.keywords[self.qm[0]]['pred_data']
         data = Data()
 
         if self.jobtype == 'train':
             ## get training data
             data.load(train_data)
             data.stat()
-            self.keywords[self.qm]['data'] = data
+            self.keywords[self.qm[0]]['data'] = data
 
             ## create model
             model = QM(self.qm, keywords=self.keywords, job_id=None)
@@ -110,7 +110,7 @@ class PYRAI2MD:
             data.load(train_data)
             data.load(pred_data, filetype='prediction')
             data.stat()
-            self.keywords[self.qm]['data'] = data
+            self.keywords[self.qm[0]]['data'] = data
 
             ## create model
             model = QM(self.qm, keywords=self.keywords, job_id=None)
@@ -170,12 +170,12 @@ class PYRAI2MD:
                 np.savetxt(initvelo, velo, fmt='%30s%30s%30s')
 
         ## create a trajectory and method model
-        if self.qm == 'nn':
-            train_data = self.keywords[self.qm]['train_data']
+        if self.qm[0] in ['nn', 'mlp', 'schnet', 'e2n2']:
+            train_data = self.keywords[self.qm[0]]['train_data']
             data = Data()
             data.load(train_data)
             data.stat()
-            self.keywords[self.qm]['data'] = data
+            self.keywords[self.qm[0]]['data'] = data
 
         traj = Trajectory(mol, keywords=self.keywords)
         method = QM(self.qm, keywords=self.keywords, job_id=None)
@@ -223,11 +223,11 @@ class PYRAI2MD:
         ref = QM(self.abinit, keywords=self.keywords, job_id=None)
         ref.load()
 
-        train_data = self.keywords[self.qm]['train_data']
+        train_data = self.keywords[self.qm[0]]['train_data']
         data = Data()
         data.load(train_data)
         data.stat()
-        self.keywords[self.qm]['data'] = data
+        self.keywords[self.qm[0]]['data'] = data
         method = QM(self.qm, keywords=self.keywords, job_id=None)
         method.load()
 

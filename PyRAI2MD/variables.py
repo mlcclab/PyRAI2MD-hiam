@@ -681,7 +681,7 @@ def read_input(ld_input):
         'verbose': 0,
         'direct': 2000,
         'buffer': 500,
-        'record': 'qm',
+        'record': 'whole',
         'record_step': 0,
         'checkpoint': 0,
         'restart': 0,

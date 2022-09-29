@@ -85,7 +85,7 @@ class GridSearch:
         self.ml_ncpu = keywords['control']['ml_ncpu']
         self.use_hpc = keywords['nn']['search']['use_hpc']
         self.retrieve = keywords['nn']['search']['retrieve']
-        train_data = keywords[self.qm]['train_data']
+        train_data = keywords[self.qm[0]]['train_data']
         self.data = Data()
         self.data.load(train_data)
         self.data.stat()
@@ -179,8 +179,8 @@ class GridSearch:
 
         ## update hypers and add training data
         keywords, key = self._update_hypers(self.keywords, hypers)
-        keywords[self.qm]['train_mode'] = 'training'
-        keywords[self.qm]['data'] = self.data
+        keywords[self.qm[0]]['train_mode'] = 'training'
+        keywords[self.qm[0]]['data'] = self.data
         maindir = os.getcwd()
         calcdir = '%s/grid-search/NN-%s-%s' % (os.getcwd(), self.title, key)
 
@@ -217,7 +217,7 @@ class GridSearch:
 
         ## update hypers
         keywords, key = self._update_hypers(self.keywords, hypers)
-        keywords[self.qm]['train_mode'] = 'training'
+        keywords[self.qm[0]]['train_mode'] = 'training'
 
         ## remote training in subprocess
         model = RemoteTrain(keywords=keywords, id=key)

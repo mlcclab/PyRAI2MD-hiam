@@ -8,7 +8,6 @@
 ######################################################
 
 import os
-import sys
 import time
 import numpy as np
 from PyRAI2MD.Machine_Learning.hyper_nn import set_hyper_eg
@@ -55,9 +54,10 @@ class DNN:
 
     """
 
-    def __init__(self, keywords=None, job_id=None):
+    def __init__(self, keywords=None, job_id=None, runtype='qm'):
 
         set_gpu([])  # No GPU for prediction
+        self.runtype = runtype
         title = keywords['control']['title']
         variables = keywords['nn'].copy()
         modeldir = variables['modeldir']
@@ -318,6 +318,47 @@ class DNN:
 
         return self
 
+    def _qmmm(self, traj):
+        ## run psnnsmd for QMQM2 calculation
+
+        xyz = traj.qm_coord.reshape((1, self.natom, 3))
+        y_pred, y_std = self.model.call(xyz)
+
+        ## initialize return values
+        energy = []
+        gradient = []
+        nac = []
+        soc = []
+        err_e = 0
+        err_g = 0
+        err_n = 0
+        err_s = 0
+
+        ## update return values
+        if 'energy_gradient' in y_pred.keys():
+            e_pred = y_pred['energy_gradient'][0] / self.f_e
+            g_pred = y_pred['energy_gradient'][1] / self.f_g
+            e_std = y_std['energy_gradient'][0] / self.f_e
+            g_std = y_std['energy_gradient'][1] / self.f_g
+            energy = e_pred[0]
+            gradient = g_pred[0]
+            err_e = np.amax(e_std)
+            err_g = np.amax(g_std)
+
+        if 'nac' in y_pred.keys():
+            n_pred = y_pred['nac'] / self.f_n
+            n_std = y_std['nac'] / self.f_n
+            nac = n_pred[0]
+            err_n = np.amax(n_std)
+
+        if 'soc' in y_pred.keys():
+            s_pred = y_pred['soc']
+            s_std = y_std['soc']
+            soc = s_pred[0]
+            err_s = np.amax(s_std)
+
+        return energy, gradient, nac, soc, err_e, err_g, err_n, err_s
+
     def _qm(self, traj):
         ## run psnnsmd for QM calculation
 
@@ -432,7 +473,10 @@ class DNN:
         if self.jobtype == 'prediction' or self.jobtype == 'predict':
             self._predict(self.pred_geos)
         else:
-            energy, gradient, nac, soc, err_energy, err_grad, err_nac, err_soc = self._qm(traj)
+            if self.runtype == 'qmmm':
+                energy, gradient, nac, soc, err_energy, err_grad, err_nac, err_soc = self._qmmm(traj)
+            else:
+                energy, gradient, nac, soc, err_energy, err_grad, err_nac, err_soc = self._qm(traj)
             traj.energy = np.copy(energy)
             traj.grad = np.copy(gradient)
             traj.nac = np.copy(nac)

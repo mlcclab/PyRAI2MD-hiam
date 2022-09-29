@@ -21,8 +21,8 @@ test_pynnsmd = 0
 test_grid_search = 0
 test_aimd = 0
 test_mixaimd = 0
-test_adaptive_sampling = 0
-test_md = 1
+test_adaptive_sampling = 1
+test_md = 0
 
 import time
 import datetime
@@ -80,6 +80,7 @@ class TestCase:
             'aimd': test_aimd,
             'mixaimd': test_mixaimd,
             'adaptive_sampling': test_adaptive_sampling,
+            'md': test_md,
         }
 
         self.test_func = {}
@@ -146,7 +147,7 @@ class TestCase:
 
         if os.path.exists('./md/test_md.py'):
             from md.test_md import TestMD
-            self.test_func['aimd'] = TestMD
+            self.test_func['md'] = TestMD
 
     def run(self):
         heading = '''

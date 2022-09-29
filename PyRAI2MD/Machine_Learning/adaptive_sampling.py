@@ -36,8 +36,9 @@ class AdaptiveSampling:
             keywords         dict        keyword list
             title            str         calculation title
             data             class       training data class
-            qm               str         quantum chemical method
-            abinit           str         ab initio calculation method
+            qm               list        a list of quantum chemical method
+            abinit           list        a list of ab initio calculation method
+            ml               str         the ml method, which is the first item in qm list
             ml_ncpu          int         number of CPU for machine learning training
             qc_ncpu          int         number of CPU for quantum chemical calculation
             maxiter          int         maximum number of adaptive sampling iteration
@@ -125,8 +126,8 @@ class AdaptiveSampling:
         self.version = keywords['version']
         self.keywords = keywords.copy()
 
-        if self.keywords['md']['record'] == 0:
-            self.keywords['md']['record'] = 10
+        if self.keywords['md']['record_step'] == 0:
+            self.keywords['md']['record_step'] = 10
 
         ## load variables for generating initcond
         ninitcond = keywords['md']['ninitcond']
@@ -138,6 +139,7 @@ class AdaptiveSampling:
         ## load variables for adaptive sampling
         self.title = keywords['control']['title']
         self.qm = keywords['control']['qm']
+        self.ml = self.qm[0]
         self.abinit = keywords['control']['abinit']
         self.ml_ncpu = keywords['control']['ml_ncpu']
         self.qc_ncpu = keywords['control']['qc_ncpu']
@@ -233,7 +235,7 @@ class AdaptiveSampling:
         self.itr_s_new = []
 
         ## load training data
-        train_data = keywords[self.qm]['train_data']
+        train_data = keywords[self.ml]['train_data']
         self.data = Data()
         self.data.load(train_data)
         self.data.stat()
@@ -361,6 +363,7 @@ class AdaptiveSampling:
         md_itr_s = [[] for _ in range(ntraj)]
         md_pop = [[] for _ in range(ntraj)]
         md_select_geom = [[] for _ in range(ntraj)]
+        md_select_charge = [[] for _ in range(ntraj)]
         md_nsampled = [[] for _ in range(ntraj)]
         md_nuncertain = [[] for _ in range(ntraj)]
         md_nselect = [[] for _ in range(ntraj)]
@@ -397,23 +400,24 @@ class AdaptiveSampling:
             md_err_s[traj_id] = traj_data[11].tolist()  # all prediction error in SOCs
             md_pop[traj_id] = traj_data[12].tolist()  # all populations
             md_select_geom[traj_id] = sampling_data[0]  # selected geometries in each traj for qm calculations
-            md_nsampled[traj_id] = sampling_data[1][0]  # number of sampled geometries in each traj
-            md_nuncertain[traj_id] = sampling_data[2][0]  # number of uncertain traj
-            md_nselect[traj_id] = sampling_data[3][0]  # number of selected geometries in each traj
-            md_ndiscard[traj_id] = sampling_data[4][0]  # number of discarded geometries in each traj
-            md_nrefine[traj_id] = sampling_data[5][0]  # number of refine geometries in each traj
-            md_dyn_e[traj_id] = sampling_data[6]  # all dynamical energy error
-            md_dyn_g[traj_id] = sampling_data[7]  # all dynamical grad error
-            md_dyn_n[traj_id] = sampling_data[8]  # all dynamical nac error
-            md_dyn_s[traj_id] = sampling_data[9]  # all dynamical soc error
-            md_itr_e[traj_id] = sampling_data[10]  # all dynamical energy error delay
-            md_itr_g[traj_id] = sampling_data[11]  # all dynamical grad error delay
-            md_itr_n[traj_id] = sampling_data[12]  # all dynamical nac error delay
-            md_itr_s[traj_id] = sampling_data[13]  # all dynamical soc error delay
-            md_selec_e[traj_id] = sampling_data[14]  # all select energy error
-            md_selec_g[traj_id] = sampling_data[15]  # all select gradient error
-            md_selec_n[traj_id] = sampling_data[16]  # all select nac error
-            md_selec_s[traj_id] = sampling_data[17]  # all select soc error
+            md_select_charge[traj_id] = sampling_data[1]  # selected qm2 charge in each traj for qm calculations
+            md_nsampled[traj_id] = sampling_data[2][0]  # number of sampled geometries in each traj
+            md_nuncertain[traj_id] = sampling_data[3][0]  # number of uncertain traj
+            md_nselect[traj_id] = sampling_data[4][0]  # number of selected geometries in each traj
+            md_ndiscard[traj_id] = sampling_data[5][0]  # number of discarded geometries in each traj
+            md_nrefine[traj_id] = sampling_data[6][0]  # number of refine geometries in each traj
+            md_dyn_e[traj_id] = sampling_data[7]  # all dynamical energy error
+            md_dyn_g[traj_id] = sampling_data[8]  # all dynamical grad error
+            md_dyn_n[traj_id] = sampling_data[9]  # all dynamical nac error
+            md_dyn_s[traj_id] = sampling_data[10]  # all dynamical soc error
+            md_itr_e[traj_id] = sampling_data[11]  # all dynamical energy error delay
+            md_itr_g[traj_id] = sampling_data[12]  # all dynamical grad error delay
+            md_itr_n[traj_id] = sampling_data[13]  # all dynamical nac error delay
+            md_itr_s[traj_id] = sampling_data[14]  # all dynamical soc error delay
+            md_selec_e[traj_id] = sampling_data[15]  # all select energy error
+            md_selec_g[traj_id] = sampling_data[16]  # all select gradient error
+            md_selec_n[traj_id] = sampling_data[17]  # all select nac error
+            md_selec_s[traj_id] = sampling_data[18]  # all select soc error
             n += 1
             print('Done %s of %s' % (n, ntraj))
 
@@ -466,9 +470,11 @@ class AdaptiveSampling:
         for n, geom in enumerate(md_select_geom):
             self.select_geom = self.select_geom + geom
 
-            for geo in geom:
+            for m, geo in enumerate(geom):
                 cond = copy.deepcopy(self.initcond[n])
+                cond.atoms = self.atoms
                 cond.coord = np.array(geo)
+                cond.qm2_charge = np.array(md_select_charge[n][m])
                 self.select_cond.append(cond)
 
         t_e = time.time()
@@ -480,10 +486,10 @@ class AdaptiveSampling:
         ## This function screens errors from trajectories
         traj_id, traj = variables
         traj_data = np.array(traj, dtype=object).T
-        sampling_data = [[] for _ in range(18)]
+        sampling_data = [[] for _ in range(19)]
 
         ## upack traj
-        itr, state, atoms, geom, energy, grad, nac, soc, err_e, err_g, err_n, err_s, pop = traj_data
+        itr, state, atoms, geom, charge, energy, grad, nac, soc, err_e, err_g, err_n, err_s, pop = traj_data
         allatoms = atoms[-1].tolist()
 
         ## find current dynamical errors and delay steps
@@ -525,6 +531,7 @@ class AdaptiveSampling:
         ## filter out the unphysical geometries based on atom distances
         if num_uncer_tot == 0:
             select_geom = []
+            select_charge = []
             num_select_geom = 0
             num_discard_geom = 0
             dyn_e_new = dyn_e
@@ -544,6 +551,8 @@ class AdaptiveSampling:
             select_geom = np.array(geom)[index_tot]
             select_geom, discard_geom, select_indx, discard_indx = self._distance_filter(allatoms, select_geom)
             select_geom = select_geom[0: self.maxsample]
+            select_charge = np.array(charge)[index_tot]
+            select_charge = select_charge[select_indx][0: self.maxsample]
             num_select_geom = len(select_geom)
             num_discard_geom = len(discard_geom)
             ndiscard_e = 0
@@ -624,23 +633,24 @@ class AdaptiveSampling:
         ## combine select and refine geom
         select_geom = select_geom + refine_geom
         sampling_data[0] = [x.tolist() for x in select_geom]  # to md_select_geom
-        sampling_data[1] = [num_index_tot]  # to md_nsampled
-        sampling_data[2] = [num_uncer_tot]  # to md_nuncertain
-        sampling_data[3] = [num_select_geom]  # to md_nselect
-        sampling_data[4] = [num_discard_geom]  # to md_ndiscard
-        sampling_data[5] = [num_refine_geom]  # to md_nrefine
-        sampling_data[6] = dyn_e_new  # to md_dyn_e
-        sampling_data[7] = dyn_g_new  # to md_dyn_g
-        sampling_data[8] = dyn_n_new  # to md_dyn_n
-        sampling_data[9] = dyn_s_new  # to md_dyn_s
-        sampling_data[10] = itr_e_new  # to md_itr_e
-        sampling_data[11] = itr_g_new  # to md_itr_g
-        sampling_data[12] = itr_n_new  # to md_itr_n
-        sampling_data[13] = itr_s_new  # to md_itr_s
-        sampling_data[14] = selec_e  # to md_selec_e
-        sampling_data[15] = selec_g  # to md_selec_g
-        sampling_data[16] = selec_n  # to md_selec_n
-        sampling_data[17] = selec_s  # to md_selec_s
+        sampling_data[1] = [x.tolist() for x in select_charge]  # to md_select_charge
+        sampling_data[2] = [num_index_tot]  # to md_nsampled
+        sampling_data[3] = [num_uncer_tot]  # to md_nuncertain
+        sampling_data[4] = [num_select_geom]  # to md_nselect
+        sampling_data[5] = [num_discard_geom]  # to md_ndiscard
+        sampling_data[6] = [num_refine_geom]  # to md_nrefine
+        sampling_data[7] = dyn_e_new  # to md_dyn_e
+        sampling_data[8] = dyn_g_new  # to md_dyn_g
+        sampling_data[9] = dyn_n_new  # to md_dyn_n
+        sampling_data[10] = dyn_s_new  # to md_dyn_s
+        sampling_data[11] = itr_e_new  # to md_itr_e
+        sampling_data[12] = itr_g_new  # to md_itr_g
+        sampling_data[13] = itr_n_new  # to md_itr_n
+        sampling_data[14] = itr_s_new  # to md_itr_s
+        sampling_data[15] = selec_e  # to md_selec_e
+        sampling_data[16] = selec_g  # to md_selec_g
+        sampling_data[17] = selec_n  # to md_selec_n
+        sampling_data[18] = selec_s  # to md_selec_s
 
         return traj_id, traj_data, sampling_data
 
@@ -780,16 +790,16 @@ class AdaptiveSampling:
 
     def _train_model(self):
         ## add training data to keywords
-        self.keywords[self.qm]['train_mode'] = 'training'
-        self.keywords[self.qm]['data'] = self.data
+        self.keywords[self.ml]['train_mode'] = 'training'
+        self.keywords[self.ml]['data'] = self.data
 
         ## copy NN weights for transfer learning
         if self.itr == 2 and self.transfer == 1:
-            self.keywords[self.qm]['train_mode'] = 'retraining'
+            self.keywords[self.ml]['train_mode'] = 'retraining'
             shutil.copytree('NN-%s' % self.title, 'NN-%s-%s' % (self.title, self.itr))
 
         if self.itr > 2 and self.transfer == 1:
-            self.keywords[self.qm]['train_mode'] = 'retraining'
+            self.keywords[self.ml]['train_mode'] = 'retraining'
             shutil.copytree('NN-%s-%s' % (self.title, self.itr - 1), 'NN-%s-%s' % (self.title, self.itr))
 
         ## start NN training
@@ -802,7 +812,7 @@ class AdaptiveSampling:
         return self
 
     def _train_wrapper(self, _):
-        model = QM(self.qm, keywords=self.keywords, job_id=self.itr)
+        model = QM([self.ml], keywords=self.keywords, job_id=self.itr)
         model.train()
 
         return self

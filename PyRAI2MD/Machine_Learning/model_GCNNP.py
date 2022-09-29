@@ -56,8 +56,9 @@ class E2N2:
 
     """
 
-    def __init__(self, keywords=None, job_id=None):
+    def __init__(self, keywords=None, job_id=None, runtype='qm'):
 
+        self.runtype = runtype
         title = keywords['control']['title']
         variables = keywords['e2n2'].copy()
         modeldir = variables['modeldir']
@@ -457,7 +458,11 @@ class E2N2:
         if self.jobtype == 'prediction' or self.jobtype == 'predict':
             self._predict(self.pred_xyz)
         else:
-            energy, gradient, nac, soc, err_energy, err_grad, err_nac, err_soc = self._qm(traj)
+            if runtype == 'qmmm':
+                energy, gradient, nac, soc, err_energy, err_grad, err_nac, err_soc = self._qm(traj)
+            else:
+                energy, gradient, nac, soc, err_energy, err_grad, err_nac, err_soc = self._qm(traj)
+
             traj.energy = np.copy(energy)
             traj.grad = np.copy(gradient)
             traj.nac = np.copy(nac)

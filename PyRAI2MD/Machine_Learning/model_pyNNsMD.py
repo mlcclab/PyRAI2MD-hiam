@@ -58,9 +58,10 @@ class MLP:
 
     """
 
-    def __init__(self, keywords=None, job_id=None):
+    def __init__(self, keywords=None, job_id=None, runtype='qm'):
 
         set_gpu([])  # No GPU for prediction
+        self.runtype = runtype
         title = keywords['control']['title']
         variables = keywords['nn'].copy()
         modeldir = variables['modeldir']
@@ -493,6 +494,45 @@ class MLP:
 
         return energy, gradient, nac, soc, err_e, err_g, err_n, err_s
 
+    def _qmmm(self, traj):
+        ## run psnnsmd for QM calculation
+
+        xyz = traj.qm_coord.reshape((1, self.natom, 3))
+
+        if self.model_register['energy_grad']:
+            pred = self.model_eg.call(xyz)
+            energy = np.mean([pred[0][0], pred[1][0]], axis=0) / self.f_e
+            e_std = np.std([pred[0][0], pred[1][0]], axis=0, ddof=1) / self.f_e
+            gradient = np.mean([pred[0][1], pred[1][1]], axis=0) / self.f_g
+            g_std = np.std([pred[0][0], pred[1][0]], axis=0, ddof=1) / self.f_g
+            err_e = np.amax(e_std)
+            err_g = np.amax(g_std)
+        else:
+            energy = []
+            gradient = []
+            err_e = 0
+            err_g = 0
+
+        if self.model_register['nac']:
+            pred = self.model_nac.predict(xyz)
+            nac = np.mean([pred[0], pred[1]], axis=0) / self.f_n
+            n_std = np.std([pred[0], pred[1]], axis=0, ddof=1) / self.f_n
+            err_n = np.amax(n_std)
+        else:
+            nac = []
+            err_n = 0
+
+        if self.model_register['soc']:
+            pred = self.model_soc.predict(xyz)
+            soc = np.mean([pred[0], pred[1]], axis=0)
+            s_std = np.std([pred[0], pred[1]], axis=0, ddof=1)
+            err_s = np.amax(s_std)
+        else:
+            soc = []
+            err_s = 0
+
+        return energy, gradient, nac, soc, err_e, err_g, err_n, err_s
+
     def _predict(self, x):
         ## run psnnsmd for model testing
 
@@ -563,7 +603,11 @@ class MLP:
         if self.jobtype == 'prediction' or self.jobtype == 'predict':
             self._predict(self.pred_geos)
         else:
-            energy, gradient, nac, soc, err_energy, err_grad, err_nac, err_soc = self._qm(traj)
+            if self.runtype == 'qmmm':
+                energy, gradient, nac, soc, err_energy, err_grad, err_nac, err_soc = self._qm(traj)
+            else:
+                energy, gradient, nac, soc, err_energy, err_grad, err_nac, err_soc = self._qm(traj)
+
             traj.energy = np.copy(energy)
             traj.grad = np.copy(gradient)
             traj.nac = np.copy(nac)
@@ -610,9 +654,10 @@ class Schnet:
 
     """
 
-    def __init__(self, keywords=None, job_id=None):
+    def __init__(self, keywords=None, job_id=None, runtype='qm'):
 
         set_gpu([])  # No GPU for prediction
+        self.runtype = runtype
         title = keywords['control']['title']
         variables = keywords['schnet'].copy()
         modeldir = variables['modeldir']
@@ -1034,6 +1079,46 @@ class Schnet:
 
         return energy, gradient, nac, soc, err_e, err_g, err_n, err_s
 
+    def _qmmm(self, traj):
+        ## run psnnsmd for QM calculation
+
+        xyz = traj.qm_coord.reshape((1, self.natom, 3))
+        atomic_numbers = [self.atomic_numbers]
+
+        if self.model_register['energy_grad']:
+            pred = self.model_eg.call([atomic_numbers, xyz])
+            energy = np.mean([pred[0][0], pred[1][0]], axis=0) / self.f_e
+            e_std = np.std([pred[0][0], pred[1][0]], axis=0, ddof=1) / self.f_e
+            gradient = np.mean([pred[0][1], pred[1][1]], axis=0) / self.f_g
+            g_std = np.std([pred[0][0], pred[1][0]], axis=0, ddof=1) / self.f_g
+            err_e = np.amax(e_std)
+            err_g = np.amax(g_std)
+        else:
+            energy = []
+            gradient = []
+            err_e = 0
+            err_g = 0
+
+        if self.model_register['nac']:
+            pred = self.model_nac.predict([atomic_numbers, xyz])
+            nac = np.mean([pred[0], pred[1]], axis=0) / self.f_n
+            n_std = np.std([pred[0], pred[1]], axis=0, ddof=1) / self.f_n
+            err_n = np.amax(n_std)
+        else:
+            nac = []
+            err_n = 0
+
+        if self.model_register['soc']:
+            pred = self.model_soc.predict([atomic_numbers, xyz])
+            soc = np.mean([pred[0], pred[1]], axis=0)
+            s_std = np.std([pred[0], pred[1]], axis=0, ddof=1)
+            err_s = np.amax(s_std)
+        else:
+            soc = []
+            err_s = 0
+
+        return energy, gradient, nac, soc, err_e, err_g, err_n, err_s
+
     def _predict(self, x):
         ## run psnnsmd for model testing
 
@@ -1105,7 +1190,11 @@ class Schnet:
         if self.jobtype == 'prediction' or self.jobtype == 'predict':
             self._predict(self.pred_geos)
         else:
-            energy, gradient, nac, soc, err_energy, err_grad, err_nac, err_soc = self._qm(traj)
+            if self.runtype == 'qmmm':
+                energy, gradient, nac, soc, err_energy, err_grad, err_nac, err_soc = self._qmmm(traj)
+            else:
+                energy, gradient, nac, soc, err_energy, err_grad, err_nac, err_soc = self._qm(traj)
+
             traj.energy = np.copy(energy)
             traj.grad = np.copy(gradient)
             traj.nac = np.copy(nac)
