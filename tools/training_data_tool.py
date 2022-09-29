@@ -172,7 +172,7 @@ def ReadData(var):
     nsoc = keywords['nsoc']
     key = keywords['key']
 
-    data = QM(qm, keywords=key, job_id='Read')
+    data = QM(qm, keywords=key, job_id='Read').get_method()
     data.project = f.split('/')[-1]
     data.workdir = f
     data.calcdir = f
@@ -183,7 +183,7 @@ def ReadData(var):
     data.soc_coupling = soc_coupling
     data.nnac = nnac
     data.nsoc = nsoc
-    xyz, energy, grad, nac, soc = data.read_data(natom)
+    xyz, energy, grad, nac, soc = data.read_data(natom, nstate)
 
     return id, xyz, energy.tolist(), grad.tolist(), nac.tolist(), soc.tolist()
 

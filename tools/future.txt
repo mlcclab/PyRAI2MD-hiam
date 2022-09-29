@@ -1,1 +1,1 @@
-add script to generate molcas or bagel input templete with UI
+add script to generate molcas or bagel input template with UI

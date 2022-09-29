@@ -365,16 +365,15 @@ cd $ORCA_WORKDIR
                 gradient.append(g)
 
         # find sf state corresponding to current and all singlet state
-        energy = []
-        sf_state_list = []
-        for n, eig in enumerate(ex_s2):
-            if eig < 0.1:
-                sf_state_list.append(n + 1)
-                energy.append(ex_energy[n])
+        state_list = np.arange(len(ex_s2))
+        sorted_state_list = state_list[np.argsort(ex_s2)]
+        sorted_sf_state_list = sorted_state_list[: self.nstate]
+        sf_state_list = np.sort(sorted_sf_state_list)
+
         self.sf_state = sf_state_list[self.state - 1]
         self.sf_state_list = sf_state_list
 
-        energy = np.array(ex_energy) + s0
+        energy = np.array(ex_energy)[sf_state_list] + s0
         gradient = np.array(gradient)
         if self.activestate == 1:
             gradall = np.zeros((self.nstate, natom, 3))

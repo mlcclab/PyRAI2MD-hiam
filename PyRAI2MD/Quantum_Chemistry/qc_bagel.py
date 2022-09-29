@@ -242,7 +242,7 @@ cd $BAGEL_WORKDIR
             if '"atom"' in line:
                 line = line.replace(',', ' ').replace('"', ' ').split()
                 coord.append([line[3], float(line[7]) * 0.529177, float(line[8]) * 0.529177, float(line[9]) * 0.529177])
-        coord = coord[:natom]
+        coord = coord[: natom]
 
         ## pack energy, only includes the requested states by self.nstate
         energy = []
@@ -379,6 +379,7 @@ cd $BAGEL_WORKDIR
 
     def read_data(self, natom):
         ## function to read the logfile
+
         coord, energy, gradient, nac, soc = self._read_data(natom)
 
         return coord, energy, gradient, nac, soc

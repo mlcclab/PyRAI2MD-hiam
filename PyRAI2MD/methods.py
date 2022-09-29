@@ -104,6 +104,10 @@ class QM:
         traj = self.method.evaluate(traj)
         return traj
 
+    def get_method(self):
+
+        return self.method
+
     def read_data(self, natom):
         data = self.method.read_data(natom)
         return data
