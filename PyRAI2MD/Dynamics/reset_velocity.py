@@ -118,14 +118,14 @@ def inertia(xyz, m):
     body = xyz - com
 
     ## initialize momentum of inertia (3x3)
-    i = np.zeros([3, 3])
+    mi = np.zeros([3, 3])
 
     ## compute momentum of inertia
     for n, i in enumerate(body):
-        i += m[n][0] * (np.sum(i ** 2) * np.diag(np.ones(3)) - np.outer(i, i))
+        mi += m[n][0] * (np.sum(i ** 2) * np.diag(np.ones(3)) - np.outer(i, i))
 
     ## compute principal axis
-    eigval, eigvec = np.linalg.eig(i)
+    eigval, eigvec = np.linalg.eig(mi)
     prin_axis = check_mirror(xyz, eigvec)
     cart_axis = la.inv(prin_axis)
 
