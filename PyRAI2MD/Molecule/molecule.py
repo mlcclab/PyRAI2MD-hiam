@@ -79,6 +79,7 @@ class Molecule:
             highlevel        ndarray     atoms in high level region
             lowlevel         ndarray     atoms in low level region
             boundary         ndarray     index of atoms at high and low level boundary
+            embedding        ndarray     embed surrounding charge for high level
             relax            ndarray     index of relaxed atoms 
             freeze           ndarray     index of frozen atoms
             constrain        ndarray     index of constrained atoms
@@ -92,7 +93,7 @@ class Molecule:
             apply_qmmm       self        apply qmmm for molecule
     """
 
-    __slots__ = ['inact', 'active', 'link', 'ninac', 'nlink', 'qmmm_key', 'qmmm_xyz', 'txyz',
+    __slots__ = ['inact', 'active', 'link', 'ninac', 'nlink', 'qmmm_key', 'qmmm_xyz', 'txyz', 'embedding',
                  'ci', 'nstate', 'spin', 'mult', 'statemult', 'coupling', 'nac_coupling', 'soc_coupling',
                  'nnac', 'nsoc', 'natom', 'atoms', 'coord', 'atomic_number', 'mass', 'velo', 'kinetic',
                  'energy', 'grad', 'nac', 'soc', 'err_energy', 'err_grad', 'err_nac', 'err_soc',
@@ -143,6 +144,7 @@ class Molecule:
         self.coupling = key_dict['coupling']
         self.highlevel = key_dict['highlevel']
         self.boundary = key_dict['boundary']
+        self.embedding = key_dict['embedding']
         self.freeze = [int(x) - 1 for x in key_dict['freeze']]
         self.constrain = key_dict['constrain']
         self.primitive = key_dict['primitive']
@@ -263,5 +265,9 @@ class Molecule:
         if len(self.charges) > 0:
             self.qm1_charge = self.charges[self.highlevel]
             self.qm2_charge = self.charges[self.lowlevel]
+
+        if self.embedding == 0:
+            self.qm1_charge = np.zeros(0)
+            self.qm2_charge = np.zeros(0)
 
         return self

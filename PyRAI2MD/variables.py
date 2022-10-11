@@ -82,6 +82,7 @@ def read_molecule(keywords, values):
         'qmmm_key': ReadVal('s'),
         'qmmm_xyz': ReadVal('s'),
         'highlevel': ReadIndex('s', start=1),
+        'embedding': ReadVal('i'),
         'boundary': ReadIndex('g'),
         'freeze': ReadIndex('s'),
         'constrain': ReadIndex('s'),
@@ -576,6 +577,7 @@ def read_input(ld_input):
         'spin': [0],
         'coupling': [],
         'highlevel': [],
+        'embedding': 1,
         'boundary': [],
         'freeze': [],
         'constrain': [],
@@ -1317,6 +1319,7 @@ def start_info(variables_all):
   QMMM xyzfile:               %-10s
   High level region:          %-10s ...
   Boundary:                   %-10s ...
+  Embedding charges:          %-10s
   Frozen atoms:               %-10s
   Constrained atoms:          %-10s
   External potential shape:   %-10s
@@ -1335,6 +1338,7 @@ def start_info(variables_all):
         variables_molecule['qmmm_xyz'],
         variables_molecule['highlevel'][0:10],
         variables_molecule['boundary'][0:5],
+        variables_molecule['embedding'],
         variables_molecule['freeze'],
         variables_molecule['constrain'],
         variables_molecule['shape'],
