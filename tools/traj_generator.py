@@ -3,7 +3,7 @@
 ## ----------------------
 ##
 ## Gen-FSSH.py 2019-2022 Jingbai Li
-## New version Sep 26 2022 Jingbai Li
+## New version Oct 13 2022 Jingbai Li
 
 import sys
 import os
@@ -72,8 +72,8 @@ def main(argv):
     slin = 1
     restart = 0
     initex = 0
-    tomlcs = '/share/apps/Molcas-ext'
-    tontx = '/share/apps/NX-2.4-B06'
+    tomlcs = '/share/apps/molcas-ext'
+    tontx = '/share/apps/NX-2.4-B06 '
     tobgl = '/share/apps/bagel'
     lbbls = '/share/apps/blas-3.10.0'
     lblpk = '/share/apps/lapack-3.10.1'
@@ -82,60 +82,66 @@ def main(argv):
     tomkl = '/share/apps/intel/oneapi'
     tompi = ''
     toxtb = '/share/apps/xtb-6.5.1/bin'
+    toorca = '/share/apps/orca_5_0_3_linux_x86-64_openmpi411'
 
     if len(argv) <= 1:
         exit(usage)
-    else:
-        with open(argv[1], 'r') as ext:
-            for line in ext:
-                if 'input' in line:
-                    inputs = line.split()[1]
-                elif 'seed' in line:
-                    iseed = int(line.split()[1])
-                elif 'temp' in line:
-                    temp = float(line.split()[1])
-                elif 'method' in line:
-                    dist = line.split()[1].lower()
-                elif 'prog' in line:
-                    prog = line.split()[1].lower()
-                elif 'partition' in line:
-                    slpt = line.split()[1]
-                elif 'time' in line:
-                    sltm = line.split()[1]
-                elif 'memory' in line:
-                    slmm = int(line.split()[1])
-                elif 'nodes' in line:
-                    slnd = int(line.split()[1])
-                elif 'cores' in line:
-                    slcr = int(line.split()[1])
-                elif 'jobs' in line:
-                    sljb = int(line.split()[1])
-                elif 'index' in line:
-                    slin = int(line.split()[1])
-                elif 'restart' in line:
-                    restart = int(line.split()[1])
-                elif 'initex' in line:
-                    initex = int(line.split()[1])
-                elif 'molcas' in line:
-                    tomlcs = line.split()[1]
-                elif 'newton' in line:
-                    tontx = line.split()[1]
-                elif 'bagel' in line:
-                    tobgl = line.split()[1]
-                elif 'lib_blas' in line:
-                    lbbls = line.split()[1]
-                elif 'lib_lapack' in line:
-                    lblpk = line.split()[1]
-                elif 'lib_scalapack' in line:
-                    lbslp = line.split()[1]
-                elif 'lib_boost' in line:
-                    lbbst = line.split()[1]
-                elif 'mkl' in line:
-                    tomkl = line.split()[1]
-                elif 'mpi' in line:
-                    tompi = line.split()[1]
-                elif 'xtb' in line:
-                    toxtb = line.split()[1]
+
+    with open(argv[1]) as inp:
+        inputfile = inp.read().splitlines()
+
+    for line in inputfile:
+        if len(line.split()) < 2:
+            continue
+        key = line.split()[0].lower()
+        if 'input' == key:
+            inputs = line.split()[1]
+        elif 'seed' == key:
+            iseed = int(line.split()[1])
+        elif 'temp' == key:
+            temp = float(line.split()[1])
+        elif 'method' == key:
+            dist = line.split()[1].lower()
+        elif 'prog' == key:
+            prog = line.split()[1].lower()
+        elif 'partition' == key:
+            slpt = line.split()[1]
+        elif 'time' == key:
+            sltm = line.split()[1]
+        elif 'memory' == key:
+            slmm = int(line.split()[1])
+        elif 'nodes' == key:
+            slnd = int(line.split()[1])
+        elif 'cores' == key:
+            slcr = int(line.split()[1])
+        elif 'jobs' == key:
+            sljb = int(line.split()[1])
+        elif 'index' == key:
+            slin = int(line.split()[1])
+        elif 'restart' == key:
+            restart = int(line.split()[1])
+        elif 'initex' == key:
+            initex = int(line.split()[1])
+        elif 'molcas' == key:
+            tomlcs = line.split()[1]
+        elif 'newton' == key:
+            tontx = line.split()[1]
+        elif 'bagel' == key:
+            tobgl = line.split()[1]
+        elif 'lib_blas' == key:
+            lbbls = line.split()[1]
+        elif 'lib_lapack' == key:
+            lblpk = line.split()[1]
+        elif 'lib_scalapack' == key:
+            lbslp = line.split()[1]
+        elif 'lib_boost' == key:
+            lbbst = line.split()[1]
+        elif 'mkl' == key:
+            tomkl = line.split()[1]
+        elif 'mpi' == key:
+            tompi = line.split()[1]
+        elif 'xtb' == key:
+            toxtb = line.split()[1]
 
     if inputs is not None and os.path.exists(inputs):
         print('\n>>> %s' % inputs)
@@ -234,7 +240,12 @@ def main(argv):
             print(usage)
             print('!!! fromage xtb_charge.pc not found !!!')
             exit()
-
+    elif prog == 'orca':
+        if not os.path.exists('%s.orca' % inputs):
+            print('\n!!! orca input not found !!!')
+            print(usage)
+            print('!!! orca input not found !!!')
+            exit()
     else:
         print('\n!!! Program %s not found !!!' % prog)
         print(usage)
@@ -288,7 +299,8 @@ def main(argv):
         gen_pyrai2md(ensemble, inputs, slpt, sltm, slmm, slnd, slcr, sljb, slin, 'hybrid', iformat)
     elif prog == 'fromage':
         gen_fromage(ensemble, inputs, slpt, sltm, slmm, slnd, slcr, sljb, slin, tomlcs, toxtb, iformat)
-
+    elif prog == 'orca':
+        gen_orca(ensemble, inputs, slpt, sltm, slmm, slnd, slcr, sljb, slin, toorca, iformat)
 
 def gen_molcas(ensemble, inputs, slpt, sltm, slmm, slnd, slcr, sljb, slin, tomlcs, iformat):
     ## This function will group Molcas calculations to individual runset
@@ -855,11 +867,11 @@ def pyrai2md(inputs, inputname, inputpath, slcr, sljb, sltm, slpt, slmm, in_temp
     if not os.path.exists('%s/%s.molcas' % (inputpath, inputs)) and (qm == 'molcas' or qm == 'hybrid'):
         shutil.copy2('%s.molcas' % inputs, '%s/%s.molcas' % (inputpath, inputname))
 
-    if not os.path.exists('%s.StrOrb' % inputs) and not os.path.exists('%s/%s.StrOrb' % (inputpath, inputs)) \
+    if os.path.exists('%s.StrOrb' % inputs) and not os.path.exists('%s/%s.StrOrb' % (inputpath, inputs)) \
             and (qm == 'molcas' or qm == 'hybrid'):
         shutil.copy2('%s.StrOrb' % inputs, '%s/%s.StrOrb' % (inputpath, inputname))
 
-    if not os.path.exists('%s.JobIph' % inputs) and not os.path.exists('%s/%s.JobIph' % (inputpath, inputs)) \
+    if os.path.exists('%s.JobIph' % inputs) and not os.path.exists('%s/%s.JobIph' % (inputpath, inputs)) \
             and (qm == 'molcas' or qm == 'hybrid'):
         shutil.copy2('%s.JobIph' % inputs, '%s/%s.JobIph' % (inputpath, inputname))
 
@@ -1092,6 +1104,123 @@ rm -r $MOLCAS_WORKDIR
         os.makedirs('%s/rl' % inputpath)
 
     shutil.copy2('rl.temp', '%s/rl/rl.temp' % inputpath)
+
+
+def gen_orca(ensemble, inputs, slpt, sltm, slmm, slnd, slcr, sljb, slin, toorca, iformat):
+    ## This function will group Molcas calculations to individual runset
+    ## this function will call molcas_batch and molcas to prepare files
+
+    in_temp = open('%s.orca' % inputs, 'r').read()
+    in_path = os.getcwd()
+
+    runall = ''
+    for j in range(slnd):
+        start = slin + j * sljb
+        end = start + sljb - 1
+        for i in range(sljb):
+            if iformat != 'xz':
+                # unpack initial condition to xyz and velocity
+                in_xyz, in_velo = Unpack(ensemble[i + j * sljb], 'molcas')
+            else:
+                in_xyz, in_velo = UnpackXZ(ensemble[i + j * sljb])
+            inputname = '%s-%s' % (inputs, i + start)
+            inputpath = '%s/%s' % (in_path, inputname)
+            # prepare calculations
+            orca(inputname, inputpath, slmm, in_temp, in_xyz, in_velo, toorca)
+            sys.stdout.write('Setup Calculation: %.2f%%\r' % ((i + j * sljb + 1) * 100 / (sljb * slnd)))
+        batch = orca_batch(inputs, j, start, end, in_path, slcr, sltm, slpt, slmm, toorca)
+        with open('./runset-%d.sh' % (j + 1), 'w') as run:
+            run.write(batch)
+
+        os.system("chmod 777 runset-%d.sh" % (j + 1))
+        runall += 'sbatch runset-%d.sh\n' % (j + 1)
+
+    with open('./runall.sh', 'w') as out:
+        out.write(runall)
+    os.system("chmod 777 runall.sh")
+    print('\n\n Done\n')
+
+
+def orca_batch(inputs, j, start, end, in_path, slcr, sltm, slpt, slmm, toorca):
+    ## This function will be called by gen_orca function
+    ## This function generates runset for ORCA calculation
+
+    batch = """#!/bin/sh
+## script for ORCA
+#SBATCH --nodes=1
+#SBATCH --ntasks=%d
+#SBATCH --time=%s
+#SBATCH --job-name=%s-%d
+#SBATCH --partition=%s
+#SBATCH --mem=%dmb
+#SBATCH --output=%%j.o.slurm
+#SBATCH --error=%%j.e.slurm
+
+export ORCA_EXE=%s
+module load openmpi/openmpi-4.1.1
+
+echo $SLURM_JOB_NAME
+
+for ((i=%d;i<=%d;i++))
+do
+  export INPUT="%s-$i"
+  export WORKDIR="%s/%s-$i"
+  cd $WORKDIR
+  $ORCA_EXE/orca $INPUT.inp > $INPUT.out &
+  sleep 5
+done
+wait
+
+""" % (
+        slcr, sltm, inputs, j + 1, slpt, int(slmm * slcr * 1.333), toorca,
+        start, end, inputs, in_path, inputs)
+
+    return batch
+
+
+def orca(inputname, inputpath, slmm, in_temp, in_xyz, in_velo, toorca):
+    ## This function prepares MolCas calculation
+    ## It generates .inp .StrOrb .xyz .velocity.xyz
+    ## This function generates a backup slurm batch file for each calculation
+
+    if not os.path.exists('%s' % inputpath):
+        os.makedirs('%s' % inputpath)
+
+    runscript = """#!/bin/sh
+## backup script for ORCA
+#SBATCH --nodes=1
+#SBATCH --ntasks=1
+#SBATCH --time=23:50:00
+#SBATCH --job-name=%s
+#SBATCH --partition=normal
+#SBATCH --mem=%dmb
+#SBATCH --output=%%j.o.slurm
+#SBATCH --error=%%j.e.slurm
+
+export INPUT=%s
+export WORKDIR=%s
+
+export ORCA_EXE=%s
+module load openmpi/openmpi-4.1.1
+
+cd $WORKDIR
+$ORCA_EXE/orca $INPUT.inp > $INPUT.out
+
+""" % (inputname, int(slmm * 1.333), inputname, inputpath, toorca)
+
+    in_xyz = '\n'.join(in_xyz.splitlines()[2:])
+    in_temp += in_xyz + '\n*\n'
+
+    with open('%s/%s.inp' % (inputpath, inputname), 'w') as out:
+        out.write(in_temp)
+
+    with open('%s/%s.sh' % (inputpath, inputname), 'w') as out:
+        out.write(runscript)
+
+    with open('%s/%s.velocity.xyz' % (inputpath, inputname), 'w') as out:
+        out.write(in_velo)
+
+    os.system("chmod 777 %s/%s.sh" % (inputpath, inputname))
 
 
 if __name__ == '__main__':
