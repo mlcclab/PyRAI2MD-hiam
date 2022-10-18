@@ -3,19 +3,19 @@
 # PyRAI2MD 2 module for interfacing to E2N2 (GCNNP)
 #
 # Author Jingbai Li
-# Sep 1 2022
+# Oct 18 2022
 #
 ######################################################
 
 import os
 import time
+import copy
 import numpy as np
 
 from PyRAI2MD.Machine_Learning.hyper_gcnnp import set_e2n2_hyper_eg
 from PyRAI2MD.Machine_Learning.hyper_gcnnp import set_e2n2_hyper_nac
 from PyRAI2MD.Machine_Learning.hyper_gcnnp import set_e2n2_hyper_soc
 from PyRAI2MD.Machine_Learning.model_helper import Multiregions
-from PyRAI2MD.Utils.coordinates import numerize_xyz
 from PyRAI2MD.Utils.timing import what_is_time
 from PyRAI2MD.Utils.timing import how_long
 
@@ -23,7 +23,7 @@ from GCNNP.gcnnp import GCNNP
 from GCNNP.gcnnp import SetupTools
 
 class E2N2:
-    """ pyNNsMD interface
+    """ GCNNP interface
 
         Parameters:          Type:
             keywords         dict        keywords dict
@@ -73,28 +73,23 @@ class E2N2:
         eg_unit = variables['eg_unit']
         nac_unit = variables['nac_unit']
         soc_unit = variables['soc_unit']
+        shuffle = variables['shuffle']
+        splits = variables['nsplits']
         self.jobtype = keywords['control']['jobtype']
         self.version = keywords['version']
         self.ncpu = keywords['control']['ml_ncpu']
-        self.train_mode = variables['train_mode']
-        self.shuffle = variables['shuffle']
-        self.splits = variables['nsplits']
         self.natom = data.natom
         self.nstate = data.nstate
         self.nnac = data.nnac
         self.nsoc = data.nsoc
 
         ## set hyperparameters
-        hyp_dict_eg = set_e2n2_hyper_eg(hyp_eg, eg_unit, data.info, self.splits)
-        hyp_dict_eg2 = set_e2n2_hyper_eg(hyp_eg, eg_unit, data.info, self.splits)
-        hyp_dict_nac = set_e2n2_hyper_nac(hyp_nac, nac_unit, data.info, self.splits)
-        hyp_dict_nac2 = set_e2n2_hyper_nac(hyp_nac, nac_unit, data.info, self.splits)
-        hyp_dict_soc = set_e2n2_hyper_soc(hyp_soc, soc_unit, data.info, self.splits)
-        hyp_dict_soc2 = set_e2n2_hyper_soc(hyp_soc, soc_unit, data.info, self.splits)
+        hyp_dict_eg = set_e2n2_hyper_eg(hyp_eg, eg_unit, data.info, splits, shuffle)
+        hyp_dict_nac = set_e2n2_hyper_nac(hyp_nac, nac_unit, data.info, splits, shuffle)
+        hyp_dict_soc = set_e2n2_hyper_soc(hyp_soc, soc_unit, data.info, splits, shuffle)
 
         ## retraining has some bug at the moment, do not use
-        if self.train_mode not in ['training', 'retraining', 'resample']:
-            self.train_mode = 'training'
+        self.train_mode = 'training'
 
         if job_id is None or job_id == 1:
             self.name = f"NN-{title}"
@@ -104,19 +99,16 @@ class E2N2:
         self.silent = variables['silent']
 
         ## prepare unit conversion for energy and force. au or si. The data units are in au.
-        h_to_ev = 27.211396132
-        h_bohr_to_ev_a = 27.211396132 / 0.529177249
+        kcal_mol_to_ev = 27.211 / 627.5
+        h_to_kcal_mol = 627.5
+        h_bohr_to_kcal_mol_a = 627.5 / 0.529177249
+        h_bohr_to_ev_a = 27.211 / 0.529177249
 
-        if eg_unit == 'si':
-            self.f_e = h_to_ev
-            self.f_g = h_bohr_to_ev_a
-            self.k_e = 1
-            self.k_g = 1
-        else:
-            self.f_e = 1
-            self.f_g = 1
-            self.k_e = h_to_ev
-            self.k_g = h_bohr_to_ev_a
+        # energy grad unit are force to be kcal/mol and kcal/mol/A during training
+        self.f_e = h_to_kcal_mol
+        self.f_g = h_bohr_to_kcal_mol_a
+        self.k_e = kcal_mol_to_ev
+        self.k_g = kcal_mol_to_ev
 
         if nac_unit == 'si':
             self.f_n = h_bohr_to_ev_a  # convert to eV/A
@@ -126,21 +118,30 @@ class E2N2:
             self.k_n = h_bohr_to_ev_a
 
         ## unpack data
-        self.xyz = data.xyz
+        self.atoms = data.atoms
+        self.geos = data.geos
         self.energy = data.energy * self.f_e
         self.grad = data.grad * self.f_g
         self.nac = data.nac * self.f_n
         self.soc = data.soc
-        self.pred_xyz = data.pred_atoms
+        self.pred_atoms = data.pred_atoms
+        self.pred_geos = data.pred_geos
         self.pred_energy = data.pred_energy
         self.pred_grad = data.pred_grad
         self.pred_nac = data.pred_nac
         self.pred_soc = data.pred_soc
 
+        ## find node type
         if len(multiscale) > 0:
-            self.mr = Multiregions(data.atoms[0], multiscale)
+            self.mr = Multiregions(self.atoms[0], multiscale)
+            atoms = self.mr.partition_atoms(self.atoms[0])
+            self.atoms = np.array([atoms] * len(self.atoms))
+            self.pred_atoms = np.array([atoms] * len(self.pred_atoms))
         else:
             self.mr = None
+            self.atoms = np.array(self.atoms)
+
+        node_type = SetupTools.find_node_type(self.atoms[0])
 
         ## initialize model path
         if modeldir is None or job_id not in [None, 1]:
@@ -164,31 +165,34 @@ class E2N2:
         if nn_eg_type > 0:
             self.y_dict['energy_grad'] = [self.energy.tolist(), self.grad.tolist()]
             self.model_register['energy_grad'] = True
-            hyper_eg = [hyp_dict_eg, hyp_dict_eg2]
+            hyper_eg = [copy.deepcopy(hyp_dict_eg), copy.deepcopy(hyp_dict_eg)]
         else:
+            del self.y_dict['energy_grad']
             self.model_register['energy_grad'] = False
             hyper_eg = []
 
         if nn_nac_type > 0:
             self.y_dict['nac'] = [None, self.nac.tolist()]
             self.model_register['nac'] = True
-            hyper_nac = [hyp_dict_nac, hyp_dict_nac2]
+            hyper_nac = [copy.deepcopy(hyp_dict_nac), copy.deepcopy(hyp_dict_nac)]
         else:
+            del self.y_dict['nac']
             self.model_register['nac'] = False
             hyper_nac = []
 
         if nn_soc_type > 0:
             self.y_dict['soc'] = [self.soc.tolist(), None]
             self.model_register['soc'] = True
-            hyper_soc = [hyp_dict_soc, hyp_dict_soc2]
+            hyper_soc = [copy.deepcopy(hyp_dict_soc), copy.deepcopy(hyp_dict_soc)]
         else:
+            del self.y_dict['soc']
             self.model_register['soc'] = False
             hyper_soc = []
 
         self.hypers = hyper_eg + hyper_nac + hyper_soc
 
         # initialize a model to load a trained method
-        self.model = GCNNP(self.model_path, self.hypers)
+        self.model = GCNNP(self.model_path, self.hypers, node_type)
 
     def _heading(self):
 
@@ -196,10 +200,10 @@ class E2N2:
 %s
  *---------------------------------------------------*
  |                                                   |
- |                     Schnet                        |
- | A continuous-filter convolutional neural network  |
+ |                       E2N2                        |
+ |      Excited-state Equivariant Neural Network     |
  |                                                   |
- |              powered by pyNNsMD                   |
+ |                powered by GCNNP                   |
  |                                                   |
  *---------------------------------------------------*
 
@@ -231,29 +235,9 @@ class E2N2:
             log.write(topline)
             log.write(runinfo)
 
-        xyz = numerize_xyz(self.xyz)
-
-        if self.mr:
-            node_type, xyz = self.mr.update_xyz(xyz)
-        else:
-            node_type = np.unique(np.array(xyz)[:, :, 0]).astype(int).tolist()
-
-        for n, _ in enumerate(self.hypers):
-            cutoff = self.hypers[n]['model']['config']['maxradius']
-            nedges = self.hypers[n]['model']['config']['nedges']
-
-            edge_list = SetupTools.edge_from_radius(
-                xyz,
-                cutoff=cutoff,
-                nedges=nedges
-            )
-
-            self.hypers[n]['model']['config']['node_info'] = node_type
-            self.hypers[n]['model']['config']['edge_list'] = edge_list
-
-        model = GCNNP(self.model_path, self.hypers)
-        model.build()
-        errors = model.train(xyz, self.y_dict)[0]
+        xyz = np.concatenate((self.atoms.reshape((-1, self.natom, 1)), self.geos), axis=-1).tolist()
+        self.model.build()
+        errors = self.model.train(xyz, self.y_dict, remote=True)
 
         if self.model_register['energy_grad']:
             eg_error = errors['energy_grad']
@@ -286,11 +270,11 @@ class E2N2:
         metrics = {
             'e1': err_e1 * self.k_e,
             'g1': err_g1 * self.k_g,
-            'n1': err_n1 / self.k_n,
+            'n1': err_n1 * self.k_n,
             's1': err_s1,
             'e2': err_e2 * self.k_e,
             'g2': err_g2 * self.k_g,
-            'n2': err_n2 / self.k_n,
+            'n2': err_n2 * self.k_n,
             's2': err_s2
         }
 
@@ -336,22 +320,21 @@ class E2N2:
 
         return self
 
-    def _qm(self, traj):
-        ## run psnnsmd for QM calculation
-        atoms = traj.atoms.reshape((1, self.natom, 1))
-        coord = traj.coord.reshape((1, self.natom, 3))
-        x = np.concatenate((atoms, coord), axis=2)
-        x = numerize_xyz(x)
+    def _qmmm(self, traj):
+        ## run GCNNP for QM calculation
+        atoms = self.atoms[0]
+        coord = traj.qm_coord
 
-        if self.mr:
-            _, x = self.mr.update_xyz(x)
+        x = [np.concatenate((atoms.reshape((-1, 1)), coord), axis=-1).tolist()]
 
         results = self.model.predict(x)
         if self.model_register['energy_grad']:
             pred = results['energy_grad']
             energy = np.mean([pred[0][0], pred[1][0]], axis=0) / self.f_e
             e_std = np.std([pred[0][0], pred[1][0]], axis=0, ddof=1) / self.f_e
-            gradient = np.mean([pred[0][1], pred[1][1]], axis=0) / self.f_g
+            gradient = np.mean([pred[0][1], pred[1][1]], axis=0) / self.f_g  # [n * natoms, nstates, 3]
+            gradient = gradient.reshape(-1, len(atoms), gradient.shape[1], gradient.shape[2])  # [n, natoms, nstates, 3]
+            gradient = np.tranpose(gradient, (0, 2, 1, 3))  # [n, nstates, natoms, 3]
             g_std = np.std([pred[0][0], pred[1][0]], axis=0, ddof=1) / self.f_g
             err_e = np.amax(e_std)
             err_g = np.amax(g_std)
@@ -363,7 +346,54 @@ class E2N2:
 
         if self.model_register['nac']:
             pred = results['nac']
-            nac = np.mean([pred[0][1], pred[1][1]], axis=0) / self.f_n
+            nac = np.mean([pred[0][1], pred[1][1]], axis=0) / self.f_n  # [n * natoms, nstates, 3]
+            nac = gradient.reshape(-1, len(atoms), nac.shape[1], nac.shape[2])  # [n, natoms, nstates, 3]
+            nac = np.tranpose(nac, (0, 2, 1, 3))  # [n, nstates, natoms, 3]
+            n_std = np.std([pred[0][1], pred[1][1]], axis=0, ddof=1) / self.f_n
+            err_n = np.amax(n_std)
+        else:
+            nac = []
+            err_n = 0
+
+        if self.model_register['soc']:
+            pred = results['soc']
+            soc = np.mean([pred[0][0], pred[1][0]], axis=0)
+            s_std = np.std([pred[0][0], pred[1][0]], axis=0, ddof=1)
+            err_s = np.amax(s_std)
+        else:
+            soc = []
+            err_s = 0
+
+        return energy, gradient, nac, soc, err_e, err_g, err_n, err_s
+
+    def _qm(self, traj):
+        ## run GCNNP for QM calculation
+        atoms = self.atoms[0]
+        coord = traj.coord
+        x = [np.concatenate((atoms.reshape((-1, 1)), coord), axis=-1).tolist()]
+
+        results = self.model.predict(x)
+        if self.model_register['energy_grad']:
+            pred = results['energy_grad']
+            energy = np.mean([pred[0][0], pred[1][0]], axis=0) / self.f_e
+            e_std = np.std([pred[0][0], pred[1][0]], axis=0, ddof=1) / self.f_e
+            gradient = np.mean([pred[0][1], pred[1][1]], axis=0) / self.f_g  # [n * natoms, nstates, 3]
+            gradient = gradient.reshape(-1, len(atoms), gradient.shape[1], gradient.shape[2])  # [n, natoms, nstates, 3]
+            gradient = np.tranpose(gradient, (0, 2, 1, 3))  # [n, nstates, natoms, 3]
+            g_std = np.std([pred[0][0], pred[1][0]], axis=0, ddof=1) / self.f_g
+            err_e = np.amax(e_std)
+            err_g = np.amax(g_std)
+        else:
+            energy = []
+            gradient = []
+            err_e = 0
+            err_g = 0
+
+        if self.model_register['nac']:
+            pred = results['nac']
+            nac = np.mean([pred[0][1], pred[1][1]], axis=0) / self.f_n  # [n * natoms, nstates, 3]
+            nac = gradient.reshape(-1, len(atoms), nac.shape[1], nac.shape[2])  # [n, natoms, nstates, 3]
+            nac = np.tranpose(nac, (0, 2, 1, 3))  # [n, nstates, natoms, 3]
             n_std = np.std([pred[0][1], pred[1][1]], axis=0, ddof=1) / self.f_n
             err_n = np.amax(n_std)
         else:
@@ -383,22 +413,18 @@ class E2N2:
 
     def _predict(self, x):
         ## run psnnsmd for model testing
-
         batch = len(x)
-
-        x = numerize_xyz(x)
-
-        if self.mr:
-            _, x = self.mr.update_xyz(x)
-
         results = self.model.predict(x)
 
         if self.model_register['energy_grad']:
             pred = results['energy_grad']
             e_pred = np.mean([pred[0][0], pred[1][0]], axis=0) / self.f_e
             e_std = np.std([pred[0][0], pred[1][0]], axis=0, ddof=1) / self.f_e
-            g_pred = np.mean([pred[0][1], pred[1][1]], axis=0) / self.f_g
+            g_pred = np.mean([pred[0][1], pred[1][1]], axis=0) / self.f_g  # [n * natoms, nstates, 3]
             g_std = np.std([pred[0][0], pred[1][0]], axis=0, ddof=1) / self.f_g
+
+            g_pred = g_pred.reshape(-1, len(self.pred_atoms), g_pred.shape[1], g_pred.shape[2])  # [n, atoms, states, 3]
+            g_pred = np.tranpose(g_pred, (0, 2, 1, 3))  # [n, nstates, natoms, 3]
 
             de = np.abs(self.pred_energy - e_pred)
             dg = np.abs(self.pred_grad - g_pred)
@@ -417,8 +443,11 @@ class E2N2:
 
         if self.model_register['nac']:
             pred = results['nac']
-            n_pred = np.mean([pred[0][1], pred[1][1]], axis=0) / self.f_n
+            n_pred = np.mean([pred[0][1], pred[1][1]], axis=0) / self.f_n  # [n * natoms, nstates, 3]
             n_std = np.std([pred[0][1], pred[1][1]], axis=0, ddof=1) / self.f_n
+
+            n_pred = n_pred.reshape(-1, len(self.pred_atoms), n_pred.shape[1], n_pred.shape[2])  # [n, natom, nstate, 3]
+            n_pred = np.tranpose(n_pred, (0, 2, 1, 3))  # [n, nstates, natoms, 3]
 
             dn = np.abs(self.pred_nac - n_pred)
             dn_max = np.amax(dn.reshape((batch, -1)), axis=1)
@@ -453,12 +482,13 @@ class E2N2:
         return self
 
     def evaluate(self, traj):
-        ## main function to run pyNNsMD and communicate with other PyRAI2MD modules
+        ## main function to run GCNNP and communicate with other PyRAI2MD modules
 
         if self.jobtype == 'prediction' or self.jobtype == 'predict':
-            self._predict(self.pred_xyz)
+            xyz = np.concatenate((self.pred_atoms.reshape((-1, self.natom, 1)), self.pred_geos), axis=-1).tolist()
+            self._predict(xyz)
         else:
-            if runtype == 'qmmm':
+            if self.runtype == 'qmmm':
                 energy, gradient, nac, soc, err_energy, err_grad, err_nac, err_soc = self._qm(traj)
             else:
                 energy, gradient, nac, soc, err_energy, err_grad, err_nac, err_soc = self._qm(traj)

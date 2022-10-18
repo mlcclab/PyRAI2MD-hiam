@@ -484,6 +484,7 @@ def read_e2n2(keywords, values):
         'learning_rate': ReadVal('f'),
         'learning_rate_step': ReadVal('fl'),
         'epoch_step_reduction': ReadVal('il'),
+        'scaler': ReadVal('s'),
         'grad_type': ReadVal('s'),
     }
 
@@ -1001,11 +1002,12 @@ def read_input(ld_input):
         'rbf_cutoff': 6,
         'rbf_layers': 2,
         'rbf_neurons': 64,
-        'rbf_act': 'shifted_softplus',
+        'rbf_act': 'silu',
         'rbf_act_a': 0.03,
         'normalization_y': 'component',
         'normalize_y': True,
-        'resnet': True,
+        'self_connection': True,
+        'resnet': False,
         'gate': True,
         'act_scalars_e': 'silu',
         'act_scalars_o': 'tanh',
@@ -1025,6 +1027,7 @@ def read_input(ld_input):
         'learning_rate': 1e-3,
         'learning_rate_step': [1e-3, 1e-4, 1e-5, 1e-6],
         'epoch_step_reduction': [100, 100, 100, 100],
+        'scaler': 'total_energy_mean_std',
         'grad_type': 'grad',
     }
 
@@ -1044,6 +1047,7 @@ def read_input(ld_input):
         'rbf_act_a': 0.03,
         'normalization_y': 'component',
         'normalize_y': True,
+        'self_connection': True,
         'resnet': True,
         'gate': True,
         'act_scalars_e': 'silu',
@@ -1063,6 +1067,7 @@ def read_input(ld_input):
         'learning_rate': 1e-3,
         'learning_rate_step': [1e-3, 1e-4, 1e-5, 1e-6],
         'epoch_step_reduction': [100, 100, 100, 100],
+        'scaler': 'no',
         'grad_type': 'grad',
     }
 
@@ -1082,6 +1087,7 @@ def read_input(ld_input):
         'rbf_act_a': 0.03,
         'normalization_y': 'component',
         'normalize_y': True,
+        'self_connection': True,
         'resnet': True,
         'gate': True,
         'act_scalars_e': 'silu',
@@ -1101,6 +1107,7 @@ def read_input(ld_input):
         'learning_rate': 1e-3,
         'learning_rate_step': [1e-3, 1e-4, 1e-5, 1e-6],
         'epoch_step_reduction': [100, 100, 100, 100],
+        'scaler': 'total_energy_mean_std',
         'grad_type': 'grad',
     }
 
@@ -2287,6 +2294,7 @@ def start_info(variables_all):
       Radial net activation a:    %-20s %-20s %-20s
       Y normalization scheme:     %-20s %-20s %-20s
       Normalize Y:                %-20s %-20s %-20s
+      Self connection:            %-20s %-20s %-20s
       Resnet update:              %-20s %-20s %-20s
       Use gate activation:        %-20s %-20s %-20s
       Even scalars activation:    %-20s %-20s %-20s
@@ -2295,12 +2303,10 @@ def start_info(variables_all):
       Odd gates activation:       %-20s %-20s %-20s
       Initialize weight:          %-20s %-20s %-20s
       Loss weights:               %-20s %-20s %-20s
-      Regularization:             %-20s %-20s %-20s
-      L1:                         %-20s %-20s %-20s
-      L2:                         %-20s %-20s %-20s
       Epoch:                      %-20s %-20s %-20s
       Epoch step:                 %-20s %-20s %-20s
       Subset:                     %-20s %-20s %-20s
+      Scaler:                     %-20s %-20s %-20s
       Batch:                      %-20s %-20s %-20s
     ----------------------------------------------------------------------------------------------
 
@@ -2350,6 +2356,9 @@ def start_info(variables_all):
         variables_e2n2_eg['normalize_y'],
         variables_e2n2_nac['normalize_y'],
         variables_e2n2_soc['normalize_y'],
+        variables_e2n2_eg['self_connection'],
+        variables_e2n2_nac['self_connection'],
+        variables_e2n2_soc['self_connection'],
         variables_e2n2_eg['resnet'],
         variables_e2n2_nac['resnet'],
         variables_e2n2_soc['resnet'],
@@ -2374,15 +2383,6 @@ def start_info(variables_all):
         variables_e2n2_eg['loss_weights'],
         '',
         '',
-        variables_e2n2_eg['use_reg_loss'],
-        variables_e2n2_nac['use_reg_loss'],
-        variables_e2n2_soc['use_reg_loss'],
-        variables_e2n2_eg['reg_l1'],
-        variables_e2n2_nac['reg_l1'],
-        variables_e2n2_soc['reg_l1'],
-        variables_e2n2_eg['reg_l2'],
-        variables_e2n2_nac['reg_l2'],
-        variables_e2n2_soc['reg_l2'],
         variables_e2n2_eg['epo'],
         variables_e2n2_nac['epo'],
         variables_e2n2_soc['epo'],
@@ -2392,6 +2392,9 @@ def start_info(variables_all):
         variables_e2n2_eg['subset'],
         variables_e2n2_nac['subset'],
         variables_e2n2_soc['subset'],
+        variables_e2n2_eg['scaler'],
+        variables_e2n2_nac['scaler'],
+        variables_e2n2_soc['scaler'],
         variables_e2n2_eg['batch_size'],
         variables_e2n2_nac['batch_size'],
         variables_e2n2_soc['batch_size'],

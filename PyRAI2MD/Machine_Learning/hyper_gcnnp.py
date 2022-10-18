@@ -7,7 +7,7 @@
 #
 ######################################################
 
-def set_e2n2_hyper_eg(hyp, unit, info, splits):
+def set_e2n2_hyper_eg(hyp, unit, info, splits, shuffle):
     """ Generating hyperparameter dict for energy+gradient NN
 
         Parameters:          Type:
@@ -44,21 +44,21 @@ def set_e2n2_hyper_eg(hyp, unit, info, splits):
 
     ## setup unit scheme
     if unit == 'si':
-        hyp['unit'] = ['eV', 'eV/A']
+        hyp['unit'] = ['kcal/mol', 'kcal/mol/A']
     else:
-        hyp['unit'] = ['Eh', 'Eh/Bohr']
+        hyp['unit'] = ['kcal/mol', 'kal/mol/A']
 
     ## setup hypers
     hyp_dict = {
         'model': {
             'class_name': 'energy_grad',  # name of the class
             'class_module': 'scalar_grad',  # name of the model
+            'model_id': 0,  # index of the model
             'config': {
                 # Properties
                 'states': info['nstate'],  # number of electronic states
                 'node_info': None,  # a list of unique atom numbers
                 'nedges': hyp['n_edges'],  # number of edges
-                'edge_list': None,  # a list of pairwise atom indices in edges
                 # NN architecture
                 'maxradius': hyp['maxradius'],  # maximum atom-centered radius in Angstrom
                 'n_features': hyp['n_features'],  # number of node features
@@ -69,10 +69,10 @@ def set_e2n2_hyper_eg(hyp, unit, info, splits):
                 'n_rbf': hyp['n_rbf'],  # number of radial basis function
                 'trainable_rbf': hyp['trainable_rbf'],  # trainable radial basis function
                 'rbf_cutoff': hyp['rbf_cutoff'],  # rbf envelop function cutoff
-                'rbf_layers': hyp['rbf_layer'],  # number of rbf layers
+                'rbf_layers': hyp['rbf_layers'],  # number of rbf layers
                 'rbf_neurons': hyp['rbf_neurons'],  # number of rbf neuron per layer
-                'rbf_act': hyp['rfb_act'],  # activation in rbf net
-                'rbf_act_a': hyp['rfb_act_a'],  # parameter for leakysoftplus function
+                'rbf_act': hyp['rbf_act'],  # activation in rbf net
+                'rbf_act_a': hyp['rbf_act_a'],  # parameter for leakysoftplus function
                 'normalization_y': hyp['normalization_y'],  # normalization scheme in spherical harmonics
                 'normalize_y': hyp['normalize_y'],  # normalize edge vectors when projecting to spherical harmonics
                 # Convolution
@@ -90,10 +90,6 @@ def set_e2n2_hyper_eg(hyp, unit, info, splits):
                 },  # activation for gated tensors
             },
         },
-        'scaling': {
-            'mean': 0,  # shifting factor for energy
-            'std': 1,   # scaling factor for energy
-        },
         'training': {
             'device': 'cpu',  # training device
             'val_split': 1 / splits,  # validation training set ratio
@@ -101,20 +97,21 @@ def set_e2n2_hyper_eg(hyp, unit, info, splits):
             'loss_weights': hyp['loss_weights'],  # weight between scalar and grad loss
             'learning_rate': hyp['learning_rate'],  # learning rate
             'epo': hyp['epo'],  # number of epoch
-            'subset': 0.1,  # ratio of train data used for training
+            'scaler': hyp['scaler'],  # scale method
+            'shuffle': shuffle,  # shuffle full training set or subset
+            'subset': hyp['subset'],  # ratio of train data used for training
             'batch_size': hyp['batch_size'],  # batch size
-            'epo_step': hyp['epo_step'],  # steps of epochs for validation
+            'epo_step': hyp['epostep'],  # steps of epochs for validation
             'callbacks': hyp['callbacks'],
-            'use_reg_loss': hyp['use_reg_loss_dict'],
             'unit_scalar': hyp['unit'][0],  # unit of scalar
             'unit_grad': hyp['unit'][1],  # unit of grad
-            'grad_type': hyp['grad_type'], # type of grad or force
+            'grad_type': hyp['grad_type'],  # type of grad or force
         }
     }
 
     return hyp_dict
 
-def set_e2n2_hyper_nac(hyp, unit, info, splits):
+def set_e2n2_hyper_nac(hyp, unit, info, splits, shuffle):
     """ Generating hyperparameter dict for soc NN
 
         Parameters:          Type:
@@ -160,12 +157,12 @@ def set_e2n2_hyper_nac(hyp, unit, info, splits):
         'model': {
             'class_name': 'nac',  # name of the class
             'class_module': 'grad',  # name of the model
+            'model_id': 0,  # index of the model
             'config': {
                 # Properties
                 'states': info['nstate'],  # number of electronic states
                 'node_info': None,  # a list of unique atom numbers
                 'nedges': hyp['n_edges'],  # number of edges
-                'edge_list': None,  # a list of pairwise atom indices in edges
                 # NN architecture
                 'maxradius': hyp['maxradius'],  # maximum atom-centered radius in Angstrom
                 'n_features': hyp['n_features'],  # number of node features
@@ -176,10 +173,10 @@ def set_e2n2_hyper_nac(hyp, unit, info, splits):
                 'n_rbf': hyp['n_rbf'],  # number of radial basis function
                 'trainable_rbf': hyp['trainable_rbf'],  # trainable radial basis function
                 'rbf_cutoff': hyp['rbf_cutoff'],  # rbf envelop function cutoff
-                'rbf_layers': hyp['rbf_layer'],  # number of rbf layers
+                'rbf_layers': hyp['rbf_layers'],  # number of rbf layers
                 'rbf_neurons': hyp['rbf_neurons'],  # number of rbf neuron per layer
-                'rbf_act': hyp['rfb_act'],  # activation in rbf net
-                'rbf_act_a': hyp['rfb_act_a'],  # parameter for leakysoftplus function
+                'rbf_act': hyp['rbf_act'],  # activation in rbf net
+                'rbf_act_a': hyp['rbf_act_a'],  # parameter for leakysoftplus function
                 'normalization_y': hyp['normalization_y'],  # normalization scheme in spherical harmonics
                 'normalize_y': hyp['normalize_y'],  # normalize edge vectors when projecting to spherical harmonics
                 # Convolution
@@ -197,22 +194,18 @@ def set_e2n2_hyper_nac(hyp, unit, info, splits):
                 },  # activation for gated tensors
             },
         },
-        'scaling': {
-            'mean': 0,  # shifting factor for energy
-            'std': 1,   # scaling factor for energy
-        },
         'training': {
             'device': 'cpu',  # training device
             'val_split': 1 / splits,  # validation training set ratio
             'initialize_weights': hyp['initialize_weights'],  # initialize weight to retrain
-            'loss_weights': hyp['loss_weights'],  # weight between scalar and grad loss
             'learning_rate': hyp['learning_rate'],  # learning rate
             'epo': hyp['epo'],  # number of epoch
-            'subset': 0.1,  # ratio of train data used for training
+            'scaler': hyp['scaler'],  # scale method
+            'shuffle': shuffle,  # shuffle full training set or subset
+            'subset': hyp['subset'],  # ratio of train data used for training
             'batch_size': hyp['batch_size'],  # batch size
-            'epo_step': hyp['epo_step'],  # steps of epochs for validation
+            'epo_step': hyp['epostep'],  # steps of epochs for validation
             'callbacks': hyp['callbacks'],
-            'use_reg_loss': hyp['use_reg_loss_dict'],
             'unit_scalar': '',  # unit of scalar
             'unit_grad': hyp['unit'],  # unit of grad
             'grad_type': hyp['grad_type'],  # type of grad or force
@@ -221,7 +214,7 @@ def set_e2n2_hyper_nac(hyp, unit, info, splits):
 
     return hyp_dict
 
-def set_e2n2_hyper_soc(hyp, unit, info, splits):
+def set_e2n2_hyper_soc(hyp, unit, info, splits, shuffle):
     """ Generating hyperparameter dict for soc NN
 
         Parameters:          Type:
@@ -267,6 +260,7 @@ def set_e2n2_hyper_soc(hyp, unit, info, splits):
         'model': {
             'class_name': 'soc',  # name of the class
             'class_module': 'scalar',  # name of the model
+            'model_id': 0,  # index of the model
             'config': {
                 # Properties
                 'states': info['nstate'],  # number of electronic states
@@ -283,10 +277,10 @@ def set_e2n2_hyper_soc(hyp, unit, info, splits):
                 'n_rbf': hyp['n_rbf'],  # number of radial basis function
                 'trainable_rbf': hyp['trainable_rbf'],  # trainable radial basis function
                 'rbf_cutoff': hyp['rbf_cutoff'],  # rbf envelop function cutoff
-                'rbf_layers': hyp['rbf_layer'],  # number of rbf layers
+                'rbf_layers': hyp['rbf_layers'],  # number of rbf layers
                 'rbf_neurons': hyp['rbf_neurons'],  # number of rbf neuron per layer
-                'rbf_act': hyp['rfb_act'],  # activation in rbf net
-                'rbf_act_a': hyp['rfb_act_a'],  # parameter for leakysoftplus function
+                'rbf_act': hyp['rbf_act'],  # activation in rbf net
+                'rbf_act_a': hyp['rbf_act_a'],  # parameter for leakysoftplus function
                 'normalization_y': hyp['normalization_y'],  # normalization scheme in spherical harmonics
                 'normalize_y': hyp['normalize_y'],  # normalize edge vectors when projecting to spherical harmonics
                 # Convolution
@@ -304,22 +298,18 @@ def set_e2n2_hyper_soc(hyp, unit, info, splits):
                 },  # activation for gated tensors
             },
         },
-        'scaling': {
-            'mean': 0,  # shifting factor for energy
-            'std': 1,   # scaling factor for energy
-        },
         'training': {
             'device': 'cpu',  # training device
             'val_split': 1 / splits,  # validation training set ratio
             'initialize_weights': hyp['initialize_weights'],  # initialize weight to retrain
-            'loss_weights': hyp['loss_weights'],  # weight between scalar and grad loss
             'learning_rate': hyp['learning_rate'],  # learning rate
             'epo': hyp['epo'],  # number of epoch
-            'subset': 0.1,  # ratio of train data used for training
+            'scaler': hyp['scaler'],  # scale method
+            'shuffle': shuffle,  # shuffle full training set or subset
+            'subset': hyp['subset'],  # ratio of train data used for training
             'batch_size': hyp['batch_size'],  # batch size
-            'epo_step': hyp['epo_step'],  # steps of epochs for validation
+            'epo_step': hyp['epostep'],  # steps of epochs for validation
             'callbacks': hyp['callbacks'],
-            'use_reg_loss': hyp['use_reg_loss_dict'],
             'unit_scalar': hyp['unit'],  # unit of scalar
             'unit_grad': '',  # unit of grad
             'grad_type': hyp['grad_type'],  # type of grad or force

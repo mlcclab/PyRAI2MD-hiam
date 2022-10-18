@@ -183,7 +183,8 @@ def ReadData(var):
     data.soc_coupling = soc_coupling
     data.nnac = nnac
     data.nsoc = nsoc
-    xyz, energy, grad, nac, soc = data.read_data(natom, nstate)
+
+    xyz, energy, grad, nac, soc = data.read_data(natom)
 
     return id, xyz, energy.tolist(), grad.tolist(), nac.tolist(), soc.tolist()
 

@@ -24,7 +24,7 @@ def main():
 
     description = ''
     parser = OptionParser(usage=usage, description=description)
-    parser.add_option('-s', dest='seed', type=float, nargs=1, help='random number seed', default=1234)
+    parser.add_option('-s', dest='seed', type=int, nargs=1, help='random number seed', default=1234)
 
     (options, args) = parser.parse_args()
     seed = options.seed
