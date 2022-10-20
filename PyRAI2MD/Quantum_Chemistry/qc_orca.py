@@ -479,7 +479,7 @@ cd $ORCA_WORKDIR
         traj.energy = np.copy(energy)
         traj.grad = np.copy(gradient)
         traj.nac = np.copy(nac)
-        traj.soc = np.zeros(soc)
+        traj.soc = np.copy(soc)
         traj.err_energy = None
         traj.err_grad = None
         traj.err_nac = None
