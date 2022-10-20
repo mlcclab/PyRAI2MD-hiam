@@ -47,7 +47,7 @@ class RemoteTrain:
 export WORKDIR=%s
 
 cd $WORKDIR
-pyrai2md.py $INPUT
+pyrai2md $INPUT
 """ % self.calcdir
 
     def _setup_hpc(self):
