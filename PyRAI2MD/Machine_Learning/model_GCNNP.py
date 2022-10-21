@@ -141,7 +141,7 @@ class E2N2:
             self.mr = None
             self.atoms = np.array(self.atoms)
 
-        node_type = SetupTools.find_node_type(self.atoms[0].reshape((-1, 1)))
+        node_type = SetupTools.find_node_type([self.atoms[0].reshape((-1, 1))])
 
         ## initialize model path
         if modeldir is None or job_id not in [None, 1]:
