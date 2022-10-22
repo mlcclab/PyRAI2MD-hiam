@@ -183,8 +183,8 @@ class Data:
     def save(self, file):
         batch = len(self.xyz)
         data = {
-            'n': self.natom,
-            'nst': self.nstate,
+            'natom': self.natom,
+            'nstate': self.nstate,
             'nnac': self.nnac,
             'nsoc': self.nsoc,
             'xyz': self.xyz.tolist(),
