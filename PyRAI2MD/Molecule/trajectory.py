@@ -9,6 +9,7 @@
 
 import numpy as np
 from PyRAI2MD.Molecule.molecule import Molecule
+from PyRAI2MD.Utils.sampling import random_velocity
 
 class Trajectory(Molecule):
     """ Trajectory property class
@@ -278,3 +279,7 @@ class Trajectory(Molecule):
             cnac = np.array(cnac)
 
         return cnac
+
+    def random_velo(self):
+        self.velo = random_velocity(self.mass, self.temp, self.freeze)
+        return self

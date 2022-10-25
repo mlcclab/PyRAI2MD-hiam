@@ -185,6 +185,26 @@ class Element:
     def get_radii(self):
         return self.__Radii
 
+def random_velocity(mass, temp, freeze):
+    ## This function generate random velocity
+    natom = len(mass)
+
+    kb = 3.166811e-6  # 1.380649 * 1e-23 / 4.359745 * 1e-18
+    kin = 1.5 * kb * temp
+    velo = (2 * kin / mass) ** 0.5
+    theta = np.random.uniform(0, 1, natom * 3).reshape(natom, 3)
+    theta[:, 0] = np.cos(theta[:, 0])
+    theta[:, 1] = np.sin(theta[:, 1])
+    theta[:, 2] = np.ones_like(theta[:, 2])
+
+    phi = np.random.uniform(0, 1, natom * 3).reshape(natom, 3)
+    phi[:, 0: 2] = np.sin(phi[:, 0: 2])
+    phi[:, 2] = np.cos(phi[:, 2])
+
+    velo = theta * phi * velo
+    velo[freeze] = np.zeros((len(freeze), 3))
+
+    return velo
 
 def read_molden(ld_input):
     ## This function read Molcas .freq.molden file and return all data as a dict

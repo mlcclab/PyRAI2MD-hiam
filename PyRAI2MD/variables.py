@@ -228,6 +228,7 @@ def read_md(keywords, values):
         'ninitcond': ReadVal('i'),
         'method': ReadVal('s'),
         'format': ReadVal('s'),
+        'randvelo': ReadVal('i'),
         'temp': ReadVal('f'),
         'step': ReadVal('i'),
         'size': ReadVal('f'),
@@ -583,7 +584,7 @@ def read_input(ld_input):
         'freeze': [],
         'constrain': [],
         'shape': 'ellipsoid',
-        'factor': 10,
+        'factor': 40,
         'cavity': [],
         'center': [],
         'primitive': [],
@@ -661,6 +662,7 @@ def read_input(ld_input):
         'ninitcond': 20,
         'method': 'wigner',
         'format': 'molden',
+        'randvelo': 0,
         'temp': 300,
         'step': 10,
         'size': 20.67,
@@ -1452,6 +1454,7 @@ def start_info(variables_all):
   &md
 -------------------------------------------------------
   Initial state:              %-10s
+  Initialize random velocity  %-10s
   Temperature (K):            %-10s
   Step:                       %-10s
   Dt (au):                    %-10s
@@ -1479,6 +1482,7 @@ def start_info(variables_all):
 
 """ % (
         variables_md['root'],
+        variables_md['randvelo'],
         variables_md['temp'],
         variables_md['step'],
         variables_md['size'],

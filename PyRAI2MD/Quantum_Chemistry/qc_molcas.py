@@ -427,7 +427,7 @@ rm -r $MOLCAS_WORKDIR/$MOLCAS_PROJECT
         ## load trajectory info
         self.ci = traj.ci
         self.mult = traj.mult
-        self.soc_coupling = traj.soc_coupling
+        self.socpling = traj.soc_coupling
         self.nsoc = traj.nsoc
         self.nnac = traj.nnac
         self.nstate = traj.nstate

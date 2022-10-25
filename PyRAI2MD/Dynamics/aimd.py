@@ -68,6 +68,7 @@ class AIMD:
         self.maxerr_grad = keywords['control']['maxgrad']
         self.maxerr_nac = keywords['control']['maxnac']
         self.maxerr_soc = keywords['control']['maxsoc']
+        self.randvelo = keywords['md']['randvelo']
         self.silent = keywords['md']['silent']
         self.verbose = keywords['md']['verbose']
         self.direct = keywords['md']['direct']
@@ -160,6 +161,10 @@ class AIMD:
         # -----------------------------------------
         #
         if self.traj.itr == 1:
+            ## initialize random velocity according to temperature
+            if self.randvelo == 1:
+                self.traj.random_velo()
+
             f = 1
             ## add excess kinetic energy in the first step if requested
             if self.traj.excess != 0:
