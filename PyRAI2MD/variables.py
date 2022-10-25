@@ -228,7 +228,7 @@ def read_md(keywords, values):
         'ninitcond': ReadVal('i'),
         'method': ReadVal('s'),
         'format': ReadVal('s'),
-        'temp': ReadVal('i'),
+        'temp': ReadVal('f'),
         'step': ReadVal('i'),
         'size': ReadVal('f'),
         'root': ReadVal('i'),
