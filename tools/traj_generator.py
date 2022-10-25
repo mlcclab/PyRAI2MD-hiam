@@ -182,6 +182,12 @@ def main(argv):
             print(usage)
             print('!!! Bagel: bagelinput.part1-3.inp not found !!!')
             exit()
+    elif prog == 'pyrai2md':
+        if not os.path.exists('input'):
+            print('\n!!! PyRAI2MD input not found !!!')
+            print(usage)
+            print('!!! PyRAI2MD input not found !!!')
+            exit()
     elif prog == 'pyrai2mdnn':
         if not os.path.exists('input'):
             print('\n!!! PyRAI2MD input not found !!!')
@@ -287,6 +293,8 @@ def main(argv):
     elif prog == 'nxbagel':
         gen_nxbagel(ensemble, inputs, slpt, sltm, slmm, slnd, slcr, sljb, slin, tontx, tobgl,
                     lbbls, lblpk, lbslp, lbbst, tomkl, tompi)
+    elif prog == 'pyrai2md':
+        gen_pyrai2md(ensemble, inputs, slpt, sltm, slmm, slnd, slcr, sljb, slin, 'no', iformat)
     elif prog == 'pyrai2mdnn':
         gen_pyrai2md(ensemble, inputs, slpt, sltm, slmm, slnd, slcr, sljb, slin, 'nn', iformat)
     elif prog == 'pyrai2mdmolcas':
