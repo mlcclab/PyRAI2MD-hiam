@@ -83,6 +83,8 @@ class Molecule:
             relax            ndarray     index of relaxed atoms 
             freeze           ndarray     index of frozen atoms
             constrain        ndarray     index of constrained atoms
+            center           ndarray     the center of the constraining potential
+            record_center    bool        record the center for the following step
             primitive        ndarray     primitive translation vectors in 1D 2D 3D
             lattice          ndarray     lattice constant
             status           int         molecular property calculation status
@@ -99,7 +101,8 @@ class Molecule:
                  'energy', 'grad', 'nac', 'soc', 'err_energy', 'err_grad', 'err_nac', 'err_soc',
                  'qm_atoms', 'qm_coord', 'Hcap_atoms', 'Hcap_coord', 'Hcap_jacob', 'boundary', 'nhigh', 'nlow',
                  'highlevel', 'lowlevel', 'relax', 'freeze', 'constrain', 'primitive', 'lattice', 'status',
-                 'charges', 'qm1_charge', 'qm2_charge', 'qm_energy', 'qm_grad', 'qm_nac', 'qm_soc']
+                 'charges', 'qm1_charge', 'qm2_charge', 'qm_energy', 'qm_grad', 'qm_nac', 'qm_soc',
+                 'center', 'record_center']
 
     def __init__(self, mol, keywords=None):
         key_dict = keywords['molecule'].copy()
@@ -134,6 +137,8 @@ class Molecule:
         self.qm1_charge = np.zeros(0)
         self.qm2_charge = np.zeros(0)
         self.lowlevel = np.zeros(0)
+        self.center = np.zeros(3)
+        self.record_center = False
         self.txyz = []
 
         ## load variables from key_dict

@@ -91,12 +91,18 @@ class Constraint:
         if not self.has_potential:
             return traj
 
-        if self.has_center:
-            center_frag_coord = traj.coord[self.center_frag]
+        if traj.record_center:
+            center = traj.center
         else:
-            center_frag_coord = traj.coord
+            if self.has_center:
+                center_frag_coord = traj.coord[self.center_frag]
+            else:
+                center_frag_coord = traj.coord
 
-        center = np.mean(center_frag_coord, axis=0)
+            center = np.mean(center_frag_coord, axis=0)
+            traj.center = np.copy(center)
+            traj.record_center = True
+
         shifted_coord = traj.coord - center
 
         if self.has_constrained:
