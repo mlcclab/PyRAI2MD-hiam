@@ -188,7 +188,7 @@ class Data:
             'nnac': self.nnac,
             'nsoc': self.nsoc,
             'xyz': self.xyz.tolist(),
-            'eng': self.energy.tolist(),
+            'energy': self.energy.tolist(),
             'grad': self.grad.tolist(),
             'nac': self.nac.tolist(),
             'soc': self.soc.tolist(),
