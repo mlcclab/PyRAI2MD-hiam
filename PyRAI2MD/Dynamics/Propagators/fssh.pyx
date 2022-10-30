@@ -254,7 +254,7 @@ cpdef FSSH(dict traj):
             deplet = 0 - np.diag(np.real(A))
             rstate = [np.argmax(exceed), np.argmax(deplet)][np.argmax([np.amax(exceed), np.amax(deplet)])]
             revert = np.amax([exceed[rstate], deplet[rstate]])
-            if revert > 0:
+            if revert > 1e-16:
                 A -= dAdt * np.abs(revert / np.real(dAdt)[rstate, rstate])  # revert A
                 B -= dB * np.abs(revert / np.real(dAdt)[rstate, rstate])
                 stop = 1 # stop if population exceed 1 or less than 0
