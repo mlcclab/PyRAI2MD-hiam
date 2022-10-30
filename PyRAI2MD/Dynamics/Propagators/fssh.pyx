@@ -174,8 +174,8 @@ cpdef FSSH(dict traj):
     cdef np.ndarray dDdt = np.zeros((nstate, nstate), dtype = complex)
 
     cdef str summary, info
-    cdef int n, i, j, k, p, stop, hoped, nhop, event, s1, s2, frustrated, rstate
-    cdef float deco, z, gsum, Asum, Amm, nacme, revert, hop_gsum, hop_z
+    cdef int n, i, j, k, p, stop, hoped, nhop, event, s1, s2, frustrated, rstate, rs
+    cdef float deco, z, gsum, Asum, Amm, nacme, revert, hop_gsum, hop_z, rp
     cdef list pair
     cdef np.ndarray stateorder, statemap, Vt, g, tau, NAC, exceed, deplet, hop_g
     hop_g = np.zeros(0)
@@ -254,10 +254,19 @@ cpdef FSSH(dict traj):
             deplet = 0 - np.diag(np.real(A))
             rstate = [np.argmax(exceed), np.argmax(deplet)][np.argmax([np.amax(exceed), np.amax(deplet)])]
             revert = np.amax([exceed[rstate], deplet[rstate]])
-            if revert > 1e-16:
+            if revert > 0:
                 A -= dAdt * np.abs(revert / np.real(dAdt)[rstate, rstate])  # revert A
                 B -= dB * np.abs(revert / np.real(dAdt)[rstate, rstate])
                 stop = 1 # stop if population exceed 1 or less than 0
+
+            if stop == 1:
+                # adjust population matrix between 0 and	1 before break
+                for rs, rp in enumerate(np.real(A)):
+                    if rp > 1:
+       	       	       	A[rs] =	1 + np.imag(A[rs]) * 1j
+     	       	    elif rp < 0:
+      	       	       	A[rs] =	0 + np.imag(A[rs]) * 1j
+                break
 
             for j in range(nstate):
                 if j != state - 1:
@@ -334,9 +343,6 @@ cpdef FSSH(dict traj):
                             A[k, j] *= np.exp(-delt / tau[j]) * (np.real(A[state - 1, state - 1]) / Amm)**0.5
                         elif k != state - 1 and j == state - 1:
                             A[k, j] *= np.exp(-delt / tau[k]) * (np.real(A[state - 1, state - 1]) / Amm)**0.5
-
-            if stop == 1:
-                break
 
         ## final decision on velocity
         if state == old_state:   # not hoped
