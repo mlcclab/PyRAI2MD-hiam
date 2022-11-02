@@ -1237,6 +1237,7 @@ def read_input(ld_input):
     variables_all['orca']['verbose'] = variables_all['md']['verbose']
     variables_all['xtb']['xtb_project'] = variables_all['control']['title']
     variables_all['xtb']['verbose'] = variables_all['md']['verbose']
+    variables_all['demo'] = variables_all['nn']
 
     ## update variables if input is a dict
     ## be caution that the input dict must have the same data structure
@@ -2535,6 +2536,7 @@ def start_info(variables_all):
     )
 
     info_method = {
+        'demo': nn_info,
         'nn': nn_info,
         'mlp': mlp_info,
         'schnet': sch_info,

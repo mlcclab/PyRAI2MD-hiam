@@ -14,6 +14,7 @@ from PyRAI2MD.Quantum_Chemistry.qc_orca import Orca
 from PyRAI2MD.Quantum_Chemistry.qc_xtb import Xtb
 from PyRAI2MD.Quantum_Chemistry.qmqm2 import QMQM2
 from PyRAI2MD.Machine_Learning.model_NN import DNN
+from PyRAI2MD.Machine_Learning.model_demo import Demo
 from PyRAI2MD.Machine_Learning.model_helper import DummyModel
 
 try:
@@ -60,6 +61,7 @@ class QM:
             'orca': Orca,
             'xtb': Xtb,
             'nn': DNN,
+            'demo': Demo,
             'mlp': MLP,
             'schnet': Schnet,
             'e2n2': E2N2,
@@ -71,6 +73,7 @@ class QM:
             'bagel': Bagel,
             'orca': Orca,
             'nn': DNN,
+            'demo': Demo,
             'mlp': MLP,
             'schnet': Schnet,
             'e2n2': E2N2,
