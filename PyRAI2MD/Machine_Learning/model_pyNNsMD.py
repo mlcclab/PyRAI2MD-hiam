@@ -496,6 +496,7 @@ class MLP:
 
     def _qmmm(self, traj):
         ## run psnnsmd for QM calculation
+        traj = traj.apply_qmmm()
 
         xyz = traj.qm_coord.reshape((1, self.natom, 3))
 
@@ -1081,6 +1082,7 @@ class Schnet:
 
     def _qmmm(self, traj):
         ## run psnnsmd for QM calculation
+        traj = traj.apply_qmmm()
 
         xyz = traj.qm_coord.reshape((1, self.natom, 3))
         atomic_numbers = [self.atomic_numbers]

@@ -320,6 +320,7 @@ class DNN:
 
     def _qmmm(self, traj):
         ## run psnnsmd for QMQM2 calculation
+        traj = traj.apply_qmmm()
 
         xyz = traj.qm_coord.reshape((1, self.natom, 3))
         y_pred, y_std = self.model.call(xyz)

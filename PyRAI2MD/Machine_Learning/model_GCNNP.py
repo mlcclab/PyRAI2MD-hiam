@@ -322,6 +322,8 @@ class E2N2:
 
     def _qmmm(self, traj):
         ## run GCNNP for QM calculation
+        traj = traj.apply_qmmm()
+
         atoms = self.atoms[0]
         coord = traj.qm_coord
 
