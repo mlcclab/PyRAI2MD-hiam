@@ -7,7 +7,7 @@
 #
 ######################################################
 
-import multiprocessing
+import copy
 import numpy as np
 from PyRAI2MD.Utils.coordinates import orca_coord
 from PyRAI2MD.Utils.coordinates import string2float
@@ -95,21 +95,24 @@ class QMQM2:
 
     def evaluate(self, traj):
         index_high = traj.highlevel
+        traj_1 = copy.deepcopy(traj)
+        traj_2 = copy.deepcopy(traj)
+        traj_3 = copy.deepcopy(traj)
 
         # first compute charge
-        traj_qm2_low = self.qm2_low.evaluate(traj)
+        traj_qm2_low = self.qm2_low.evaluate(traj_1)
         traj.charges = traj_qm2_low.charges
 
-        traj_results = [None, None]
-        eval_func = [[0, traj], [1, traj]]
-        pool = multiprocessing.Pool(processes=self.nprocs)
-        for val in pool.imap_unordered(self.eval_wrapper, eval_func):
-            ifunc, results = val
-            traj_results[ifunc] = results
-        pool.close()
+        # traj_results = [None, None]
+        # eval_func = [[0, traj], [1, traj]]
+        # pool = multiprocessing.Pool(processes=self.nprocs)
+        # for val in pool.imap_unordered(self.eval_wrapper, eval_func):
+        #     ifunc, results = val
+        #     traj_results[ifunc] = results
+        # pool.close()
 
-        traj_qm1_high = traj_results[0]
-        traj_qm1_low = traj_results[1]
+        traj_qm1_high = self.qm1_high.evaluate(traj_2)
+        traj_qm1_low = self.qm1_low.evaluate(traj_3)
 
         qm1_high_completion = traj_qm1_high.status
         qm1_low_completion = traj_qm1_low.status
