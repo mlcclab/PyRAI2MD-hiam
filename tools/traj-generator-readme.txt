@@ -139,6 +139,8 @@
                         The trajectory calculions are named as file_name-index. Change the inital index
                         can setup new calculcations following exsited ones. 
 
+            repeat      Reuse the first sampled initial condition for all requested calculation
+
             molcas      Path to Molcas.
                         Default is /share/apps/molcas-ext
                         This path is used to setup molcas root in slurm submission script

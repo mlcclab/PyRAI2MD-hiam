@@ -70,6 +70,7 @@ def main(argv):
     slcr = 1
     sljb = 1
     slin = 1
+    repeat = 0
     restart = 0
     initex = 0
     tomlcs = '/share/apps/molcas-ext'
@@ -118,6 +119,8 @@ def main(argv):
             sljb = int(line.split()[1])
         elif 'index' == key:
             slin = int(line.split()[1])
+        elif 'repeat' == key:
+            repeat = int(line.split()[1])
         elif 'restart' == key:
             restart = int(line.split()[1])
         elif 'initex' == key:
@@ -278,7 +281,12 @@ def main(argv):
 
     """)
 
-    ensemble = sampling(inputs, nesmb, iseed, temp, dist, iformat)  # generate initial conditions
+    if repeat == 0:
+        ensemble = sampling(inputs, nesmb, iseed, temp, dist, iformat)  # generate initial conditions
+    else:
+        print("Reuse the first sampled condition %s times" % nesmb)
+        ensemble = sampling(inputs, 1, iseed, temp, dist, iformat)  # generate initial conditions
+        ensemble = [ensemble[0] for _ in range(nesmb)]
 
     print("""
 

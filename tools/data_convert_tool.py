@@ -34,7 +34,7 @@ def main():
     newset = {
         'natom': natom,
         'nstate': nstate,
-        'nnac': 1,
+        'nnac': 0,
         'nsoc': 0,
         'xyz': xyz,
         'energy': energy,
