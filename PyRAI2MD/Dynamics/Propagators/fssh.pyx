@@ -260,12 +260,12 @@ cpdef FSSH(dict traj):
                 stop = 1 # stop if population exceed 1 or less than 0
 
             if stop == 1:
-                # adjust population matrix between 0 and	1 before break
+                # adjust population matrix between 0 and 1 before break
                 for rs, rp in enumerate(np.real(A)):
                     if rp > 1:
-       	       	       	A[rs] =	1 + np.imag(A[rs]) * 1j
-     	       	    elif rp < 0:
-      	       	       	A[rs] =	0 + np.imag(A[rs]) * 1j
+                        A[rs] = 1 + np.imag(A[rs]) * 1j
+                    elif rp < 0:
+                        A[rs] = 0 + np.imag(A[rs]) * 1j
                 break
 
             for j in range(nstate):
