@@ -261,11 +261,11 @@ cpdef FSSH(dict traj):
 
             if stop == 1:
                 # adjust population matrix between 0 and 1 before break
-                for rs, rp in enumerate(np.real(A)):
+                for rs, rp in enumerate(np.real(np.diag(A))):
                     if rp > 1:
-                        A[rs] = 1 + np.imag(A[rs]) * 1j
+                        A[rs, rs] = 1 + np.imag(A[rs, rs]) * 1j
                     elif rp < 0:
-                        A[rs] = 0 + np.imag(A[rs]) * 1j
+                        A[rs, rs] = 0 + np.imag(A[rs, rs]) * 1j
                 break
 
             for j in range(nstate):
