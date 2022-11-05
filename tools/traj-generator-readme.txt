@@ -139,7 +139,14 @@
                         The trajectory calculions are named as file_name-index. Change the inital index
                         can setup new calculcations following exsited ones. 
 
+            ncpus       Number of CPUs for generating trajectory in parallel
+                        Default is 1.
+
             repeat      Reuse the first sampled initial condition for all requested calculation
+                        Default is 0. Use all sampled conditions
+
+            notraj      Only perform initial condition sampling
+                        Deafult is 0. Generate trajectories after sampling
 
             molcas      Path to Molcas.
                         Default is /share/apps/molcas-ext

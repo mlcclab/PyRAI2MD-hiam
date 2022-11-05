@@ -4,10 +4,12 @@
 ##
 ## Gen-FSSH.py 2019-2022 Jingbai Li
 ## New version Oct 13 2022 Jingbai Li
+## Upgrade to multiprocessing Nov 5 2022 Jingbai Li
 
 import sys
 import os
 import shutil
+import multiprocessing
 
 ## import initial condition sampling module
 try:
@@ -31,6 +33,8 @@ def main(argv):
 
     a sampling file contains the following parameters
 
+      cpus          number of cpu for parallel generation
+      notraj        0
       input         file_name.freq.molden
       seed          -1
       temp          298.15  
@@ -59,6 +63,8 @@ def main(argv):
 
     ## defaults parameters
     inputs = ''
+    cpus = 1
+    notraj = 0
     iseed = 1
     temp = 273.15
     dist = 'wigner'
@@ -71,8 +77,6 @@ def main(argv):
     sljb = 1
     slin = 1
     repeat = 0
-    restart = 0
-    initex = 0
     tomlcs = '/share/apps/molcas-ext'
     tontx = '/share/apps/NX-2.4-B06 '
     tobgl = '/share/apps/bagel'
@@ -97,6 +101,10 @@ def main(argv):
         key = line.split()[0].lower()
         if 'input' == key:
             inputs = line.split()[1]
+        elif 'cpus' == key:
+            cpus = int(line.split()[1])
+        elif 'notraj' == key:
+            notraj = int(line.split()[1])
         elif 'seed' == key:
             iseed = int(line.split()[1])
         elif 'temp' == key:
@@ -121,10 +129,6 @@ def main(argv):
             slin = int(line.split()[1])
         elif 'repeat' == key:
             repeat = int(line.split()[1])
-        elif 'restart' == key:
-            restart = int(line.split()[1])
-        elif 'initex' == key:
-            initex = int(line.split()[1])
         elif 'molcas' == key:
             tomlcs = line.split()[1]
         elif 'newton' == key:
@@ -157,109 +161,113 @@ def main(argv):
     iformat = inputs.split('.')[-1]
     inputs = inputs.split('.')[0]
 
-    if prog == 'molcas':
-        if not os.path.exists('%s.inp' % inputs):
-            print('\n!!! Molcas template input %s.inp not found !!!' % inputs)
+    if notraj == 0:
+        if prog == 'molcas':
+            if not os.path.exists('%s.inp' % inputs):
+                print('\n!!! Molcas template input %s.inp not found !!!' % inputs)
+                print(usage)
+                print('!!! Molcas template input %s.inp not found !!!\n' % inputs)
+                exit()
+            if not os.path.exists('%s.StrOrb' % inputs) and not os.path.exists('%s.JobIph' % inputs):
+                print('\n!!! Molcas orbital file %s.StrOrb or JobIph not found !!!' % inputs)
+                print(usage)
+                print('!!! Molcas orbital file %s.StrOrb or JobIph not found !!!\n' % inputs)
+                exit()
+        elif prog == 'nxbagel':
+            if not os.path.exists('control.dyn'):
+                print('\n!!! NewtonX: control.dyn not found !!!')
+                print(usage)
+                print('!!! NewtonX: control.dyn not found !!!')
+                exit()
+            if not os.path.exists('bagelinput.basis.inp'):
+                print('\n!!! Bagel: bagelinput.basis.inp not found !!!')
+                print(usage)
+                print('!!! Bagel: bagelinput.basis.inp not found !!!')
+                exit()
+            if not os.path.exists('bagelinput.part1.inp') or not os.path.exists(
+                    'bagelinput.part2.inp') or not os.path.exists('bagelinput.part3.inp'):
+                print('\n!!! Bagel: bagelinput.part1-3.inp not found !!!')
+                print(usage)
+                print('!!! Bagel: bagelinput.part1-3.inp not found !!!')
+                exit()
+        elif prog == 'pyrai2md':
+            if not os.path.exists('input'):
+                print('\n!!! PyRAI2MD input not found !!!')
+                print(usage)
+                print('!!! PyRAI2MD input not found !!!')
+                exit()
+        elif prog == 'pyrai2mdnn':
+            if not os.path.exists('input'):
+                print('\n!!! PyRAI2MD input not found !!!')
+                print(usage)
+                print('!!! PyRAI2MD input not found !!!')
+                exit()
+        elif prog == 'pyrai2mdmolcas' or prog == 'pyrai2mdhybrid':
+            if not os.path.exists('input'):
+                print('\n!!! PyRAI2MD input not found !!!')
+                print(usage)
+                print('!!! PyRAI2MD input not found !!!')
+                exit()
+            if not os.path.exists('%s.molcas' % inputs):
+                print('\n!!! PyRAI2MD molcas template not found !!!')
+                print(usage)
+                print('!!! PyRAI2MD molcas template not found !!!')
+                exit()
+            if not os.path.exists('%s.StrOrb' % inputs) and not os.path.exists('%s.JobIph' % inputs):
+                print('\n!!! PyRAI2MD molcas orbital file StrOrb or JobIph not found !!!')
+                print(usage)
+                print('!!! PyRAI2MD molcas orbital file StrOrb or JobIph not found !!!')
+                exit()
+        elif prog == 'fromage':
+            if not os.path.exists('fromage.in'):
+                print('\n!!! fromage input not found !!!')
+                print(usage)
+                print('!!! fromage input not found !!!')
+                exit()
+            if not os.path.exists('mh.temp'):
+                print('\n!!! fromage mh.temp not found !!!')
+                print(usage)
+                print('!!! fromage mh.temp not found !!!')
+                exit()
+            if not os.path.exists('%s.StrOrb' % input):
+                print('\n!!! fromage orbital file %s.StrOrb not found !!!' % inputs)
+                print(usage)
+                print('!!! fromage orbital file %s.StrOrb found !!!' % inputs)
+                exit()
+            if not os.path.exists('rl.temp'):
+                print('\n!!! fromage rl.temp not found !!!')
+                print(usage)
+                print('!!! fromage rl.temp not found !!!')
+                exit()
+            if not os.path.exists('ml.temp'):
+                print('\n!!! fromage ml.temp not found !!!')
+                print(usage)
+                print('!!! fromage ml.temp not found !!!')
+                exit()
+            if not os.path.exists('xtb.input'):
+                print('\n!!! fromage xtb.input not found !!!')
+                print(usage)
+                print('!!! fromage xtb.input not found !!!')
+                exit()
+            if not os.path.exists('xtb_charge.pc'):
+                print('\n!!! fromage xtb_charge.pc  not found !!!')
+                print(usage)
+                print('!!! fromage xtb_charge.pc not found !!!')
+                exit()
+        elif prog == 'orca':
+            if not os.path.exists('%s.orca' % inputs):
+                print('\n!!! orca input not found !!!')
+                print(usage)
+                print('!!! orca input not found !!!')
+                exit()
+        else:
+            print('\n!!! Program %s not found !!!' % prog)
             print(usage)
-            print('!!! Molcas template input %s.inp not found !!!\n' % inputs)
+            print('!!! Program %s not found !!!' % prog)
             exit()
-        if not os.path.exists('%s.StrOrb' % inputs) and not os.path.exists('%s.JobIph' % inputs):
-            print('\n!!! Molcas orbital file %s.StrOrb or JobIph not found !!!' % inputs)
-            print(usage)
-            print('!!! Molcas orbital file %s.StrOrb or JobIph not found !!!\n' % inputs)
-            exit()
-    elif prog == 'nxbagel':
-        if not os.path.exists('control.dyn'):
-            print('\n!!! NewtonX: control.dyn not found !!!')
-            print(usage)
-            print('!!! NewtonX: control.dyn not found !!!')
-            exit()
-        if not os.path.exists('bagelinput.basis.inp'):
-            print('\n!!! Bagel: bagelinput.basis.inp not found !!!')
-            print(usage)
-            print('!!! Bagel: bagelinput.basis.inp not found !!!')
-            exit()
-        if not os.path.exists('bagelinput.part1.inp') or not os.path.exists(
-                'bagelinput.part2.inp') or not os.path.exists('bagelinput.part3.inp'):
-            print('\n!!! Bagel: bagelinput.part1-3.inp not found !!!')
-            print(usage)
-            print('!!! Bagel: bagelinput.part1-3.inp not found !!!')
-            exit()
-    elif prog == 'pyrai2md':
-        if not os.path.exists('input'):
-            print('\n!!! PyRAI2MD input not found !!!')
-            print(usage)
-            print('!!! PyRAI2MD input not found !!!')
-            exit()
-    elif prog == 'pyrai2mdnn':
-        if not os.path.exists('input'):
-            print('\n!!! PyRAI2MD input not found !!!')
-            print(usage)
-            print('!!! PyRAI2MD input not found !!!')
-            exit()
-    elif prog == 'pyrai2mdmolcas' or prog == 'pyrai2mdhybrid':
-        if not os.path.exists('input'):
-            print('\n!!! PyRAI2MD input not found !!!')
-            print(usage)
-            print('!!! PyRAI2MD input not found !!!')
-            exit()
-        if not os.path.exists('%s.molcas' % inputs):
-            print('\n!!! PyRAI2MD molcas template not found !!!')
-            print(usage)
-            print('!!! PyRAI2MD molcas template not found !!!')
-            exit()
-        if not os.path.exists('%s.StrOrb' % inputs) and not os.path.exists('%s.JobIph' % inputs):
-            print('\n!!! PyRAI2MD molcas orbital file StrOrb or JobIph not found !!!')
-            print(usage)
-            print('!!! PyRAI2MD molcas orbital file StrOrb or JobIph not found !!!')
-            exit()
-    elif prog == 'fromage':
-        if not os.path.exists('fromage.in'):
-            print('\n!!! fromage input not found !!!')
-            print(usage)
-            print('!!! fromage input not found !!!')
-            exit()
-        if not os.path.exists('mh.temp'):
-            print('\n!!! fromage mh.temp not found !!!')
-            print(usage)
-            print('!!! fromage mh.temp not found !!!')
-            exit()
-        if not os.path.exists('%s.StrOrb' % input):
-            print('\n!!! fromage orbital file %s.StrOrb not found !!!' % inputs)
-            print(usage)
-            print('!!! fromage orbital file %s.StrOrb found !!!' % inputs)
-            exit()
-        if not os.path.exists('rl.temp'):
-            print('\n!!! fromage rl.temp not found !!!')
-            print(usage)
-            print('!!! fromage rl.temp not found !!!')
-            exit()
-        if not os.path.exists('ml.temp'):
-            print('\n!!! fromage ml.temp not found !!!')
-            print(usage)
-            print('!!! fromage ml.temp not found !!!')
-            exit()
-        if not os.path.exists('xtb.input'):
-            print('\n!!! fromage xtb.input not found !!!')
-            print(usage)
-            print('!!! fromage xtb.input not found !!!')
-            exit()
-        if not os.path.exists('xtb_charge.pc'):
-            print('\n!!! fromage xtb_charge.pc  not found !!!')
-            print(usage)
-            print('!!! fromage xtb_charge.pc not found !!!')
-            exit()
-    elif prog == 'orca':
-        if not os.path.exists('%s.orca' % inputs):
-            print('\n!!! orca input not found !!!')
-            print(usage)
-            print('!!! orca input not found !!!')
-            exit()
+
     else:
-        print('\n!!! Program %s not found !!!' % prog)
-        print(usage)
-        print('!!! Program %s not found !!!' % prog)
-        exit()
+        print(' Only perform initial condition sampling')
 
     callsample = ['molden', 'bagel', 'g16', 'orca']
     skipsample = ['newtonx', 'xyz']
@@ -288,37 +296,32 @@ def main(argv):
         ensemble = sampling(inputs, 1, iseed, temp, dist, iformat)  # generate initial conditions
         ensemble = [ensemble[0] for _ in range(nesmb)]
 
-    print("""
-
-    Additional Info
-  ------------------------------------------------
-    Restart after the first run:  %s (Only for Molcas)
-    Select initial excited state: %s (Only for Molcas)
-    """ % (restart, initex))
+    if notraj != 0:
+        print('\n\n Done\n')
 
     if prog == 'molcas':
-        gen_molcas(ensemble, inputs, slpt, sltm, slmm, slnd, slcr, sljb, slin, tomlcs, iformat)
+        gen_molcas(cpus, ensemble, inputs, slpt, sltm, slmm, slnd, slcr, sljb, slin, tomlcs, iformat)
     elif prog == 'nxbagel':
-        gen_nxbagel(ensemble, inputs, slpt, sltm, slmm, slnd, slcr, sljb, slin, tontx, tobgl,
+        gen_nxbagel(cpus, ensemble, inputs, slpt, sltm, slmm, slnd, slcr, sljb, slin, tontx, tobgl,
                     lbbls, lblpk, lbslp, lbbst, tomkl, tompi)
     elif prog == 'pyrai2md':
-        gen_pyrai2md(ensemble, inputs, slpt, sltm, slmm, slnd, slcr, sljb, slin, 'no', iformat)
+        gen_pyrai2md(cpus, ensemble, inputs, slpt, sltm, slmm, slnd, slcr, sljb, slin, 'no', iformat)
     elif prog == 'pyrai2mdnn':
-        gen_pyrai2md(ensemble, inputs, slpt, sltm, slmm, slnd, slcr, sljb, slin, 'nn', iformat)
+        gen_pyrai2md(cpus, ensemble, inputs, slpt, sltm, slmm, slnd, slcr, sljb, slin, 'nn', iformat)
     elif prog == 'pyrai2mdmolcas':
-        gen_pyrai2md(ensemble, inputs, slpt, sltm, slmm, slnd, slcr, sljb, slin, 'molcas', iformat)
+        gen_pyrai2md(cpus, ensemble, inputs, slpt, sltm, slmm, slnd, slcr, sljb, slin, 'molcas', iformat)
     elif prog == 'pyrai2mdbagel':
-        gen_pyrai2md(ensemble, inputs, slpt, sltm, slmm, slnd, slcr, sljb, slin, 'bagel', iformat)
+        gen_pyrai2md(cpus, ensemble, inputs, slpt, sltm, slmm, slnd, slcr, sljb, slin, 'bagel', iformat)
     elif prog == 'pyrai2mdorca':
-        gen_pyrai2md(ensemble, inputs, slpt, sltm, slmm, slnd, slcr, sljb, slin, 'orca', iformat)
+        gen_pyrai2md(cpus, ensemble, inputs, slpt, sltm, slmm, slnd, slcr, sljb, slin, 'orca', iformat)
     elif prog == 'pyrai2mdhybrid':
-        gen_pyrai2md(ensemble, inputs, slpt, sltm, slmm, slnd, slcr, sljb, slin, 'hybrid', iformat)
+        gen_pyrai2md(cpus, ensemble, inputs, slpt, sltm, slmm, slnd, slcr, sljb, slin, 'hybrid', iformat)
     elif prog == 'fromage':
-        gen_fromage(ensemble, inputs, slpt, sltm, slmm, slnd, slcr, sljb, slin, tomlcs, toxtb, iformat)
+        gen_fromage(cpus, ensemble, inputs, slpt, sltm, slmm, slnd, slcr, sljb, slin, tomlcs, toxtb, iformat)
     elif prog == 'orca':
-        gen_orca(ensemble, inputs, slpt, sltm, slmm, slnd, slcr, sljb, slin, toorca, iformat)
+        gen_orca(cpus, ensemble, inputs, slpt, sltm, slmm, slnd, slcr, sljb, slin, toorca, iformat)
 
-def gen_molcas(ensemble, inputs, slpt, sltm, slmm, slnd, slcr, sljb, slin, tomlcs, iformat):
+def gen_molcas(cpus, ensemble, inputs, slpt, sltm, slmm, slnd, slcr, sljb, slin, tomlcs, iformat):
     ## This function will group Molcas calculations to individual runset
     ## this function will call molcas_batch and molcas to prepare files
 
@@ -346,7 +349,9 @@ def gen_molcas(ensemble, inputs, slpt, sltm, slmm, slnd, slcr, sljb, slin, tomlc
     in_path = os.getcwd()
 
     runall = ''
+    variables_wrapper = []
     for j in range(slnd):
+        runall += 'sbatch runset-%d.sh\n' % (j + 1)
         start = slin + j * sljb
         end = start + sljb - 1
         for i in range(sljb):
@@ -360,20 +365,31 @@ def gen_molcas(ensemble, inputs, slpt, sltm, slmm, slnd, slcr, sljb, slin, tomlc
             inputname = '%s-%s' % (inputs, i + start)
             inputpath = '%s/%s' % (in_path, inputname)
             # prepare calculations
-            molcas(inputname, inputpath, slmm, in_temp, in_orb, jobiph, qmmmkey, in_xyz, in_velo, tomlcs)
-            sys.stdout.write('Setup Calculation: %.2f%%\r' % ((i + j * sljb + 1) * 100 / (sljb * slnd)))
+            variables_wrapper.append([
+                inputname, inputpath, slmm, in_temp, in_orb, jobiph, qmmmkey, in_xyz, in_velo, tomlcs
+            ])
+
         batch = molcas_batch(inputs, j, start, end, in_path, slcr, sltm, slpt, slmm, tomlcs)
+
         with open('./runset-%d.sh' % (j + 1), 'w') as run:
             run.write(batch)
 
         os.system("chmod 777 runset-%d.sh" % (j + 1))
-        runall += 'sbatch runset-%d.sh\n' % (j + 1)
+
+    task = len(variables_wrapper)
+    cpus = min([task, cpus])
+    pool = multiprocessing.Pool(processes=cpus)
+    n = 0
+    for _ in pool.imap_unordered(molcas, variables_wrapper):
+        n += 1
+        sys.stdout.write('CPU: %3d generating trajectory: %d/%d\r' % (cpus, n, task))
+    pool.close()
 
     with open('./runall.sh', 'w') as out:
         out.write(runall)
+
     os.system("chmod 777 runall.sh")
     print('\n\n Done\n')
-
 
 def molcas_batch(inputs, j, start, end, in_path, slcr, sltm, slpt, slmm, tomlcs):
     ## This function will be called by gen_molcas function
@@ -487,11 +503,11 @@ rm -r $MOLCAS_WORKDIR
     return batch
 
 
-def molcas(inputname, inputpath, slmm, in_temp, in_orb, jobiph, qmmmkey, in_xyz, in_velo, tomlcs):
+def molcas(var):
     ## This function prepares MolCas calculation
     ## It generates .inp .StrOrb .xyz .velocity.xyz
     ## This function generates a backup slurm batch file for each calculation
-
+    inputname, inputpath, slmm, in_temp, in_orb, jobiph, qmmmkey, in_xyz, in_velo, tomlcs = var
     if not os.path.exists('%s' % inputpath):
         os.makedirs('%s' % inputpath)
 
@@ -571,8 +587,8 @@ def Markatom(xyz, marks):
     return new_xyz
 
 
-def gen_nxbagel(ensemble, inputs, slpt, sltm, slmm, slnd, slcr, sljb, slin, tontx, tobgl, lbbls, lblpk, lbslp, lbbst,
-                tomkl, tompi):
+def gen_nxbagel(cpus, ensemble, inputs, slpt, sltm, slmm, slnd, slcr, sljb, slin, tontx, tobgl, lbbls, lblpk, lbslp,
+                lbbst, tomkl, tompi):
     ## This function groups nxbagel calculations in individual runset
     ## This function will call nxbagel_batch and nxbagel to prepare files
     ## This function need control.dyn for NxBagel calculation, therm.inp, sh.inp and jiri.inp are optional
@@ -609,27 +625,41 @@ def gen_nxbagel(ensemble, inputs, slpt, sltm, slmm, slnd, slcr, sljb, slin, tont
     }
 
     in_path = os.getcwd()
+    variables_wrapper = []
     runall = ''
-
     for j in range(slnd):
+        runall += 'sbatch runset-%d.sh\n' % (j + 1)
         start = slin + j * sljb
         end = start + sljb - 1
         for i in range(sljb):
             in_xyz, in_velo = Unpack(ensemble[i + j * sljb], 'newton')  # unpack initial condition to xyz and velocity
             inputname = '%s-%s' % (inputs, i + start)
             inputpath = '%s/%s' % (in_path, inputname)
-            nxbagel(inputname, inputpath, slcr, sljb, sltm, slpt, slmm, in_temp, in_xyz, in_velo, tontx, tobgl,
-                    lbbls, lblpk, lbslp, lbbst, tomkl, tompi)  # prepare calculations
-            sys.stdout.write('Setup Calculation: %.2f%%\r' % ((i + j * sljb + 1) * 100 / (sljb * slnd)))
+            variables_wrapper.append([
+                inputname, inputpath, slcr, sljb, sltm, slpt, slmm, in_temp, in_xyz, in_velo, tontx, tobgl,
+                lbbls, lblpk, lbslp, lbbst, tomkl, tompi
+            ])  # prepare calculations
+
         batch = nxbagel_batch(inputs, j, start, end, in_path, slcr, sljb, sltm, slpt, slmm, tontx, tobgl, lbbls, lblpk,
                               lbslp, lbbst, tomkl, tompi)
-        run = open('./runset-%d.sh' % (j + 1), 'w')
-        run.write(batch)
-        run.close()
+
+        with open('./runset-%d.sh' % (j + 1), 'w') as out:
+            out.write(batch)
+
         os.system("chmod 777 runset-%d.sh" % (j + 1))
-        runall += 'sbatch runset-%d.sh\n' % (j + 1)
+
+    task = len(variables_wrapper)
+    cpus = min([task, cpus])
+    pool = multiprocessing.Pool(processes=cpus)
+    n = 0
+    for _ in pool.imap_unordered(nxbagel, variables_wrapper):
+        n += 1
+        sys.stdout.write('CPU: %3d generating trajectory: %d/%d\r' % (cpus, n, task))
+    pool.close()
+
     with open('./runall.sh', 'w') as out:
         out.write(runall)
+
     os.system("chmod 777 runall.sh")
     print('\n\n Done\n')
 
@@ -688,12 +718,13 @@ wait
     return batch
 
 
-def nxbagel(inputname, inputpath, slcr, sljb, sltm, slpt, slmm, in_temp, in_xyz, in_velo, tontx, tobgl, lbbls,
-            lblpk, lbslp, lbbst, tomkl, tompi):
+def nxbagel(var):
     ## This function prepares NxBagel calculation
     ## It generates TRAJECTORIES/TRAJ#/JOB_NAD, geom, veloc, controd.dyn for NxBagel calculations
     ## This function generates a backup slurm batch file for each calculation
 
+    inputname, inputpath, slcr, sljb, sltm, slpt, slmm, in_temp, in_xyz, in_velo, tontx, tobgl, lbbls, \
+        lblpk, lbslp, lbbst, tomkl, tompi = var
     ### Note, this line doesn't check if slcr and sljb are appropriate for parallelization, be careful!!!
     bagelpal = int(slcr / sljb)
 
@@ -795,15 +826,16 @@ def Unpack(ensemble, prog):
     return xyz, velo
 
 
-def gen_pyrai2md(ensemble, inputs, slpt, sltm, slmm, slnd, slcr, sljb, slin, qm, iformat):
+def gen_pyrai2md(cpus, ensemble, inputs, slpt, sltm, slmm, slnd, slcr, sljb, slin, qm, iformat):
     ## This function will group PyRAI2MD calculations to individual runset
     ## this function will call pyrai2md_batch and pyrai2md to prepare files
 
     in_temp = open('input', 'r').read()
     in_path = os.getcwd()
+    variables_wrapper = []
     runall = ''
-    runall2 = ''
     for j in range(slnd):
+        runall += 'sbatch runset-%d.sh\n' % (j + 1)
         start = slin + j * sljb
         end = start + sljb - 1
         for i in range(sljb):
@@ -815,23 +847,29 @@ def gen_pyrai2md(ensemble, inputs, slpt, sltm, slmm, slnd, slcr, sljb, slin, qm,
             inputname = '%s-%s' % (inputs, i + start)
             inputpath = '%s/%s' % (in_path, inputname)
             # prepare calculations
-            pyrai2md(inputs, inputname, inputpath, slcr, sljb, sltm, slpt, slmm, in_temp, in_xyz, in_velo, qm)
-            sys.stdout.write('Setup Calculation: %.2f%%\r' % ((i + j * sljb + 1) * 100 / (sljb * slnd)))
-            runall2 += 'cd %s\nsbatch run_PyRAI2MD.sh\n' % inputpath
+            variables_wrapper.append([
+                inputs, inputname, inputpath, slcr, sljb, sltm, slpt, slmm, in_temp, in_xyz, in_velo, qm
+            ])
+
         batch = pyrai2md_batch(inputs, j, start, end, in_path, slcr, sltm, slpt, slmm)
-        run = open('./runset-%d.sh' % (j + 1), 'w')
-        run.write(batch)
-        run.close()
+
+        with open('./runset-%d.sh' % (j + 1), 'w') as out:
+            out.write(batch)
+
         os.system("chmod 777 runset-%d.sh" % (j + 1))
-        runall += 'sbatch runset-%d.sh\n' % (j + 1)
+
+    task = len(variables_wrapper)
+    cpus = min([task, cpus])
+    pool = multiprocessing.Pool(processes=cpus)
+    n = 0
+    for _ in pool.imap_unordered(pyrai2md, variables_wrapper):
+        n += 1
+        sys.stdout.write('CPU: %3d generating trajectory: %d/%d\r' % (cpus, n, task))
+    pool.close()
 
     with open('./runall.sh', 'w') as out:
         out.write(runall)
     os.system("chmod 777 runall.sh")
-
-    with open('./runall2.sh', 'w') as out:
-        out.write(runall2)
-    os.system("chmod 777 runall2.sh")
 
     print('\n\n Done\n')
 
@@ -866,10 +904,11 @@ wait
     return batch
 
 
-def pyrai2md(inputs, inputname, inputpath, slcr, sljb, sltm, slpt, slmm, in_temp, in_xyz, in_velo, qm):
+def pyrai2md(var):
     ## This function prepares PyRAI2MD calculation
     ## This function generates a backup slurm batch file for each calculation
 
+    inputs, inputname, inputpath, slcr, sljb, sltm, slpt, slmm, in_temp, in_xyz, in_velo, qm = var
     ### Note, this line doesn't check if slcr and sljb are appropriate for parallelization, be careful!!!
     ncpu = int(
         slcr / sljb)
@@ -959,14 +998,16 @@ def UnpackXZ(ensemble):
     return xyz, velo
 
 
-def gen_fromage(ensemble, inputs, slpt, sltm, slmm, slnd, slcr, sljb, slin, tomlcs, toxtb, iformat):
+def gen_fromage(cpus, ensemble, inputs, slpt, sltm, slmm, slnd, slcr, sljb, slin, tomlcs, toxtb, iformat):
     ## This function will group fromage calculations to individual runset
     ## this function will call fromage_batch and molcas to prepare files
 
     in_path = os.getcwd()
 
     runall = ''
+    variables_wrapper = []
     for j in range(slnd):
+        runall += 'sbatch runset-%d.sh\n' % (j + 1)
         start = slin + j * sljb
         end = start + sljb - 1
         for i in range(sljb):
@@ -977,17 +1018,31 @@ def gen_fromage(ensemble, inputs, slpt, sltm, slmm, slnd, slcr, sljb, slin, toml
                 in_xyz, in_velo = UnpackXZ(ensemble[i + j * sljb])
             inputname = '%s-%s' % (inputs, i + start)
             inputpath = '%s/%s' % (in_path, inputname)
-            fromage(inputs, inputname, inputpath, slmm, in_xyz, in_velo, tomlcs, toxtb)  # prepare calculations
-            sys.stdout.write('Setup Calculation: %.2f%%\r' % ((i + j * sljb + 1) * 100 / (sljb * slnd)))
+            variables_wrapper.append([
+                inputs, inputname, inputpath, slmm, in_xyz, in_velo, tomlcs, toxtb
+            ])  # prepare calculations
+
         batch = fromage_batch(inputs, j, start, end, in_path, slcr, sltm, slpt, slmm, tomlcs, toxtb)
-        run = open('./runset-%d.sh' % (j + 1), 'w')
-        run.write(batch)
-        run.close()
+
+        with open('./runset-%d.sh' % (j + 1), 'w') as out:
+            out.write(batch)
+
         os.system("chmod 777 runset-%d.sh" % (j + 1))
-        runall += 'sbatch runset-%d.sh\n' % (j + 1)
+
+    task = len(variables_wrapper)
+    cpus = min([task, cpus])
+    pool = multiprocessing.Pool(processes=cpus)
+    n = 0
+    for _ in pool.imap_unordered(fromage, variables_wrapper):
+        n += 1
+        sys.stdout.write('CPU: %3d generating trajectory: %d/%d\r' % (cpus, n, task))
+    pool.close()
+
     with open('./runall.sh', 'w') as out:
         out.write(runall)
+
     os.system("chmod 777 runall.sh")
+
     print('\n\n Done\n')
 
 
@@ -1043,11 +1098,12 @@ rm -r $MOLCAS_WORKDIR
     return batch
 
 
-def fromage(inputs, inputname, inputpath, slmm, in_xyz, in_velo, tomlcs, toxtb):
+def fromage(var):
     ## This function prepares fromage calculation
     ## This function copy fromage.in shell.xyz and generates mol.init.xyz
     ## This function creates mh (mh.temp .StrOrb), ml (ml.temp xtb_charges.pc, xtb.input), rl (rl.temp) folders
     ## This function generates a backup slurm batch file for each calculation
+    inputs, inputname, inputpath, slmm, in_xyz, in_velo, tomlcs, toxtb = var
 
     if not os.path.exists('%s' % inputpath):
         os.makedirs('%s' % inputpath)
@@ -1122,7 +1178,7 @@ rm -r $MOLCAS_WORKDIR
     shutil.copy2('rl.temp', '%s/rl/rl.temp' % inputpath)
 
 
-def gen_orca(ensemble, inputs, slpt, sltm, slmm, slnd, slcr, sljb, slin, toorca, iformat):
+def gen_orca(cpus, ensemble, inputs, slpt, sltm, slmm, slnd, slcr, sljb, slin, toorca, iformat):
     ## This function will group Molcas calculations to individual runset
     ## this function will call molcas_batch and molcas to prepare files
 
@@ -1130,7 +1186,9 @@ def gen_orca(ensemble, inputs, slpt, sltm, slmm, slnd, slcr, sljb, slin, toorca,
     in_path = os.getcwd()
 
     runall = ''
+    variables_wrapper = []
     for j in range(slnd):
+        runall += 'sbatch runset-%d.sh\n' % (j + 1)
         start = slin + j * sljb
         end = start + sljb - 1
         for i in range(sljb):
@@ -1142,18 +1200,27 @@ def gen_orca(ensemble, inputs, slpt, sltm, slmm, slnd, slcr, sljb, slin, toorca,
             inputname = '%s-%s' % (inputs, i + start)
             inputpath = '%s/%s' % (in_path, inputname)
             # prepare calculations
-            orca(inputname, inputpath, slmm, in_temp, in_xyz, in_velo, toorca)
-            sys.stdout.write('Setup Calculation: %.2f%%\r' % ((i + j * sljb + 1) * 100 / (sljb * slnd)))
+            variables_wrapper.append([inputname, inputpath, slmm, in_temp, in_xyz, in_velo, toorca])
+
         batch = orca_batch(inputs, j, start, end, in_path, slcr, sltm, slpt, slmm, toorca)
+
         with open('./runset-%d.sh' % (j + 1), 'w') as run:
             run.write(batch)
 
-        os.system("chmod 777 runset-%d.sh" % (j + 1))
-        runall += 'sbatch runset-%d.sh\n' % (j + 1)
+    task = len(variables_wrapper)
+    cpus = min([task, cpus])
+    pool = multiprocessing.Pool(processes=cpus)
+    n = 0
+    for _ in pool.imap_unordered(orca, variables_wrapper):
+        n += 1
+        sys.stdout.write('CPU: %3d generating trajectory: %d/%d\r' % (cpus, n, task))
+    pool.close()
 
     with open('./runall.sh', 'w') as out:
         out.write(runall)
+
     os.system("chmod 777 runall.sh")
+
     print('\n\n Done\n')
 
 
@@ -1194,11 +1261,12 @@ wait
     return batch
 
 
-def orca(inputname, inputpath, slmm, in_temp, in_xyz, in_velo, toorca):
+def orca(var):
     ## This function prepares MolCas calculation
     ## It generates .inp .StrOrb .xyz .velocity.xyz
     ## This function generates a backup slurm batch file for each calculation
 
+    inputname, inputpath, slmm, in_temp, in_xyz, in_velo, toorca = var
     if not os.path.exists('%s' % inputpath):
         os.makedirs('%s' % inputpath)
 
