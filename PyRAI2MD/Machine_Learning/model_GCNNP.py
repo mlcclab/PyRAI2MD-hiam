@@ -338,6 +338,8 @@ class E2N2:
             gradient = gradient.reshape(-1, len(atoms), gradient.shape[1], gradient.shape[2])  # [n, natoms, nstates, 3]
             gradient = np.transpose(gradient, (0, 2, 1, 3))  # [n, nstates, natoms, 3]
             g_std = np.std([pred[0][0], pred[1][0]], axis=0, ddof=1) / self.f_g
+            energy = energy[0]
+            gradient = gradient[0]
             err_e = np.amax(e_std)
             err_g = np.amax(g_std)
         else:
@@ -352,6 +354,7 @@ class E2N2:
             nac = gradient.reshape(-1, len(atoms), nac.shape[1], nac.shape[2])  # [n, natoms, nstates, 3]
             nac = np.transpose(nac, (0, 2, 1, 3))  # [n, nstates, natoms, 3]
             n_std = np.std([pred[0][1], pred[1][1]], axis=0, ddof=1) / self.f_n
+            nac = nac[0]
             err_n = np.amax(n_std)
         else:
             nac = []
@@ -361,6 +364,7 @@ class E2N2:
             pred = results['soc']
             soc = np.mean([pred[0][0], pred[1][0]], axis=0)
             s_std = np.std([pred[0][0], pred[1][0]], axis=0, ddof=1)
+            soc = soc[0]
             err_s = np.amax(s_std)
         else:
             soc = []
@@ -383,6 +387,8 @@ class E2N2:
             gradient = gradient.reshape(-1, len(atoms), gradient.shape[1], gradient.shape[2])  # [n, natoms, nstates, 3]
             gradient = np.transpose(gradient, (0, 2, 1, 3))  # [n, nstates, natoms, 3]
             g_std = np.std([pred[0][0], pred[1][0]], axis=0, ddof=1) / self.f_g
+            energy = energy[0]
+            gradient = gradient[0]
             err_e = np.amax(e_std)
             err_g = np.amax(g_std)
         else:
@@ -397,6 +403,7 @@ class E2N2:
             nac = gradient.reshape(-1, len(atoms), nac.shape[1], nac.shape[2])  # [n, natoms, nstates, 3]
             nac = np.transpose(nac, (0, 2, 1, 3))  # [n, nstates, natoms, 3]
             n_std = np.std([pred[0][1], pred[1][1]], axis=0, ddof=1) / self.f_n
+            nac = nac[0]
             err_n = np.amax(n_std)
         else:
             nac = []
@@ -406,6 +413,7 @@ class E2N2:
             pred = results['soc']
             soc = np.mean([pred[0][0], pred[1][0]], axis=0)
             s_std = np.std([pred[0][0], pred[1][0]], axis=0, ddof=1)
+            soc = soc[0]
             err_s = np.amax(s_std)
         else:
             soc = []
