@@ -1594,6 +1594,7 @@ def RUNdiag(key_dict):
     cpus = key_dict['cpus']
     read_files = key_dict['read_files']
     prog = key_dict['prog']
+    minstep = key_dict['minstep']
 
     procs = cpus
     input_val = []
@@ -1618,7 +1619,7 @@ def RUNdiag(key_dict):
     print('\nDiagnosis results\n%-20s%12s%12s%12s\n' % ('Name', '.log', '.md.energy', '.md.xyz'))
     for i in result:
         print('%-20s%12d%12d%12d' % (i[0], i[1], i[2], i[3]))
-        if i[1] == i[2] == i[3] > 0:
+        if i[1] == i[2] == i[3] > minstep:
             select.append(i[0])
 
     if len(select) > 0:
@@ -2421,7 +2422,8 @@ def main(argv):
       title      name of calculation files
       save_traj  1
       cpus       2
-      read_index 1 [single,range,separate range]  
+      read_index 1 [single,range,separate range]
+      minstep    50  
       maxstep    100
       mode       1
       select      1
@@ -2439,6 +2441,7 @@ def main(argv):
     cpus = 1  # Number of CPU for analysis
     read_index = '1'  # Index of calculation files to read
     save_traj = 1  # save trajectory data into json
+    minstep = 0  # Minimum step per trajectory
     maxstep = 0  # Maximum step per trajectory
     maxdrift = 0.5  # Maximum energy drift to check energy conservation
     opt_mode = 0  # Analysis mode.
@@ -2470,6 +2473,8 @@ def main(argv):
             read_index = line.split()[1:]
         elif 'save_traj' == key:
             save_traj = int(line.split()[1])
+        elif 'minstep' == key:
+            minstep = int(line.split()[1])
         elif 'maxstep' == key:
             maxstep = int(line.split()[1])
         elif 'maxdrift' == key:
@@ -2582,6 +2587,7 @@ Maximum step of trajectory: %-10s
         'cpus': cpus,
         'save_traj': save_traj,
         'read_files': read_files,
+        'minstep': minstep,
         'maxstep': maxstep,
         'maxdrift': maxdrift,
         'classify': classify,

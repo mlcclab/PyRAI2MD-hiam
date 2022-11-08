@@ -58,6 +58,10 @@
                     and re-reading them could be faster than loading the JSON file.
                     The traj_analysis.py will attempt to re-read if the JSON file is not available.
 
+    minstep         Minimum step of trajectory to determine completion.
+                    Default is 0. Any length of trajectory is complete.
+                    If greater than 0, the shorter trajectory will not be included in complete list.
+                    
     maxstep         Maximum step of trajectory to read.
                     Default is 0. All steps will be read.
                     If greater than 0, the longer part of trajectory will not be read.
