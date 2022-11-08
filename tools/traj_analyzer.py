@@ -1619,7 +1619,7 @@ def RUNdiag(key_dict):
     print('\nDiagnosis results\n%-20s%12s%12s%12s\n' % ('Name', '.log', '.md.energy', '.md.xyz'))
     for i in result:
         print('%-20s%12d%12d%12d' % (i[0], i[1], i[2], i[3]))
-        if i[1] == i[2] == i[3] > minstep:
+        if i[1] == i[2] == i[3] >= minstep:
             select.append(i[0])
 
     if len(select) > 0:
@@ -2441,7 +2441,7 @@ def main(argv):
     cpus = 1  # Number of CPU for analysis
     read_index = '1'  # Index of calculation files to read
     save_traj = 1  # save trajectory data into json
-    minstep = 0  # Minimum step per trajectory
+    minstep = 1  # Minimum step per trajectory
     maxstep = 0  # Maximum step per trajectory
     maxdrift = 0.5  # Maximum energy drift to check energy conservation
     opt_mode = 0  # Analysis mode.
