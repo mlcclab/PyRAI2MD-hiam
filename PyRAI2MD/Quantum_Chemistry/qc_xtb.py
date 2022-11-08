@@ -74,7 +74,8 @@ class Xtb:
         ## initialize runscript
         self.runscript = """
 export XTB_PROJECT=%s
-export XTBPATH=%s
+export XTBHOME=%s
+export XTBPATH=$XTBHOME/share/xtb
 export OMP_NUM_THREADS=%s
 export XTB_WORKDIR=%s
 
@@ -86,7 +87,7 @@ cd $XTB_WORKDIR
             self.workdir,
         )
 
-        self.runscript += '$XTBPATH/bin/xtb --grad -I $XTB_WORKDIR/$XTB_PROJECT.inp $XTB_WORKDIR/$XTB_PROJECT.xyz > ' \
+        self.runscript += '$XTBHOME/bin/xtb --grad -I $XTB_WORKDIR/$XTB_PROJECT.inp $XTB_WORKDIR/$XTB_PROJECT.xyz > ' \
                           '$XTB_WORKDIR/$XTB_PROJECT.out\n '
 
     def _setup_hpc(self):
