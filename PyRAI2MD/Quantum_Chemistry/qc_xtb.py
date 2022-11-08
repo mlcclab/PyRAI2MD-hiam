@@ -54,6 +54,7 @@ class Xtb:
         self.workdir = variables['xtb_workdir']
         self.xtb = variables['xtb']
         self.nproc = variables['xtb_nproc']
+        self.mem = variables['mem']
         self.use_hpc = variables['use_hpc']
         self.charges = np.zeros(0)
         ## check calculation folder
@@ -77,6 +78,7 @@ export XTB_PROJECT=%s
 export XTBHOME=%s
 export XTBPATH=$XTBHOME/share/xtb
 export OMP_NUM_THREADS=%s
+export OMP_STACKSIZE=%sMB
 export XTB_WORKDIR=%s
 
 cd $XTB_WORKDIR
@@ -84,6 +86,7 @@ cd $XTB_WORKDIR
             self.project,
             self.xtb,
             self.nproc,
+            self.mem,
             self.workdir,
         )
 
