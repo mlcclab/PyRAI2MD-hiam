@@ -919,27 +919,29 @@ def pyrai2md(var):
     in_temp = update_pyrai2md_input(in_temp, inputname)
 
     # copy molcas files
-    if not os.path.exists('%s/%s.molcas' % (inputpath, inputs)) and (qm == 'molcas' or qm == 'hybrid'):
+    if os.path.exists('%s.molcas' % inputs) and not os.path.exists('%s/%s.molcas' % (inputpath, inputs)):
         shutil.copy2('%s.molcas' % inputs, '%s/%s.molcas' % (inputpath, inputname))
 
-    if os.path.exists('%s.StrOrb' % inputs) and not os.path.exists('%s/%s.StrOrb' % (inputpath, inputs)) \
-            and (qm == 'molcas' or qm == 'hybrid'):
+    if os.path.exists('%s.StrOrb' % inputs) and not os.path.exists('%s/%s.StrOrb' % (inputpath, inputs)):
         shutil.copy2('%s.StrOrb' % inputs, '%s/%s.StrOrb' % (inputpath, inputname))
 
-    if os.path.exists('%s.JobIph' % inputs) and not os.path.exists('%s/%s.JobIph' % (inputpath, inputs)) \
-            and (qm == 'molcas' or qm == 'hybrid'):
+    if os.path.exists('%s.JobIph' % inputs) and not os.path.exists('%s/%s.JobIph' % (inputpath, inputs)):
         shutil.copy2('%s.JobIph' % inputs, '%s/%s.JobIph' % (inputpath, inputname))
 
     # copy bagel files
-    if not os.path.exists('%s/%s.bagel' % (inputpath, inputs)) and (qm == 'bagel'):
+    if os.path.exists('%s.bagel' % inputs) and not os.path.exists('%s/%s.bagel' % (inputpath, inputs)):
         shutil.copy2('%s.bagel' % inputs, '%s/%s.bagel' % (inputpath, inputname))
 
-    if not os.path.exists('%s/%s.archive' % (inputpath, inputs)) and (qm == 'bagel'):
+    if os.path.exists('%s.archive' % inputs) and not os.path.exists('%s/%s.archive' % (inputpath, inputs)):
         shutil.copy2('%s.archive' % inputs, '%s/%s.archive' % (inputpath, inputname))
 
     # copy orca files
-    if not os.path.exists('%s/%s.orca' % (inputpath, inputs)) and (qm == 'orca'):
+    if os.path.exists('%s.orca' % inputs) and not os.path.exists('%s/%s.orca' % (inputpath, inputs)):
         shutil.copy2('%s.orca' % inputs, '%s/%s.orca' % (inputpath, inputname))
+
+    # copy xtb files
+    if os.path.exists('%s.xtb' % inputs) and not os.path.exists('%s/%s.xtb' % (inputpath, inputs)):
+        shutil.copy2('%s.xtb' % inputs, '%s/%s.xtb' % (inputpath, inputname))
 
     runscript = """#!/bin/sh
 ## script for PyRAI2MD

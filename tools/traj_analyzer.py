@@ -1619,7 +1619,7 @@ def RUNdiag(key_dict):
     print('\nDiagnosis results\n%-20s%12s%12s%12s\n' % ('Name', '.log', '.md.energy', '.md.xyz'))
     for i in result:
         print('%-20s%12d%12d%12d' % (i[0], i[1], i[2], i[3]))
-        if i[1] == i[2] == i[3] >= minstep:
+        if i[1] == i[2] == i[3] > minstep:
             select.append(i[0])
 
     if len(select) > 0:
@@ -1832,7 +1832,7 @@ def RUNread(key_dict):
             for i_hop in hop_index:
                 if len(coord[i_traj - 1]) >= i_hop:
                     hop_snapshot += format1(natom, coord[i_traj - 1][i_hop - 1])
-                hop_geom[i_traj] = format3(natom, coord[i_traj - 1][hop_index[-1]])
+                hop_geom[i_traj] = format3(natom, coord[i_traj - 1][hop_index[-1] - 1])
 
         with open('Fin.S%d.xyz' % i_state, 'w') as outxyz:
             outxyz.write(last_snapshot)
@@ -1980,9 +1980,9 @@ def RUNpop(key_dict):
         crt_hop = hop[i_traj - 1]
         if len(crt_hop) > 0:
             for i_hop in crt_hop:
-                init_state = label[i_traj - 1][i_hop - 1].split()[7]
-                final_state = label[i_traj - 1][i_hop - 1].split()[9]
-                gap = np.abs(crt_pot[init_state] - crt_pot[final_state]) * 27.211
+                init_state = int(label[i_traj - 1][i_hop - 1].split()[7])
+                final_state = int(label[i_traj - 1][i_hop - 1].split()[9])
+                gap = np.abs(crt_pot[i_hop - 1][init_state] - crt_pot[i_hop - 1][final_state]) * 27.211
                 hop_energy += '%-5d %5d %5d %12.4f' % (i_traj, init_state, final_state, gap)
 
     avg_kin /= len(traj_index)
