@@ -182,7 +182,7 @@ def main(argv):
         elif 'freq' == key:
             freq = int(line.split()[1])
         elif 'combine' == key:
-            combine = line.split()[1]
+            combine = line.split()[1].lower()
 
     key_dict = {
         'title': title,
@@ -541,7 +541,7 @@ def merge_env(key_dict):
     env_atom, env = read_xyz(geom_e)
 
     if len(initcond) > 0:
-        output = [[] for _ in initcond]
+        output = ['' for _ in initcond]
         diff = [[] for _ in initcond]
         variables_wrapper = [(n, env_atom, env, cond) for n, cond in enumerate(initcond)]
         cpus = np.amin([cpus, len(initcond)])
@@ -732,7 +732,7 @@ def read_final_cond(key_dict):
     ntask = np.amin([nfile, ncond])
 
     variables_wrapper = [(n, file_list[n], initcond[n], skip, freq) for n in range(ntask)]
-    output = [[] for _ in range(ntask)]
+    output = ['' for _ in range(ntask)]
     diff = [[] for _ in range(ntask)]
     cpus = np.amin([cpus, ntask])
     pool = multiprocessing.Pool(processes=cpus)
