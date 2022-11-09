@@ -2159,7 +2159,7 @@ Time step (a.u.):           %-10s
     if len(param_f) > 0:
         output_f = ''
         structure_f = {}
-        param_f = np.array(param_all[0])
+        param_f = np.array(param_f)
         for n, p in enumerate(param_f):
             ntraj = ntraj_f[n]
             value = ''.join(['%12.4f' % x[0] for x in p])
@@ -2183,7 +2183,7 @@ Time step (a.u.):           %-10s
     if len(param_h) > 0:
         output_h = ''
         structure_h = {}
-        param_h = np.array(param_all[0])
+        param_h = np.array(param_h)
         for n, p in enumerate(param_h):
             ntraj = ntraj_h[n]
             value = ''.join(['%12.4f' % x[0] for x in p])
