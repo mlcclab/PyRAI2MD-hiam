@@ -55,6 +55,7 @@ class Xtb:
         self.xtb = variables['xtb']
         self.nproc = variables['xtb_nproc']
         self.mem = variables['mem']
+        self.gfnver = variables['gfnver']
         self.use_hpc = variables['use_hpc']
         self.charges = np.zeros(0)
         ## check calculation folder
@@ -90,8 +91,19 @@ cd $XTB_WORKDIR
             self.workdir,
         )
 
-        self.runscript += '$XTBHOME/bin/xtb --grad -I $XTB_WORKDIR/$XTB_PROJECT.inp $XTB_WORKDIR/$XTB_PROJECT.xyz > ' \
-                          '$XTB_WORKDIR/$XTB_PROJECT.out\n '
+        if self.gfnver == -1:
+            addon = '--gfnff'
+        elif self.gfnver == 0:
+            addon = '--gfn 0'
+        elif self.gfnver == 1:
+            addon = '--gfn 1'
+        elif self.gfnver == 2:
+            addon = '--gfn 2'
+        else:
+            addon = ''
+
+        self.runscript += '$XTBHOME/bin/xtb %s --grad -I $XTB_WORKDIR/$XTB_PROJECT.inp $XTB_WORKDIR/$XTB_PROJECT.xyz ' \
+                          '> $XTB_WORKDIR/$XTB_PROJECT.out\n ' % addon
 
     def _setup_hpc(self):
         ## setup calculation using HPC
@@ -176,8 +188,12 @@ cd $XTB_WORKDIR
         if not os.path.exists('%s/%s.engrad' % (self.workdir, self.project)):
             return coord, np.zeros(1), np.zeros(1), np.zeros(1), np.zeros(1)
 
-        if os.path.exists('%s/charges' % self.workdir):
+        if os.path.exists('%s/charges' % self.workdir) and self.gfnver > -1:
             with open('%s/charges' % self.workdir) as out:
+                self.charges = np.loadtxt(out)
+
+        if os.path.exists('%s/gfnff_charges' % self.workdir) and self.gfnver == -1:
+            with open('%s/gfnff_charges' % self.workdir) as out:
                 self.charges = np.loadtxt(out)
 
         with open('%s/%s.engrad' % (self.workdir, self.project), 'r') as out:

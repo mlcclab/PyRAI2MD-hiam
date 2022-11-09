@@ -199,6 +199,7 @@ def read_xtb(keywords, values):
         'xtb_nproc': ReadVal('s'),
         'xtb_project': ReadVal('s'),
         'xtb_workdir': ReadVal('s'),
+        'gfnver': ReadVal('i'),
         'use_hpc': ReadVal('i'),
         'mem': ReadVal('s'),
         'keep_tmp': ReadVal('i'),
@@ -646,6 +647,7 @@ def read_input(ld_input):
         'xtb_nproc': 1,
         'xtb_project': None,
         'xtb_workdir': os.getcwd(),
+        'gfnver': -2,
         'mem': '1000',
         'use_hpc': 0,
         'keep_tmp': 1,
@@ -2524,6 +2526,7 @@ def start_info(variables_all):
   XTB:                      %-10s
   XTB_project:              %-10s
   XTB_workdir:              %-10s
+  XTB version:              %-10s
   Omp_num_threads:          %-10s
   Omp_stacksize:            %-10s
   Keep tmp_xtb:             %-10s
@@ -2533,6 +2536,7 @@ def start_info(variables_all):
         variables_xtb['xtb'],
         variables_xtb['xtb_project'],
         variables_xtb['xtb_workdir'],
+        variables_xtb['gfnver'],
         variables_xtb['xtb_nproc'],
         variables_xtb['mem'],
         variables_orca['keep_tmp'],
