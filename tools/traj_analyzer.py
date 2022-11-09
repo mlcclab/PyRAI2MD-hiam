@@ -2195,8 +2195,8 @@ Time step (a.u.):           %-10s
             else:
                 structure_h[label] = [ntraj]
 
-        print('\nSave parameters for hop snapshot to param-%s.S%s.fin' % (title, classify_state))
-        with open('param-%s.S%s.fin' % (title, classify_state), 'w') as out:
+        print('\nSave parameters for hop snapshot to param-%s.S%s.hop' % (title, classify_state))
+        with open('param-%s.S%s.hop' % (title, classify_state), 'w') as out:
             out.write(output_h)
 
         print('\nSummary: hop snapshot')
