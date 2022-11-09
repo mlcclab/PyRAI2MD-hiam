@@ -2273,22 +2273,23 @@ def RUNcompute(key_dict):
     plot_label = []
     input_val = []
 
-    for i_traj in traj_index:
-        plot_hop.append(hop[i_traj - 1])
-        plot_label.append(label[i_traj - 1])
+    print('\nPrepare plot data...\n')
+    for i_traj, traj_idx in enumerate(traj_index):
+        plot_hop.append(hop[traj_idx - 1])
+        plot_label.append(label[traj_idx - 1])
         trj_para = []
         trj_etot = []
-        for i_geom, geom in enumerate(coord[i_traj - 1]):  # for each coordinates
+        for i_geom, geom in enumerate(coord[traj_idx - 1]):  # for each coordinates
             geom = geom[1:]  # remove the label
-            crt_label = label[i_traj - 1][i_geom]
+            crt_label = label[traj_idx - 1][i_geom]
             crt_state = int(crt_label.split()[7])  # state number is the 8th data
-            crt_kin = kin[i_traj - 1][i_geom]
-            crt_pot = pot[i_traj - 1][i_geom][crt_state]
+            crt_kin = kin[traj_idx - 1][i_geom]
+            crt_pot = pot[traj_idx - 1][i_geom][crt_state]
             crt_tot = crt_kin + crt_pot
             trj_para.append([0 for _ in range(len(param_list))])
             trj_etot.append(crt_tot)
             for i_param, param in enumerate(param_list):  # for each parameter
-                input_val.append([i_traj - 1, i_geom, i_param, geom, param, 0, ref_coord])
+                input_val.append([i_traj, i_geom, i_param, geom, param, 0, ref_coord])
 
         plot_para.append(trj_para)
         plot_etot.append(trj_etot)
