@@ -1812,6 +1812,7 @@ def RUNread(key_dict):
 
     geom_f = {}
     geom_h = {}
+    geom_t = {}
     state_info = ''
     ## output CI and products coordinates according to final state
     print('\nNumber of Trajectories: %5d\nNumber of States:       %5d\n' % (ntraj, nstate))
@@ -1821,6 +1822,7 @@ def RUNread(key_dict):
         hop_snapshot = ''
         last_geom = {}
         hop_geom = {}
+        hop_time = {}
         for i_traj in traj_index:
             last_snapshot += format1(natom, coord[i_traj - 1][-1])
             last_geom[i_traj] = format3(natom, coord[i_traj - 1][-1])
@@ -1832,7 +1834,8 @@ def RUNread(key_dict):
             for i_hop in hop_index:
                 if len(coord[i_traj - 1]) >= i_hop:
                     hop_snapshot += format1(natom, coord[i_traj - 1][i_hop - 1])
-                hop_geom[i_traj] = format3(natom, coord[i_traj - 1][hop_index[-1] - 1])
+            hop_geom[i_traj] = format3(natom, coord[i_traj - 1][hop_index[-1] - 1])
+            hop_time[i_traj] = label[i_traj - 1][hop_index[-1] - 1].split()[3]  # step is the 4th data
 
         with open('Fin.S%d.xyz' % i_state, 'w') as outxyz:
             outxyz.write(last_snapshot)
@@ -1842,6 +1845,7 @@ def RUNread(key_dict):
 
         geom_f[i_state] = last_geom
         geom_h[i_state] = hop_geom
+        geom_t[i_state] = hop_time
 
         index_range = redindex(last[i_state])
         print('\nState %5d:  %5d  Write: Fin.S%d.xyz and Hop.S%d.xyz Range: %s' % (
@@ -1855,6 +1859,7 @@ def RUNread(key_dict):
         'nstate': nstate,
         'ntraj': ntraj,
         'dtime': dtime,
+        'htime': geom_t,
         'hop': geom_h,
         'final': geom_f,
     }
@@ -2077,6 +2082,10 @@ def RUNclassify(key_dict):
         for key, val in geom_dict['final'].items():
             geom_f[int(key)] = val
 
+        geom_t = {}
+        for key, val in geom_dict['htime'].items():
+            geom_t[int(key)] = val
+
         state_info = ''
         for n, g in enumerate(geom_f):
             print('\nState %5d:  %5d' % (n, len(geom_f[g])))
@@ -2100,6 +2109,7 @@ Time step (a.u.):           %-10s
         raw_data, geom_dict = RUNread(key_dict)
         geom_h = geom_dict['hop']
         geom_f = geom_dict['final']
+        geom_t = geom_dict['htime']
 
     ## compute geometrical parameters
     input_val = []
@@ -2184,11 +2194,13 @@ Time step (a.u.):           %-10s
         output_h = ''
         structure_h = {}
         param_h = np.array(param_h)
+        htime = geom_t[classify_state]
         for n, p in enumerate(param_h):
             ntraj = ntraj_h[n]
             value = ''.join(['%12.4f' % x[0] for x in p])
             label = ''.join(['%s' % int(x[1]) for x in p])
-            output_h += '%-5s %s\n' % (ntraj, value)
+            time = htime[ntraj]
+            output_h += '%-5s %s     %s\n' % (ntraj, value, time)
 
             if label in structure_h.keys():
                 structure_h[label].append(ntraj)
