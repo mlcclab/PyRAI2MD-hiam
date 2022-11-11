@@ -46,6 +46,7 @@
                     5 or cat or classify         Classify trajectory based on snapshot structures.
                     6 or plot or compute         Compute geometrical parameters for plot trajectory
                     7 or out or fetch            Fetch coordinates and more data for selected trajectory
+                    8 or hop                     Special mode to compute geometrical parameters for all hopping point
 
     read_index      Index to read trajectory or a file of path to read trajectory
                     Default	is 1.
@@ -61,7 +62,7 @@
     minstep         Minimum step of trajectory to determine completion.
                     Default is 0. Any length of trajectory is complete.
                     If greater than 0, the shorter trajectory will not be included in complete list.
-                    
+
     maxstep         Maximum step of trajectory to read.
                     Default is 0. All steps will be read.
                     If greater than 0, the longer part of trajectory will not be read.
@@ -329,3 +330,30 @@
 
     It will save the selected trajectory in select-$file_name-$index.xyz and the corresponding data
     in select-$file_name-$index.dat
+
+    -------------------------------------------------------------------------
+    Special step. compute geometrical parameters for all surface hopping points
+    When using buffer option in PyRAI2MD, the output file might miss recording a surface hopping point
+    in the .md.xyz file. However, the information is available in the .sh.xyz. This special step will
+    extract information from there.
+    The input file look similar to Step 5 and 6.
+
+    title file_name
+    mode hop
+    read_index conserved
+    param B 1 2 B 3 4
+    classify_state 0
+    select file.txt
+
+    It will first read all sh.xyz file and save data in $file_name.hop.json. If the file exists in
+    the current folder, it will be directly loaded.
+    The keyword 'classify_state' determine the surface hopping points that will be considered. The value 0
+    means hopping from state 1 to state 0. The value 1 means hopping from state 2 to state 1.
+    Currently, it does not support the reverse hopping from a lower state to a higher state.
+    The keyword 'select' decides the trajectories to compute the geometrical parameters for surface hopping
+    point. Ignoring this keyword will use all trajectories. It is recommended to use a list file containing the
+    indices of all ground-state trajectories together with classify_state of 0. This will only consider the last
+    surface hopping to the ground-state of the trajectories in the ground-state.
+
+    The computed geometrical parameters will be saved in param-$file_name.all.hop. Note that the last two colomns
+    record the step number and the energy gap of the selected surface hopping point.
