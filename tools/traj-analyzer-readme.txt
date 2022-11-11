@@ -355,5 +355,5 @@
     indices of all ground-state trajectories together with classify_state of 0. This will only consider the last
     surface hopping to the ground-state of the trajectories in the ground-state.
 
-    The computed geometrical parameters will be saved in param-$file_name.all.hop. Note that the last two colomns
+    The computed geometrical parameters will be saved in param-$file_name.all.hop. Note that the last two columns
     record the step number and the energy gap of the selected surface hopping point.
