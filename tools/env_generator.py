@@ -744,7 +744,7 @@ def read_final_cond(key_dict):
         diff[pos] = rmsd
         sys.stdout.write('CPU: %3d combining data: %d/%d\r' % (cpus, n, ntask))
     pool.close()
-    output = '\n'.join(output) + '\n'
+    output = ''.join(output)
 
     with open('final.init', 'w') as out:
         out.write(output)
@@ -788,8 +788,11 @@ def read_traj(file):
     with open('%s/%s.md.xyz' % (file, filename), 'r') as infile:
         xyz = infile.read().splitlines()
 
-    with open('%s/%s.md.velo' % (file, filename), 'r') as infile:
-        velo = infile.read().splitlines()
+    if os.path.exists('%s/%s.md.velo' % (file, filename)):
+        with open('%s/%s.md.velo' % (file, filename), 'r') as infile:
+            velo = infile.read().splitlines()
+    else:
+        velo = ['X 0 0 0' for _ in xyz]
 
     atom = []
     traj = []
