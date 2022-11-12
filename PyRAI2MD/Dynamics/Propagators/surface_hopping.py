@@ -8,8 +8,12 @@
 ######################################################
 
 import numpy as np
-from PyRAI2MD.Dynamics.Propagators.fssh import FSSH
 from PyRAI2MD.Dynamics.Propagators.gsh import gsh
+try:
+    from PyRAI2MD.Dynamics.Propagators.fssh import FSSH
+except ModuleNotFoundError:
+    FSSH = None
+    print('\n PyRAI2MD: fssh lib has not found, please run pyrai2md update first\n')
 
 def surfhop(traj):
     """ Computing surface hopping 
