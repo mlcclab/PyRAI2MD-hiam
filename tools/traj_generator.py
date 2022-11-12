@@ -366,7 +366,7 @@ def gen_molcas(cpus, ensemble, inputs, slpt, sltm, slmm, slnd, slcr, sljb, slin,
             inputpath = '%s/%s' % (in_path, inputname)
             # prepare calculations
             variables_wrapper.append([
-                inputname, inputpath, slmm, in_temp, in_orb, jobiph, qmmmkey, in_xyz, in_velo, tomlcs
+                inputname, inputpath, slpt, slmm, in_temp, in_orb, jobiph, qmmmkey, in_xyz, in_velo, tomlcs
             ])
 
         batch = molcas_batch(inputs, j, start, end, in_path, slcr, sltm, slpt, slmm, tomlcs)
@@ -507,7 +507,7 @@ def molcas(var):
     ## This function prepares MolCas calculation
     ## It generates .inp .StrOrb .xyz .velocity.xyz
     ## This function generates a backup slurm batch file for each calculation
-    inputname, inputpath, slmm, in_temp, in_orb, jobiph, qmmmkey, in_xyz, in_velo, tomlcs = var
+    inputname, inputpath, slpt, slmm, in_temp, in_orb, jobiph, qmmmkey, in_xyz, in_velo, tomlcs = var
     if not os.path.exists('%s' % inputpath):
         os.makedirs('%s' % inputpath)
 
@@ -518,7 +518,7 @@ def molcas(var):
 #SBATCH --ntasks=1
 #SBATCH --time=23:50:00
 #SBATCH --job-name=%s
-#SBATCH --partition=normal
+#SBATCH --partition=%s
 #SBATCH --mem=%dmb
 #SBATCH --output=%%j.o.slurm
 #SBATCH --error=%%j.e.slurm
@@ -546,7 +546,7 @@ mkdir -p $MOLCAS_WORKDIR/$MOLCAS_PROJECT
 cd $WORKDIR
 $MOLCAS/bin/pymolcas -f $INPUT.inp -b 1
 rm -r $MOLCAS_WORKDIR
-""" % (inputname, int(slmm * 1.333), inputname, inputpath, slmm, tomlcs)
+""" % (inputname, slpt, int(slmm * 1.333), inputname, inputpath, slmm, tomlcs)
 
     with open('%s/%s.inp' % (inputpath, inputname), 'w') as out:
         out.write(in_temp)
