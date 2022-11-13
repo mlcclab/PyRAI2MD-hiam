@@ -80,6 +80,8 @@ export XTBHOME=%s
 export XTBPATH=$XTBHOME/share/xtb
 export OMP_NUM_THREADS=%s
 export OMP_STACKSIZE=%sMB
+export KMP_STACKSIZE=$OMP_STACKSIZE
+export OMP_MAX_ACTIVE_LEVELS=1
 export XTB_WORKDIR=%s
 
 cd $XTB_WORKDIR
