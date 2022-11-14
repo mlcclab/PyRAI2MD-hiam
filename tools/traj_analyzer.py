@@ -2543,6 +2543,7 @@ def RUNspecial(key_dict):
     gap_h = []
     time_h = []
     i_coord = -1
+    hop_xyz = ''
     for traj_idx in traj_index:  # geom_h[classify_state] is a dict
 
         if len(coord[traj_idx - 1]) == 0:
@@ -2569,9 +2570,13 @@ def RUNspecial(key_dict):
         ntraj_h.append(traj_idx)
         gap_h.append(gap)
         time_h.append(time)
-
+        hop_xyz += '%s\n%s\n%s\n' % (len(xyz), label, '\n'.join(xyz))
         for i_param, param in enumerate(param_list):
             input_val.append([0, i_coord, i_param, xyz, param, thrhd[i_param], []])
+
+    print('\nSave hop snapshot to Hop-%s.all.hop' % title)
+    with open('Hop-%s.all.xyz' % title, 'w') as out:
+        out.write(hop_xyz)
 
     param_h = [[[] for _ in param_list] for _ in range(i_coord + 1)]
 
