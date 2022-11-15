@@ -2574,7 +2574,7 @@ def RUNspecial(key_dict):
         for i_param, param in enumerate(param_list):
             input_val.append([0, i_coord, i_param, xyz, param, thrhd[i_param], []])
 
-    print('\nSave hop snapshot to Hop-%s.all.hop' % title)
+    print('\nSave hop snapshot to Hop-%s.all.xyz' % title)
     with open('Hop-%s.all.xyz' % title, 'w') as out:
         out.write(hop_xyz)
 
