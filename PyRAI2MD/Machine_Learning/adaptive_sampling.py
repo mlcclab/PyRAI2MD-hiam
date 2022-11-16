@@ -271,7 +271,7 @@ class AdaptiveSampling:
 
         ## multiprocessing doesn't support shared-memory
         ## load mode in each worker process here :(
-        qm = QM(self.qm, keywords=self.keywords, job_id=self.itr)
+        qm = QM(self.qm, keywords=self.keywords, job_id=[self.itr, traj_id + 1])
         qm.load()
 
         ## prepare AIMD

@@ -9,6 +9,7 @@
 
 import numpy as np
 from PyRAI2MD.Dynamics.Propagators.gsh import gsh
+
 try:
     from PyRAI2MD.Dynamics.Propagators.fssh import FSSH
 except ModuleNotFoundError:

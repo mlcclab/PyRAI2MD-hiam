@@ -51,13 +51,13 @@ class QMQM2:
 
     """
 
-    def __init__(self, methods=None, keywords=None, job_id=None):
+    def __init__(self, methods=None, keywords=None, job_id_1=None, job_id_2=None):
 
         qm1 = methods[0]
         qm2 = methods[1]
-        self.qm1_high = qm1(keywords=keywords, job_id=job_id, runtype='qmmm')
-        self.qm1_low = qm2(keywords=keywords, job_id=job_id, runtype='qmmm')
-        self.qm2_low = qm2(keywords=keywords, job_id=job_id, runtype='qmmm_low')
+        self.qm1_high = qm1(keywords=keywords, job_id=job_id_1, runtype='qmmm')
+        self.qm1_low = qm2(keywords=keywords, job_id=job_id_2, runtype='qmmm')
+        self.qm2_low = qm2(keywords=keywords, job_id=job_id_2, runtype='qmmm_low')
         self.nprocs = keywords['control']['ms_ncpu']
         self.project = ''
         self.workdir = ''
