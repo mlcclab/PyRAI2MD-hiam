@@ -71,7 +71,7 @@ class Xtb:
             self.workdir = '%s/tmp_xtb' % self.workdir
 
         if runtype == 'qmmm_low':
-            self.workdir = '%s2' % self.workdir
+            self.workdir = '%s_2' % self.workdir
 
         ## initialize runscript
         self.runscript = """
