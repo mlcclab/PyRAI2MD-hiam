@@ -355,6 +355,7 @@ cpdef FSSH(dict traj):
                 hoped = 1
             else:                # frustrated hopping
                 hoped = 2
+                state = old_state
 
         At = A
 
