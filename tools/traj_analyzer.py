@@ -1578,7 +1578,7 @@ def read_raw_data_fromage(files):
 
     return ntraj, natom, nstate, nstep, dtime, trj_kin, trj_pot, trj_pop, trj_lab, trj_coord, trj_hop, crt_state
 
-def read_pyrai2md_hop(files):
+def read_pyrai2md(files):
     ## This function read data from provided folders
     ## This function is for parallelization
     ## subloops find crt_kin,crt_pot,crt_pop,crt_coord,crt_hop and
@@ -1586,44 +1586,79 @@ def read_pyrai2md_hop(files):
     ## natom, nstate, and dtime are supposed to be the same over all trajectories, so just pick up the last values.
     ntraj, f = files
     t = f.split('/')[-1]
+    natom = 0
+    nstate = 0
 
     with open('%s/%s.sh.energies' % (f, t), 'r') as engfile:
-        eng = engfile.read().splitlines()
+        eng_h = engfile.read().splitlines()
 
     with open('%s/%s.sh.xyz' % (f, t), 'r') as xyzfile:
-        xyz = xyzfile.read().splitlines()
+        xyz_h = xyzfile.read().splitlines()
 
-    if len(eng) < 2:
-        return ntraj, 0, 0, [], []
+    with open('%s/%s.md.energies' % (f, t), 'r') as engfile:
+        eng_m = engfile.read().splitlines()
 
-    ## Find population and label for each structure
-    trj_pot = []  # pot energy
-    nstate = len(eng[1].split()) - 4
-    n = 0
-    for line in eng:
-        n += 1
-        if 'time' in line:
-            continue  # skip the title line
-        line = line.split()
-        crt_pot = line[4:nstate + 4]
-        crt_pot = [float(i) for i in crt_pot]
-        trj_pot.append(crt_pot)
+    with open('%s/%s.md.xyz' % (f, t), 'r') as xyzfile:
+        xyz_m = xyzfile.read().splitlines()
 
-    ## Find coordinates
-    trj_coord = []  # coordinates list
-    natom = int(xyz[0])
-    n = 0  # count line number
-    m = 0  # count structure number
-    for _ in xyz:
-        n += 1
-        if n % (natom + 2) == 0:  # at the last line of each coordinates
-            m += 1
-            lb = xyz[n - natom - 1].split()
-            crt_label = 'traj %s coord %s state %s to %s CI' % (ntraj + 1, lb[2], int(lb[4]) - 1, int(lb[6]) - 1)
-            crt_coord = [crt_label] + xyz[n - natom:n]  # combine label with coordinates
-            trj_coord.append(crt_coord)
+    if len(eng_m) < 2:
+        trj_init = []
+        trj_init_t = []
+        trj_init_p = []
+        trj_final = []
+        trj_final_t = []
+        trj_final_p = []
+    else:
+        nstate = len(eng_m[1].split()) - 4
+        trj_init_p = eng_m[1].split()[4:nstate + 4]
+        trj_init_p = [[float(i) for i in trj_init_p]]
+        trj_init_t = [0]
+        trj_final_p = eng_m[-1].split()[4:nstate + 4]
+        trj_final_p = [[float(i) for i in trj_final_p]]
+        trj_final_t = [len(eng_m) - 1]
+        natom = int(xyz_m[0])
+        trj_init = [xyz_m[1: 2 + natom]]
+        lb = trj_init[0][0].split()
+        trj_init[0][0] = 'traj %s coord 1 state %s' % (ntraj + 1, int(lb[4]) - 1)
+        trj_final = [xyz_m[-(1 + natom):]]
+        lb = trj_final[0][0].split()
+        trj_final[0][0] = 'traj %s coord %s state %s' % (ntraj + 1, trj_final_t[0], int(lb[4]) - 1)
 
-    return ntraj, natom, nstate, trj_pot, trj_coord
+    if len(eng_h) < 2:
+        trj_hop = []
+        trj_hop_t = []
+        trj_hop_p = []
+    else:
+        ## Find population and label for each structure
+        trj_hop_p = []  # pot energy
+        n = 0
+        for line in eng_h:
+            n += 1
+            if 'time' in line:
+                continue  # skip the title line
+            line = line.split()
+            crt_pot = line[4:nstate + 4]
+            crt_hop_p = [float(i) for i in crt_pot]
+            trj_hop_p.append(crt_hop_p)
+
+        ## Find coordinates
+        nstate = len(eng_h[1].split()) - 4
+        trj_hop = []  # coordinates list
+        trj_hop_t = []
+        natom = int(xyz_h[0])
+        n = 0  # count line number
+        m = 0  # count structure number
+        for _ in xyz_h:
+            n += 1
+            if n % (natom + 2) == 0:  # at the last line of each coordinates
+                m += 1
+                lb = xyz_h[n - natom - 1].split()
+                crt_label = 'traj %s coord %s state %s to %s CI' % (ntraj + 1, lb[2], int(lb[4]) - 1, int(lb[6]) - 1)
+                crt_hop = [crt_label] + xyz_h[n - natom:n]  # combine label with coordinates
+                trj_hop.append(crt_hop)
+                trj_hop_t.append(lb[2])
+    return ntraj, natom, nstate, trj_init, trj_final, trj_hop, trj_init_t, trj_final_t, trj_hop_t, trj_init_p, \
+        trj_final_p, trj_hop_p
 
 def RUNdiag(key_dict):
     ## This function run diagnosis for calculation results
@@ -1856,32 +1891,56 @@ def RUNread(key_dict):
     # print(len(kin[0]),len(pot[0][0]),len(pop[0][0]),len(coord[0]))
     # exit()
 
+    geom_i = {}
+    time_i = {}
+    pot_i = {}
     geom_f = {}
+    time_f = {}
+    pot_f = {}
     geom_h = {}
-    geom_t = {}
+    time_h = {}
+    pot_h = {}
     state_info = ''
     ## output CI and products coordinates according to final state
     print('\nNumber of Trajectories: %5d\nNumber of States:       %5d\n' % (ntraj, nstate))
 
     for i_state, traj_index in enumerate(last):  # trajectory index in each state
+        init_snapshot = ''
         last_snapshot = ''
         hop_snapshot = ''
+        init_geom = {}
         last_geom = {}
         hop_geom = {}
+        init_pot = {}
+        last_pot = {}
+        hop_pot = {}
+        init_time = {}
+        last_time = {}
         hop_time = {}
         for i_traj in traj_index:
+            init_snapshot += format1(natom, coord[i_traj - 1][0])
+            init_geom[i_traj] = format3(natom, coord[i_traj - 1][0])
+            init_pot[i_traj] = pot[i_traj - 1][0]
+            init_time[i_traj] = '0'
             last_snapshot += format1(natom, coord[i_traj - 1][-1])
             last_geom[i_traj] = format3(natom, coord[i_traj - 1][-1])
-            hop_index = hop[i_traj - 1]
+            last_pot[i_traj] = pot[i_traj - 1][-1]
+            last_time[i_traj] = len(pot[i_traj - 1])
 
+            hop_index = hop[i_traj - 1]
             if len(hop_index) == 0:
                 continue
 
             for i_hop in hop_index:
                 if len(coord[i_traj - 1]) >= i_hop:
                     hop_snapshot += format1(natom, coord[i_traj - 1][i_hop - 1])
+
             hop_geom[i_traj] = format3(natom, coord[i_traj - 1][hop_index[-1] - 1])
+            hop_pot[i_traj] = pot[i_traj - 1][hop_index[-1] - 1]
             hop_time[i_traj] = label[i_traj - 1][hop_index[-1] - 1].split()[3]  # step is the 4th data
+
+        with open('Ini.S%d.xyz' % i_state, 'w') as outxyz:
+            outxyz.write(init_snapshot)
 
         with open('Fin.S%d.xyz' % i_state, 'w') as outxyz:
             outxyz.write(last_snapshot)
@@ -1889,9 +1948,15 @@ def RUNread(key_dict):
         with open('Hop.S%d.xyz' % i_state, 'w') as outxyz:
             outxyz.write(hop_snapshot)
 
+        geom_i[i_state] = init_geom
+        time_i[i_state] = init_time
+        pot_i[i_state] = init_pot
         geom_f[i_state] = last_geom
+        time_f[i_state] = last_time
+        pot_f[i_state] = last_pot
         geom_h[i_state] = hop_geom
-        geom_t[i_state] = hop_time
+        time_h[i_state] = hop_time
+        pot_h[i_state] = hop_pot
 
         index_range = redindex(last[i_state])
         print('\nState %5d:  %5d  Write: Fin.S%d.xyz and Hop.S%d.xyz Range: %s' % (
@@ -1905,13 +1970,19 @@ def RUNread(key_dict):
         'nstate': nstate,
         'ntraj': ntraj,
         'dtime': dtime,
-        'htime': geom_t,
         'hop': geom_h,
         'final': geom_f,
+        'init': geom_i,
+        'init_t': time_i,
+        'final_t': time_f,
+        'hop_t': time_h,
+        'init_p': pot_i,
+        'final_p': pot_f,
+        'hop_p': pot_h,
     }
 
-    print('\nSave the hopping and final snapshots to geom-%s.json\n' % title)
-    with open('geom-%s.json' % title, 'w') as indata:
+    print('\nSave the hopping and final snapshots to Geom-%s.json\n' % title)
+    with open('Geom-%s.json' % title, 'w') as indata:
         json.dump(geom_dict, indata)
 
         log_info = """
@@ -2088,6 +2159,60 @@ def RUNpop(key_dict):
             with open('energy-profile-%s.json' % title, 'w') as outtot:
                 json.dump([all_lab, all_kin, all_pot, all_tot], outtot)
 
+def classify_prep(order, geom, step, pot, snapshot_type, classify_state, param_list, thrhd, ref_coord, select):
+    input_val = []
+    ntraj_list = []
+    time_list = []
+    gap_list = []
+    if len(geom[classify_state]) == 0:
+        exit('\nNo %s snapshot at state %s, please change classify or classify_state' % (snapshot_type, classify_state))
+
+    i_coord = -1
+    for ntraj in geom[classify_state].keys():  # geom_f[classify_state] is a dict
+        if len(select) > 0:
+            if int(ntraj) not in select:
+                continue
+        i_coord += 1
+        coord = format4(geom[classify_state][ntraj])
+        ntraj_list.append(ntraj)
+        time_list.append(step[classify_state][ntraj])
+        gap_list.append(' '.join(['%24.16f' % x for x in pot[classify_state][ntraj]]))
+        for i_param, param in enumerate(param_list):
+            input_val.append([order, i_coord, i_param, coord, param, thrhd[i_param], ref_coord])
+
+    param = [[[] for _ in param_list] for _ in range(i_coord + 1)]
+
+    return param, input_val, ntraj_list, time_list, gap_list
+
+def classify_output(title, snapshot_type, param, ntraj_list, ext, time, gap):
+    output_f = ''
+    structure_f = {}
+    param = np.array(param)
+    for n, p in enumerate(param):
+        ntraj = ntraj_list[n]
+        value = ''.join(['%12.4f' % x[0] for x in p])
+        label = ''.join(['%s' % int(x[1]) for x in p])
+        if len(time) > 0:
+            value += ' %12s ' % time[n]
+
+        if len(gap) > 0:
+            value += ' %s ' % gap[n]
+
+        output_f += '%-5s %s\n' % (ntraj, value)
+
+        if label in structure_f.keys():
+            structure_f[label].append(ntraj)
+        else:
+            structure_f[label] = [ntraj]
+
+    print('\nSave parameters for final snapshot to param-%s.%s' % (title, ext))
+    with open('param-%s.%s' % (title, ext), 'w') as out:
+        out.write(output_f)
+
+    print('\nSummary: %s snapshot' % snapshot_type)
+    print('Label  Ntraj    %')
+    for label, ntraj in structure_f.items():
+        print('%s %5d      %5.2f' % (label, len(ntraj), len(ntraj) / len(param)))
 
 def RUNclassify(key_dict):
     ## This function classify hopping and final structures
@@ -2097,6 +2222,9 @@ def RUNclassify(key_dict):
     cpus = key_dict['cpus']
     classify = key_dict['classify']
     classify_state = key_dict['classify_state']
+    output_atom = key_dict['output_atom']
+    align = key_dict['align']
+    align_core = key_dict['align_core']
     select = key_dict['select']
     ref_geom = key_dict['ref_geom']
     param = key_dict['param']
@@ -2111,26 +2239,50 @@ def RUNclassify(key_dict):
     if len(thrhd) != len(param_list):
         thrhd = [0 for _ in range(len(param_list))]
 
-    if os.path.exists('geom-%s.json' % title):
-        print('\nRead snapshots from geom-%s.json' % title)
-        with open('geom-%s.json' % title, 'r') as indata:
+    if os.path.exists('Geom-%s.json' % title):
+        print('\nRead snapshots from Geom-%s.json' % title)
+        with open('Geom-%s.json' % title, 'r') as indata:
             geom_dict = json.load(indata)
         natom = geom_dict['natom']
         nstate = geom_dict['nstate']
         ntraj = geom_dict['ntraj']
         dtime = geom_dict['dtime']
 
-        geom_h = {}
-        for key, val in geom_dict['hop'].items():
-            geom_h[int(key)] = val
+        geom_i = {}
+        for key, val in geom_dict['init'].items():
+            geom_i[int(key)] = val
 
         geom_f = {}
         for key, val in geom_dict['final'].items():
             geom_f[int(key)] = val
 
-        geom_t = {}
-        for key, val in geom_dict['htime'].items():
-            geom_t[int(key)] = val
+        geom_h = {}
+        for key, val in geom_dict['hop'].items():
+            geom_h[int(key)] = val
+
+        step_i = {}
+        for key, val in geom_dict['init_t'].items():
+            step_i[int(key)] = val
+
+        step_f = {}
+        for key, val in geom_dict['final_t'].items():
+            step_f[int(key)] = val
+
+        step_h = {}
+        for key, val in geom_dict['hop_t'].items():
+            step_h[int(key)] = val
+
+        pot_i = {}
+        for key, val in geom_dict['init_p'].items():
+            pot_i[int(key)] = val
+
+        pot_f = {}
+        for key, val in geom_dict['final_p'].items():
+            pot_f[int(key)] = val
+
+        pot_h = {}
+        for key, val in geom_dict['hop_p'].items():
+            pot_h[int(key)] = val
 
         state_info = ''
         for n, g in enumerate(geom_f):
@@ -2153,51 +2305,55 @@ Time step (a.u.):           %-10s
     else:
         print('\nRead data from calculation folders')
         raw_data, geom_dict = RUNread(key_dict)
-        geom_h = geom_dict['hop']
+        geom_i = geom_dict['init']
         geom_f = geom_dict['final']
-        geom_t = geom_dict['htime']
+        geom_h = geom_dict['hop']
+        step_i = geom_dict['init_t']
+        step_f = geom_dict['final_t']
+        step_h = geom_dict['hop_t']
+        pot_i = geom_dict['init_p']
+        pot_f = geom_dict['final_p']
+        pot_h = geom_dict['hop_p']
 
     ## compute geometrical parameters
-    input_val = []
+    input_val_i = []
+    param_i = []
+    ntraj_i = []
+    time_i = []
+    gap_i = []
+    if classify == 'all' or classify == 'init':
+        param_i, input_val_i, ntraj_i, time_i, gap_i = classify_prep(
+            0, geom_i, step_i, pot_i, 'initial', classify_state, param_list, thrhd, ref_coord, select
+        )
+        if align:
+            align_mol('Ini.S%d.xyz' % classify_state, align_core, output_atom, cpus)
+
+    input_val_f = []
     param_f = []
     ntraj_f = []
+    time_f = []
+    gap_f = []
     if classify == 'all' or classify == 'final':
-        if len(geom_f[classify_state]) == 0:
-            exit('\nNo final snapshot at state %s, please change classify or classify_state' % classify_state)
+        param_f, input_val_f, ntraj_f, time_f, gap_f = classify_prep(
+            1, geom_f, step_f, pot_f, 'final', classify_state, param_list, thrhd, ref_coord, select
+        )
+        if align:
+            align_mol('Fin.S%d.xyz' % classify_state, align_core, output_atom, cpus)
 
-        i_coord = -1
-        for ntraj in geom_f[classify_state].keys():  # geom_f[classify_state] is a dict
-            if len(select) > 0:
-                if int(ntraj) not in select:
-                    continue
-            i_coord += 1
-            coord = format4(geom_f[classify_state][ntraj])
-            ntraj_f.append(ntraj)
-            for i_param, param in enumerate(param_list):
-                input_val.append([0, i_coord, i_param, coord, param, thrhd[i_param], ref_coord])
-
-        param_f = [[[] for _ in param_list] for _ in range(i_coord + 1)]
-
+    input_val_h = []
     param_h = []
     ntraj_h = []
+    time_h = []
+    gap_h = []
     if classify == 'all' or classify == 'hop':
-        if len(geom_h[classify_state]) == 0:
-            exit('\nNo hop snapshot at state %s, please change classify or classify_state' % classify_state)
+        param_h, input_val_h, ntraj_h, time_h, gap_h = classify_prep(
+            2, geom_h, step_h, pot_h, 'hop', classify_state, param_list, thrhd, ref_coord, select
+        )
+        if align:
+            align_mol('Hop.S%d.xyz' % classify_state, align_core, output_atom, cpus)
 
-        i_coord = -1
-        for ntraj in geom_h[classify_state].keys():  # geom_h[classify_state] is a dict
-            if len(select) > 0:
-                if int(ntraj) not in select:
-                    continue
-            i_coord += 1
-            coord = format4(geom_h[classify_state][ntraj])
-            ntraj_h.append(ntraj)
-            for i_param, param in enumerate(param_list):
-                input_val.append([1, i_coord, i_param, coord, param, thrhd[i_param], ref_coord])
-
-        param_h = [[[] for _ in param_list] for _ in range(i_coord + 1)]
-
-    param_all = [param_f, param_h]
+    input_val = input_val_i + input_val_f + input_val_h
+    param_all = [param_i, param_f, param_h]
 
     if (len(input_val)) < cpus:
         cpus = len(input_val)
@@ -2212,55 +2368,14 @@ Time step (a.u.):           %-10s
             'CPU: %3d Computing parameters: %6.2f%% %d/%d\r' % (cpus, p * 100 / (len(input_val)), p, len(input_val)))
 
     ## save geometrical parameters
-    if len(param_f) > 0:
-        output_f = ''
-        structure_f = {}
-        param_f = np.array(param_f)
-        for n, p in enumerate(param_f):
-            ntraj = ntraj_f[n]
-            value = ''.join(['%12.4f' % x[0] for x in p])
-            label = ''.join(['%s' % int(x[1]) for x in p])
-            output_f += '%-5s %s\n' % (ntraj, value)
+    if len(param_all[0]) > 0:
+        classify_output(title, 'init', param_all[0], ntraj_i, 'S%s.ini' % classify_state, time_i, gap_i)
 
-            if label in structure_f.keys():
-                structure_f[label].append(ntraj)
-            else:
-                structure_f[label] = [ntraj]
+    if len(param_all[1]) > 0:
+        classify_output(title, 'final', param_all[1], ntraj_f, 'S%s.fin' % classify_state, time_f, gap_f)
 
-        print('\nSave parameters for final snapshot to param-%s.S%s.fin' % (title, classify_state))
-        with open('param-%s.S%s.fin' % (title, classify_state), 'w') as out:
-            out.write(output_f)
-
-        print('\nSummary: final snapshot')
-        print('Label  Ntraj    %')
-        for label, ntraj in structure_f.items():
-            print('%s %5d      %5.2f' % (label, len(ntraj), len(ntraj)/len(param_f)))
-
-    if len(param_h) > 0:
-        output_h = ''
-        structure_h = {}
-        param_h = np.array(param_h)
-        htime = geom_t[classify_state]
-        for n, p in enumerate(param_h):
-            ntraj = ntraj_h[n]
-            value = ''.join(['%12.4f' % x[0] for x in p])
-            label = ''.join(['%s' % int(x[1]) for x in p])
-            time = htime[ntraj]
-            output_h += '%-5s %s     %s\n' % (ntraj, value, time)
-
-            if label in structure_h.keys():
-                structure_h[label].append(ntraj)
-            else:
-                structure_h[label] = [ntraj]
-
-        print('\nSave parameters for hop snapshot to param-%s.S%s.hop' % (title, classify_state))
-        with open('param-%s.S%s.hop' % (title, classify_state), 'w') as out:
-            out.write(output_h)
-
-        print('\nSummary: hop snapshot')
-        print('Label  Ntraj    %')
-        for label, ntraj in structure_h.items():
-            print('%s %5d      %5.2f' % (label, len(ntraj), len(ntraj) / len(param_f)))
+    if len(param_all[2]) > 0:
+        classify_output(title, 'hop', param_all[2], ntraj_h, 'S%s.hop' % classify_state, time_h, gap_h)
 
 
 def RUNcompute(key_dict):
@@ -2459,7 +2574,7 @@ def RUNfetch(key_dict):
         with open('select-%s-%s.dat' % (title, i_traj), 'w') as outxyz:
             outxyz.write(select_traj)
 
-def RUNreadhop(key_dict):
+def RUNreadpmd(key_dict):
     title = key_dict['title']
     cpus = key_dict['cpus']
     read_files = key_dict['read_files']
@@ -2470,39 +2585,214 @@ def RUNreadhop(key_dict):
     input_val = []
     for n, f in enumerate(read_files):
         input_val.append([n, f])
-    pot = [[] for _ in range(len(input_val))]
-    coord = [[] for _ in range(len(input_val))]
+
+    init = [[] for _ in range(len(input_val))]
+    final = [[] for _ in range(len(input_val))]
+    hop = [[] for _ in range(len(input_val))]
+    init_t = [[] for _ in range(len(input_val))]
+    final_t = [[] for _ in range(len(input_val))]
+    hop_t = [[] for _ in range(len(input_val))]
+    init_p = [[] for _ in range(len(input_val))]
+    final_p = [[] for _ in range(len(input_val))]
+    hop_p = [[] for _ in range(len(input_val))]
 
     if (len(input_val)) < cpus:
         cpus = len(input_val)
     sys.stdout.write('CPU: %3d Reading data: \r' % cpus)
     pool = multiprocessing.Pool(processes=cpus)
-    for ntraj, val in enumerate(pool.imap_unordered(read_pyrai2md_hop, input_val)):
+    for ntraj, val in enumerate(pool.imap_unordered(read_pyrai2md, input_val)):
         ntraj += 1
-        p, natom, nstate, trj_pot, trj_coord = val
+        p, natom, nstate, trj_init, trj_final, trj_hop, trj_init_t, trj_final_t, trj_hop_t, trj_init_p, trj_final_p, \
+            trj_hop_p = val
 
         ## send data
         atoms.append(natom)
         states.append(nstate)
-        pot[p] = trj_pot
-        coord[p] = trj_coord
+        init[p] = trj_init
+        final[p] = trj_final
+        hop[p] = trj_hop
+        init_t[p] = trj_init_t
+        final_t[p] = trj_final_t
+        hop_t[p] = trj_hop_t
+        init_p[p] = trj_init_p
+        final_p[p] = trj_final_p
+        hop_p[p] = trj_hop_p
         sys.stdout.write(
-            'CPU: %3d Reading hopping: %6.2f%% %d/%d\r' % (cpus, ntraj * 100 / (len(input_val)), ntraj, len(input_val)))
+            'CPU: %3d Reading snapshots: %6.2f%% %d/%d\r' % (cpus, ntraj * 100 / (len(input_val)), ntraj, len(input_val)))
 
     main_dict = {
         'title': title,
         'natom': max(atoms),
         'nstate': max(states),
         'ntraj': ntraj,
-        'pot': pot,
-        'coord': coord,
+        'init': init,
+        'final': final,
+        'hop': hop,
+        'init_t': init_t,
+        'final_t': final_t,
+        'hop_t': hop_t,
+        'init_p': init_p,
+        'final_p': final_p,
+        'hop_p': hop_p,
     }
 
-    print('\nSave hopping point data to %s.hop.json\n' % title)
-    with open('%s.hop.json' % title, 'w') as out:
+    print('\nSave snapshot data to geom-%s.json\n' % title)
+    with open('geom-%s.json' % title, 'w') as out:
         json.dump(main_dict, out)
 
     return main_dict
+
+def init_prep(read_init, param_list, thrhd):
+    with open(read_init, 'r') as data:
+        coord = data.read().splitlines()
+    input_val = []
+    ntraj_list = []
+    time_list = []
+    gap_list = []
+    out_xyz = ''
+    i_coord = -1
+    natom = int(coord[0].split()[2])
+    for n, line in enumerate(coord):  # geom_h[classify_state] is a dict
+        if 'Init' in line:
+            i_coord += 1
+            xyz = coord[n + 1: n + 1 + natom]
+            ntraj_list.append(i_coord)
+            gap_list.append(0)
+            time_list.append(0)
+            label = 'traj %s coord 1 state 0' % (i_coord + 1)
+            out_xyz += '%s\n%s\n%s\n' % (natom, label, '\n'.join(xyz))
+            for i_param, param in enumerate(param_list):
+                input_val.append([0, i_coord, i_param, xyz, param, thrhd[i_param], []])
+
+    print('\nRead initial snapshot from %s' % read_init)
+    print('\nOverwrite initial snapshot to ini.pmd.xyz')
+
+    with open('ini.pmd.xyz', 'w') as out:
+        out.write(out_xyz)
+
+    param = [[[] for _ in param_list] for _ in range(i_coord + 1)]
+
+    return param, input_val, ntraj_list, time_list, gap_list
+
+def special_prep(order, traj_index, geom, step, pot, snapshot_type, label_key, param_list, thrhd, select):
+    input_val = []
+    ntraj_list = []
+    time_list = []
+    gap_list = []
+    out_xyz = ''
+    i_coord = -1
+    for traj_idx in traj_index:  # geom_h[classify_state] is a dict
+
+        if len(geom[traj_idx - 1]) == 0:
+            continue
+
+        if len(select) > 0:
+            if traj_idx not in select:
+                continue
+
+        i_coord += 1
+        geom_index = -1
+        for n, hop_coord in enumerate(geom[traj_idx - 1]):
+            label = hop_coord[0]
+            if label_key in label:
+                geom_index = n
+
+        label = geom[traj_idx - 1][geom_index][0]
+        xyz = geom[traj_idx - 1][geom_index][1:]
+        energy = pot[traj_idx - 1][geom_index]
+        time = step[traj_idx - 1][geom_index]
+        gap = ' '.join(['%24.16f' % x for x in energy])
+        ntraj_list.append(traj_idx)
+        gap_list.append(gap)
+        time_list.append(time)
+        out_xyz += '%s\n%s\n%s\n' % (len(xyz), label, '\n'.join(xyz))
+        for i_param, param in enumerate(param_list):
+            input_val.append([order, i_coord, i_param, xyz, param, thrhd[i_param], []])
+
+    print('\nSave %s snapshot to %s.pmd.xyz' % (snapshot_type, snapshot_type))
+
+    with open('%s.pmd.xyz' % snapshot_type, 'w') as out:
+        out.write(out_xyz)
+
+    param = [[[] for _ in param_list] for _ in range(i_coord + 1)]
+
+    return param, input_val, ntraj_list, time_list, gap_list
+
+def aligner(var):
+    i_geom, coord, ref, core, out = var
+
+    head = coord[0: 2]
+    ss = np.array([x.split() for x in coord[2:]])
+    atom = ss[:, 0]
+    ss = ss[:, 1: 4].astype('float')
+    rf = np.array([x.split() for x in ref[2:]])
+    rf = rf[:, 1: 4].astype('float')
+
+    if len(core) <= 0:
+        core = [x for x in range(len(ss))]
+    else:
+        core = [x - 1 for x in core]
+
+    if len(out) <= 0:
+        out = [x for x in range(len(ss))]
+    else:
+        out = [x - 1 for x in out]
+
+    p = ss.copy()[core, :]
+    q = rf.copy()[core, :]
+    pc = p.mean(axis=0)
+    qc = q.mean(axis=0)
+    p -= pc
+    q -= qc
+    c = np.dot(np.transpose(p), q)
+    v, s, w = np.linalg.svd(c)
+    d = (np.linalg.det(v) * np.linalg.det(w)) < 0.0
+    if d:  # ensure right-hand system
+        s[-1] = -s[-1]
+        v[:, -1] = -v[:, -1]
+    u = np.dot(v, w)
+
+    new_coord = np.dot(ss[out, :] - pc, u) + qc
+
+    new_coord = '%s\n%s\n' % (len(new_coord), head[1]) + ''.join(
+        ['%-5s %18.10f %18.10f %18.10f\n' % (atom[n], x[0], x[1], x[2]) for n, x in enumerate(new_coord)]
+    )
+
+    return i_geom, new_coord
+
+def align_mol(title, align_core, output_atom, cpus):
+    print('\nAlign snapshots from %s' % title)
+
+    with open(title, 'r') as inxyz:
+        xyz = inxyz.read().splitlines()
+
+    natom = int(xyz[0])
+    coord_list = []
+    for n, line in enumerate(xyz):
+        if 'traj' in line:
+            coord = xyz[n - 1: n + 1 + natom]
+            coord_list.append(coord)
+
+    variables_wrapper = [[n, x, coord_list[0], align_core, output_atom] for n, x in enumerate(coord_list)]
+    if (len(variables_wrapper)) < cpus:
+        cpus = len(variables_wrapper)
+
+    coord_new = ['' for _ in coord_list]
+    sys.stdout.write('CPU: %3d Aligning snapshots: \r' % cpus)
+    pool = multiprocessing.Pool(processes=cpus)
+    for p, val in enumerate(pool.imap_unordered(aligner, variables_wrapper)):
+        p += 1
+        i_geom, new_coord = val
+        coord_new[i_geom] = new_coord
+        sys.stdout.write(
+            'CPU: %3d Aligning snapshots: %6.2f%% %d/%d\r' % (
+                cpus, p * 100 / (len(variables_wrapper)), p, len(variables_wrapper))
+        )
+
+    print('\nSave aligned snapshot to aligned-%s' % title)
+    with open('aligned-%s' % title, 'w') as out:
+        out.write(''.join(coord_new))
+
 
 def RUNspecial(key_dict):
     ## This function compute geometrical parameter for plot
@@ -2514,23 +2804,35 @@ def RUNspecial(key_dict):
     param = key_dict['param']
     param_list = Paramread(param)
     thrhd = key_dict['thrhd']
+    read_init = key_dict['read_init']
+    classify = key_dict['classify']
     classify_state = key_dict['classify_state']
+    output_atom = key_dict['output_atom']
+    align = key_dict['align']
+    align_core = key_dict['align_core']
     label_key = '%s to %s' % (classify_state + 1, classify_state)
 
     if len(thrhd) != len(param_list):
         thrhd = [0 for _ in range(len(param_list))]
 
-    if os.path.exists('%s.hop.json' % title):
-        print('\nLoad hopping point data from %s.hop.json' % title)
-        with open('%s.hop.json' % title, 'r') as indata:
-            hop_data = json.load(indata)
+    if os.path.exists('geom-%s.json' % title):
+        print('\nLoad snapshot data from geom-%s.json' % title)
+        with open('geom-%s.json' % title, 'r') as indata:
+            geom_data = json.load(indata)
     else:
-        print('\nRead hopping point data from calculation folders')
-        hop_data = RUNreadhop(key_dict)
+        print('\nRead geometry data from calculation folders')
+        geom_data = RUNreadpmd(key_dict)
 
-    ntraj = hop_data['ntraj']
-    pot: list = hop_data['pot']
-    coord: list = hop_data['coord']
+    ntraj = geom_data['ntraj']
+    coord_i: list = geom_data['init']
+    coord_h: list = geom_data['hop']
+    coord_f: list = geom_data['final']
+    init_t: list = geom_data['init_t']
+    final_t: list = geom_data['final_t']
+    hop_t: list = geom_data['hop_t']
+    init_p: list = geom_data['init_p']
+    final_p: list = geom_data['final_p']
+    hop_p: list = geom_data['hop_p']
 
     if len(select) == 0:
         traj_index = [x + 1 for x in range(ntraj)]
@@ -2538,47 +2840,51 @@ def RUNspecial(key_dict):
         traj_index = select
 
     ## compute geometrical parameters for selected trajectories
-    input_val = []
+    ## compute geometrical parameters
+    input_val_i = []
+    param_i = []
+    ntraj_i = []
+    time_i = []
+    gap_i = []
+    if classify == 'all' or classify == 'init':
+        if read_init:
+            param_i, input_val_i, ntraj_i, time_i, gap_i = init_prep(read_init, param_list, thrhd)
+        else:
+            param_i, input_val_i, ntraj_i, time_i, gap_i = special_prep(
+                0, traj_index, coord_i, init_t, init_p, 'ini', 'state', param_list, thrhd, select
+            )
+        if align:
+            align_mol('ini.pmd.xyz', align_core, output_atom, cpus)
+
+    input_val_f = []
+    param_f = []
+    ntraj_f = []
+    time_f = []
+    gap_f = []
+    if classify == 'all' or classify == 'final':
+        param_f, input_val_f, ntraj_f, time_f, gap_f = special_prep(
+            1, traj_index, coord_f, final_t, final_p, 'fin', 'state', param_list, thrhd, select
+        )
+        if align:
+            align_mol('fin.pmd.xyz', align_core, output_atom, cpus)
+
+    input_val_h = []
+    param_h = []
     ntraj_h = []
-    gap_h = []
     time_h = []
-    i_coord = -1
-    hop_xyz = ''
-    for traj_idx in traj_index:  # geom_h[classify_state] is a dict
+    gap_h = []
+    if classify == 'all' or classify == 'hop':
+        param_h, input_val_h, ntraj_h, time_h, gap_h = special_prep(
+            2, traj_index, coord_h, hop_t, hop_p, 'hop', label_key, param_list, thrhd, select
+        )
+        if align:
+            align_mol('hop.pmd.xyz', align_core, output_atom, cpus)
 
-        if len(coord[traj_idx - 1]) == 0:
-            continue
+    input_val = input_val_i + input_val_f + input_val_h
+    param_all = [param_i, param_f, param_h]
 
-        if len(select) > 0:
-            if traj_idx not in select:
-                continue
-
-        i_coord += 1
-        hop_index = -1
-        for n, hop_coord in enumerate(coord[traj_idx - 1]):
-            label = hop_coord[0]
-            if label_key in label:
-                hop_index = n
-
-        label = coord[traj_idx - 1][hop_index][0]
-        xyz = coord[traj_idx - 1][hop_index][1:]
-        energy = pot[traj_idx - 1][hop_index]
-        time = label.split()[3]
-        s0 = int(label.split()[5])
-        s1 = int(label.split()[7])
-        gap = (energy[s0] - energy[s1]) * 27.211
-        ntraj_h.append(traj_idx)
-        gap_h.append(gap)
-        time_h.append(time)
-        hop_xyz += '%s\n%s\n%s\n' % (len(xyz), label, '\n'.join(xyz))
-        for i_param, param in enumerate(param_list):
-            input_val.append([0, i_coord, i_param, xyz, param, thrhd[i_param], []])
-
-    print('\nSave hop snapshot to Hop-%s.all.xyz' % title)
-    with open('Hop-%s.all.xyz' % title, 'w') as out:
-        out.write(hop_xyz)
-
-    param_h = [[[] for _ in param_list] for _ in range(i_coord + 1)]
+    if len(param_list) == 0:
+        exit('\nSkip parameter calculations')
 
     if (len(input_val)) < cpus:
         cpus = len(input_val)
@@ -2588,35 +2894,19 @@ def RUNspecial(key_dict):
     for p, val in enumerate(pool.imap_unordered(compute_para, input_val)):
         p += 1
         i_traj, i_geom, i_param, geom_param, geom_type = val
-        param_h[i_geom][i_param] = [geom_param, geom_type]
+        param_all[i_traj][i_geom][i_param] = [geom_param, geom_type]
         sys.stdout.write(
             'CPU: %3d Computing parameters: %6.2f%% %d/%d\r' % (cpus, p * 100 / (len(input_val)), p, len(input_val)))
 
     ## save geometrical parameters
-    output_h = ''
-    structure_h = {}
-    param_h = np.array(param_h)
-    for n, p in enumerate(param_h):
-        traj_idx = ntraj_h[n]
-        value = ''.join(['%12.4f' % x[0] for x in p])
-        label = ''.join(['%s' % int(x[1]) for x in p])
-        time = time_h[n]
-        gap = gap_h[n]
-        output_h += '%-5s %s     %s %12.4f\n' % (traj_idx, value, time, gap)
+    if len(param_all[0]) > 0:
+        classify_output(title, 'init', param_all[0], ntraj_i, 'pmd.ini', time_i, gap_i)
 
-        if label in structure_h.keys():
-            structure_h[label].append(traj_idx)
-        else:
-            structure_h[label] = [traj_idx]
+    if len(param_all[1]) > 0:
+        classify_output(title, 'final', param_all[1], ntraj_f, 'pmd.fin', time_f, gap_f)
 
-    print('\nSave parameters for hop snapshot to param-%s.all.hop' % title)
-    with open('param-%s.all.hop' % title, 'w') as out:
-        out.write(output_h)
-
-    print('\nSummary: hop snapshot')
-    print('Label  Ntraj    %')
-    for label, traj_idx in structure_h.items():
-        print('%s %5d      %5.2f' % (label, len(traj_idx), len(traj_idx) / len(param_h)))
+    if len(param_all[2]) > 0:
+        classify_output(title, 'hop', param_all[2], ntraj_h, 'pmd.hop', time_h, gap_h)
 
 
 def main(argv):
@@ -2665,10 +2955,14 @@ def main(argv):
     opt_mode = 0  # Analysis mode.
     # Skip analysis (0), analyze products and trajectories (1), only analyze products (2), only analyze trajectories (3)
     select = None  # Select trajectories to classify snapshots or fetch trajectory data or compute plot data
+    read_init = None  # Read initial condition form a .init or init.xyz file
     classify = None  # Select type of snapshots for classification
     classify_state = 0  # Target state for structure classification
+    align = None  # align snapshots
+    align_core = []  # define the core for alignment
+    output_atom = []  # output the coordinates of the selected atom
     ref_geom = None  # A reference coordinates file that has one or more structures
-    param = None  # Geometrical parameters to compute. Options and a file of them are acceptable
+    param = []  # Geometrical parameters to compute. Options and a file of them are acceptable
     thrhd = []  # Threshold for classification according to the selected geometrical parameters
     save_data = 0  # Save detailed kinetic energy, potential energy, total energy, state population
     prog = 'molcas'  # Output file format
@@ -2699,10 +2993,18 @@ def main(argv):
             maxdrift = float(line.split()[1])
         elif 'mode' == key:
             opt_mode = line.split()[1]
+        elif 'read_init' == key:
+            read_init = line.split()[1]
+        elif 'output_atom' == key:
+            output_atom = line.split()[1:]
         elif 'classify' == key:
             classify = line.split()[1]
         elif 'classify_state' == key:
             classify_state = int(line.split()[1])
+        elif 'align' == key:
+            align = int(line.split()[1])
+        elif 'align_core' == key:
+            align_core = line.split()[1:]
         elif 'select' == key:
             select = line.split()[1:]
         elif 'ref_geom' == key:
@@ -2743,7 +3045,7 @@ def main(argv):
         for i in traj_index:
             read_files.append('%s-%s' % (title, i))
 
-    if param is not None:
+    if len(param) > 0:
         if os.path.exists('%s' % (param[0])):
             print('\nRead geometrical parameters from file: %s' % (param[0]))
             opt_param = '%s' % (param[0])
@@ -2762,7 +3064,7 @@ def main(argv):
     if classify is None:
         classify = 'all'
 
-    if classify not in ['all', 'hop', 'final']:
+    if classify not in ['all', 'hop', 'final', 'init']:
         classify = 'all'
 
     if select is not None:
@@ -2779,6 +3081,12 @@ def main(argv):
         print('\nSelect trajectories: None')
         opt_select = 'None'
         select = []
+
+    if len(output_atom) > 0:
+        output_atom = getindex(output_atom)
+
+    if len(align_core) > 0:
+        align_core = getindex(align_core)
 
     log_info = """
       Trajectory Analyzer Log
@@ -2808,8 +3116,12 @@ Maximum step of trajectory: %-10s
         'minstep': minstep,
         'maxstep': maxstep,
         'maxdrift': maxdrift,
+        'read_init': read_init,
         'classify': classify,
         'classify_state': classify_state,
+        'align': align,
+        'align_core': align_core,
+        'output_atom': output_atom,
         'select': select,
         'ref_geom': ref_geom,
         'param': param,
@@ -2839,8 +3151,8 @@ Maximum step of trajectory: %-10s
     elif opt_mode in ['7', 'out', 'fetch']:
         print('\nFetch trajectories')
         RUNfetch(key_dict)
-    elif opt_mode in ['8', 'hop']:
-        print('\nCompute parameters for hopping points')
+    elif opt_mode in ['8', 'pmd']:
+        print('\nFast mode for compute parameters of PyRAI2MD trajectories')
         RUNspecial(key_dict)
     else:
         print('\n!!! Skip analysis !!!\n')
