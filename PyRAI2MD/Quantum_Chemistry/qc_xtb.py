@@ -102,6 +102,7 @@ cd $XTB_WORKDIR
         elif self.gfnver == 2:
             addon = '--gfn 2'
         else:
+            self.gfnver = -0.5
             addon = ''
 
         self.runscript += '$XTBHOME/bin/xtb %s --grad -I $XTB_WORKDIR/$XTB_PROJECT.inp $XTB_WORKDIR/$XTB_PROJECT.xyz ' \
