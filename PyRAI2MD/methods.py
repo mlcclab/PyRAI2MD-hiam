@@ -93,7 +93,7 @@ class QM:
             job_id_2 = None
             if isinstance(job_id, list):
                 job_id_1 = job_id[0]
-                job_id_2 = job_id[0]
+                job_id_2 = job_id[1]
             qm1 = qm1_list[qm[0]]
             qm2 = qm2_list[qm[1]]
             self.method = QMQM2(methods=[qm1, qm2], keywords=keywords, job_id_1=job_id_1, job_id_2=job_id_2)
