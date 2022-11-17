@@ -207,7 +207,7 @@ cpdef FSSH(dict traj):
     ## start fssh calculation
     if iter < 4:
         At[state - 1, state - 1] = 1
-        Vt = V
+        Vt = np.copy(V)
         info = '  No surface hopping is performed'
     else:
         dHdt = (Ht - H) / substep
@@ -273,7 +273,8 @@ cpdef FSSH(dict traj):
                     g[j] += np.amax([0, B[j, state - 1] * delt / np.real(A[state - 1, state - 1])])
 
             z = np.random.uniform(0, 1)
-
+            if integrate == 99:
+                z = 0
             gsum = 0
             for j in range(nstate):
                 gsum += g[stateindex[j]]
@@ -340,9 +341,9 @@ cpdef FSSH(dict traj):
                 for k in range(nstate):
                     for j in range(nstate):
                         if   k == state - 1 and j != state - 1:
-                            A[k, j] *= np.exp(-delt / tau[j]) * (np.real(A[state - 1, state - 1]) / Amm)**0.5
+                            A[k, j] *= np.exp(-delt / tau[j]) * (np.real(A[state - 1, state - 1]) / (Amm + 1e-16))**0.5
                         elif k != state - 1 and j == state - 1:
-                            A[k, j] *= np.exp(-delt / tau[k]) * (np.real(A[state - 1, state - 1]) / Amm)**0.5
+                            A[k, j] *= np.exp(-delt / tau[k]) * (np.real(A[state - 1, state - 1]) / (Amm + 1e-16))**0.5
 
         ## final decision on velocity
         if state == old_state:   # not hoped
@@ -351,6 +352,7 @@ cpdef FSSH(dict traj):
         else:
             NAC = GetNAC(state, new_state, nac_coupling, N, len(V))
             Vt, frustrated = adjust_velo(E[old_state - 1], E[state - 1], V, M, NAC, adjust, reflect)
+
             if frustrated == 0:  # hoped
                 hoped = 1
             else:                # frustrated hopping

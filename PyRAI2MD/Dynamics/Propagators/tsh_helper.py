@@ -57,11 +57,11 @@ def reflect_velo(velo, nac, reflect):
     """
 
     if reflect == 1:
-        velo = -velo
+        new_velo = -velo
     elif reflect == 2:
-        velo -= 2 * np.sum(velo * nac) / np.sum(nac * nac) * nac
+        new_velo = velo - 2 * np.sum(velo * nac) / np.sum(nac * nac) * nac
 
-    return velo
+    return new_velo
 
 
 def adjust_velo(energy_old, energy_new, velo, mass, nac, adjust, reflect):
@@ -88,16 +88,18 @@ def adjust_velo(energy_old, energy_new, velo, mass, nac, adjust, reflect):
         del_kinetic = energy_old - energy_new + kinetic
 
         if del_kinetic < 0:
-            velo = reflect_velo(velo, nac, reflect)
+            new_velo = reflect_velo(velo, nac, reflect)
             frustrated = 1
+        else:
+            new_velo = velo
 
     elif adjust == 1:
         del_kinetic = energy_old - energy_new + kinetic
         if del_kinetic >= 0:
             f = (del_kinetic / kinetic) ** 0.5
-            velo *= f
+            new_velo = velo * f
         else:
-            velo = reflect_velo(velo, nac, reflect)
+            new_velo = reflect_velo(velo, nac, reflect)
             frustrated = 1
 
     elif adjust == 2:
@@ -110,9 +112,11 @@ def adjust_velo(energy_old, energy_new, velo, mass, nac, adjust, reflect):
                 f = (b + del_kinetic ** 0.5) / (2 * a)
             else:
                 f = (b - del_kinetic ** 0.5) / (2 * a)
-            velo -= f * nac / mass
+            new_velo = velo - f * nac / mass
         else:
-            velo = reflect_velo(velo, nac, reflect)
+            new_velo = reflect_velo(velo, nac, reflect)
             frustrated = 1
+    else:
+        new_velo = velo
 
-    return velo, frustrated
+    return new_velo, frustrated
