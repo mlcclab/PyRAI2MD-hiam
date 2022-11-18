@@ -39,8 +39,8 @@ def ensemble(traj):
     ## NVE for excited-state, NoseHoover for ground-state after a certain amount of time
     elif thermo == '2' or thermo.lower() == 'nve_nvt':
         if state > 1:
-            traj.iter_x = traj.iter
-        delay = traj.iter - traj.iter_x
+            traj.itr_x = traj.itr
+        delay = traj.itr - traj.itr_x
         if state == 1 and delay >= thermodelay:
             traj = nose_hoover(traj)
         else:
@@ -48,8 +48,8 @@ def ensemble(traj):
     ## NVE for excited-state without scaling, NoseHoover for ground-state after a certain amount of time
     elif thermo == '3' or thermo.lower() == 'mixednvt':
         if state > 1:
-            traj.iter_x = traj.iter
-        delay = traj.iter - traj.iter_x
+            traj.itr_x = traj.itr
+        delay = traj.itr - traj.itr_x
         if state == 1 and delay >= thermodelay:
             traj = nose_hoover(traj)
         else:
