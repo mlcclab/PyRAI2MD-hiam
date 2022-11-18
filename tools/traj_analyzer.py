@@ -187,7 +187,7 @@ def BND(xyz, var):
     ## a<->b
 
     var = [int(x) for x in var]
-    xyz = np.array([[float(y) for y in x.split()[1:]] for x in xyz])
+    xyz = np.array([[float(y) for y in x.split()[1: 4]] for x in xyz])
     a, b = var[0:2]
 
     v1 = xyz[a - 1]
@@ -201,7 +201,7 @@ def AGL(xyz, var):
     ## a<-b->c
 
     var = [int(x) for x in var]
-    xyz = np.array([[float(y) for y in x.split()[1:]] for x in xyz])
+    xyz = np.array([[float(y) for y in x.split()[1: 4]] for x in xyz])
     a, b, c = var[0:3]
 
     r1 = np.array(xyz[a - 1])
@@ -223,7 +223,7 @@ def DHD(xyz, var):
     ## a<-b-><-c->d
 
     var = [int(x) for x in var]
-    xyz = np.array([[float(y) for y in x.split()[1:]] for x in xyz])
+    xyz = np.array([[float(y) for y in x.split()[1: 4]] for x in xyz])
     a, b, c, d = var[0:4]
     r1 = np.array(xyz[a - 1])
     r2 = np.array(xyz[b - 1])
@@ -250,7 +250,7 @@ def DHD2(xyz, var):
     ## a<-b-><-c->d
 
     var = [int(x) for x in var]
-    xyz = np.array([[float(y) for y in x.split()[1:]] for x in xyz])
+    xyz = np.array([[float(y) for y in x.split()[1: 4]] for x in xyz])
     a, b, c, d = var[0:4]
     r1 = np.array(xyz[a - 1])
     r2 = np.array(xyz[b - 1])
@@ -283,7 +283,7 @@ def DHD3(xyz, var):
     ## a<-b-><-c->d
 
     var = [int(x) for x in var]
-    xyz = np.array([[float(y) for y in x.split()[1:]] for x in xyz])
+    xyz = np.array([[float(y) for y in x.split()[1: 4]] for x in xyz])
     a, b, c, d = var[0:4]
     r1 = np.array(xyz[a - 1])
     r2 = np.array(xyz[b - 1])
@@ -316,7 +316,7 @@ def DHDD(xyz, var):
     ## a,b<-c-><-d->e,f
 
     var = [int(x) for x in var]
-    xyz = np.array([[float(y) for y in x.split()[1:]] for x in xyz])
+    xyz = np.array([[float(y) for y in x.split()[1: 4]] for x in xyz])
     a, b, c, d, e, f = var[0:6]
     r1 = np.array(xyz[a - 1])
     r2 = np.array(xyz[b - 1])
@@ -350,7 +350,7 @@ def DHDD2(xyz, var):
     ## a,b<-c-><-d->e,f
 
     var = [int(x) for x in var]
-    xyz = np.array([[float(y) for y in x.split()[1:]] for x in xyz])
+    xyz = np.array([[float(y) for y in x.split()[1: 4]] for x in xyz])
     a, b, c, d, e, f = var[0:6]
     r1 = np.array(xyz[a - 1])
     r2 = np.array(xyz[b - 1])
@@ -384,7 +384,7 @@ def DHDD3(xyz, var):
     ## a,b<-c-><-d->e,f
 
     var = [int(x) for x in var]
-    xyz = np.array([[float(y) for y in x.split()[1:]] for x in xyz])
+    xyz = np.array([[float(y) for y in x.split()[1: 4]] for x in xyz])
     a, b, c, d, e, f = var[0:6]
     r1 = np.array(xyz[a - 1])
     r2 = np.array(xyz[b - 1])
@@ -418,7 +418,7 @@ def OOP(xyz, var):
     ## a<-b->c
 
     var = [int(x) for x in var]
-    xyz = np.array([[float(y) for y in x.split()[1:]] for x in xyz])
+    xyz = np.array([[float(y) for y in x.split()[1: 4]] for x in xyz])
     a, b, c, d = var[0:4]
     r1 = np.array(xyz[a - 1])
     r2 = np.array(xyz[b - 1])
@@ -443,7 +443,7 @@ def PPA(xyz, var):
     ## a<-b->c d<-e->f
 
     var = [int(x) for x in var]
-    xyz = np.array([[float(y) for y in x.split()[1:]] for x in xyz])
+    xyz = np.array([[float(y) for y in x.split()[1: 4]] for x in xyz])
     a, b, c, d, e, f = var[0:6]
     r1 = np.array(xyz[a - 1])
     r2 = np.array(xyz[b - 1])
