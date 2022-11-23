@@ -29,7 +29,7 @@ class DummyModel:
 
     """
     def __init__(self, keywords=None, job_id=None):
-        model_name = keywords['control']['qm']
+        model_name = keywords['control']['qm'][0]
         lib = {
             'MLP': 'pyNNsMD',
             'Schnet': 'pyNNsMD',
