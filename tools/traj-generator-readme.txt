@@ -181,9 +181,30 @@
     mpi                 Path to Intel MPI
                         Default is None
 
-6. Useful tips
+
+6. Insert shell commands in the generated submission scripts
 ------------------------------------------------------------------------
-    User need to change the original extention of frequency file so Gen-FSSH can identify the format
+    Users may have their customized slurm setting or environments, shell, conda etc.
+    To provide the largest flexibility, this script can read user-defined shell commands
+    in the following way with a pair of delimiter '>shell'. For example,
+
+    ... other keywords
+    >shell
+    #SBATCH constraint=["some slurm constraints"]
+    module load some_module
+    export PATH=/some/path:$PATH
+    conda activate some_environments
+    >shell
+    ... other keywords
+
+    In this example, we can specify some slurm setting, load modules, export environment
+    variables, activate conda environments, and more shell command you would like to use.
+    Note, the syntax must use 2 '>shell' delimiters, less or more will stop the script.
+    If no '>shell' delimiter is used, it will be automatically skipped.
+
+7. Useful tips
+------------------------------------------------------------------------
+    User need to change the original extension of frequency file so Gen-FSSH can identify the format
     Molcas         - .freq.molden === .freq.molden
     Gaussian       - .log         --> .freq.g16 
     BAGEL          - .log         --> .freq.bagel

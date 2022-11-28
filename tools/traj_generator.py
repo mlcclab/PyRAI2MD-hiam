@@ -5,6 +5,7 @@
 ## Gen-FSSH.py 2019-2022 Jingbai Li
 ## New version Oct 13 2022 Jingbai Li
 ## Upgrade to multiprocessing Nov 5 2022 Jingbai Li
+## Support user-defined shell commands Nov 28 Jingbai Li
 
 import sys
 import os
@@ -56,6 +57,9 @@ def main(argv):
       lib_boost     /path/to/Boost
       mkl           /path/to/mkl
       mpi           /path/to/mpi
+      >shell
+      additional shell commands ...
+      >shell
       
     For more information, please see traj-generator-readme.txt 
     
@@ -93,7 +97,15 @@ def main(argv):
         exit(usage)
 
     with open(argv[1]) as inp:
-        inputfile = inp.read().splitlines()
+        infile = inp.read().split('>shell')
+    if len(infile) == 1:
+        shell = ''
+        inputfile = infile[0].splitlines()
+    elif len(infile) == 3:
+        shell = infile[1]
+        inputfile = infile[0].splitlines() + infile[2].splitlines()
+    else:
+        exit('\n SyntaxError: require 2 >shell delimiters, but found %s\n' % (len(infile) - 1))
 
     for line in inputfile:
         if len(line.split()) < 2:
@@ -300,28 +312,28 @@ def main(argv):
         print('\n\n Done\n')
 
     if prog == 'molcas':
-        gen_molcas(cpus, ensemble, inputs, slpt, sltm, slmm, slnd, slcr, sljb, slin, tomlcs, iformat)
+        gen_molcas(cpus, ensemble, inputs, slpt, sltm, slmm, slnd, slcr, sljb, slin, tomlcs, iformat, shell)
     elif prog == 'nxbagel':
         gen_nxbagel(cpus, ensemble, inputs, slpt, sltm, slmm, slnd, slcr, sljb, slin, tontx, tobgl,
-                    lbbls, lblpk, lbslp, lbbst, tomkl, tompi)
+                    lbbls, lblpk, lbslp, lbbst, tomkl, tompi, shell)
     elif prog == 'pyrai2md':
-        gen_pyrai2md(cpus, ensemble, inputs, slpt, sltm, slmm, slnd, slcr, sljb, slin, 'no', iformat)
+        gen_pyrai2md(cpus, ensemble, inputs, slpt, sltm, slmm, slnd, slcr, sljb, slin, 'no', iformat, shell)
     elif prog == 'pyrai2mdnn':
-        gen_pyrai2md(cpus, ensemble, inputs, slpt, sltm, slmm, slnd, slcr, sljb, slin, 'nn', iformat)
+        gen_pyrai2md(cpus, ensemble, inputs, slpt, sltm, slmm, slnd, slcr, sljb, slin, 'nn', iformat, shell)
     elif prog == 'pyrai2mdmolcas':
-        gen_pyrai2md(cpus, ensemble, inputs, slpt, sltm, slmm, slnd, slcr, sljb, slin, 'molcas', iformat)
+        gen_pyrai2md(cpus, ensemble, inputs, slpt, sltm, slmm, slnd, slcr, sljb, slin, 'molcas', iformat, shell)
     elif prog == 'pyrai2mdbagel':
-        gen_pyrai2md(cpus, ensemble, inputs, slpt, sltm, slmm, slnd, slcr, sljb, slin, 'bagel', iformat)
+        gen_pyrai2md(cpus, ensemble, inputs, slpt, sltm, slmm, slnd, slcr, sljb, slin, 'bagel', iformat, shell)
     elif prog == 'pyrai2mdorca':
-        gen_pyrai2md(cpus, ensemble, inputs, slpt, sltm, slmm, slnd, slcr, sljb, slin, 'orca', iformat)
+        gen_pyrai2md(cpus, ensemble, inputs, slpt, sltm, slmm, slnd, slcr, sljb, slin, 'orca', iformat, shell)
     elif prog == 'pyrai2mdhybrid':
-        gen_pyrai2md(cpus, ensemble, inputs, slpt, sltm, slmm, slnd, slcr, sljb, slin, 'hybrid', iformat)
+        gen_pyrai2md(cpus, ensemble, inputs, slpt, sltm, slmm, slnd, slcr, sljb, slin, 'hybrid', iformat, shell)
     elif prog == 'fromage':
-        gen_fromage(cpus, ensemble, inputs, slpt, sltm, slmm, slnd, slcr, sljb, slin, tomlcs, toxtb, iformat)
+        gen_fromage(cpus, ensemble, inputs, slpt, sltm, slmm, slnd, slcr, sljb, slin, tomlcs, toxtb, iformat, shell)
     elif prog == 'orca':
-        gen_orca(cpus, ensemble, inputs, slpt, sltm, slmm, slnd, slcr, sljb, slin, toorca, iformat)
+        gen_orca(cpus, ensemble, inputs, slpt, sltm, slmm, slnd, slcr, sljb, slin, toorca, iformat, shell)
 
-def gen_molcas(cpus, ensemble, inputs, slpt, sltm, slmm, slnd, slcr, sljb, slin, tomlcs, iformat):
+def gen_molcas(cpus, ensemble, inputs, slpt, sltm, slmm, slnd, slcr, sljb, slin, tomlcs, iformat, shell):
     ## This function will group Molcas calculations to individual runset
     ## this function will call molcas_batch and molcas to prepare files
 
@@ -366,10 +378,10 @@ def gen_molcas(cpus, ensemble, inputs, slpt, sltm, slmm, slnd, slcr, sljb, slin,
             inputpath = '%s/%s' % (in_path, inputname)
             # prepare calculations
             variables_wrapper.append([
-                inputname, inputpath, slpt, slmm, in_temp, in_orb, jobiph, qmmmkey, in_xyz, in_velo, tomlcs
+                inputname, inputpath, slpt, slmm, in_temp, in_orb, jobiph, qmmmkey, in_xyz, in_velo, tomlcs, shell
             ])
 
-        batch = molcas_batch(inputs, j, start, end, in_path, slcr, sltm, slpt, slmm, tomlcs)
+        batch = molcas_batch(inputs, j, start, end, in_path, slcr, sltm, slpt, slmm, tomlcs, shell)
 
         with open('./runset-%d.sh' % (j + 1), 'w') as run:
             run.write(batch)
@@ -391,7 +403,7 @@ def gen_molcas(cpus, ensemble, inputs, slpt, sltm, slmm, slnd, slcr, sljb, slin,
     os.system("chmod 777 runall.sh")
     print('\n\n Done\n')
 
-def molcas_batch(inputs, j, start, end, in_path, slcr, sltm, slpt, slmm, tomlcs):
+def molcas_batch(inputs, j, start, end, in_path, slcr, sltm, slpt, slmm, tomlcs, shell):
     ## This function will be called by gen_molcas function
     ## This function generates runset for MolCas calculation
 
@@ -443,7 +455,7 @@ def molcas_batch(inputs, j, start, end, in_path, slcr, sltm, slpt, slmm, tomlcs)
 #SBATCH --mem=%dmb
 #SBATCH --output=%%j.o.slurm
 #SBATCH --error=%%j.e.slurm
-
+%s
 export MOLCAS_NPROCS=1
 export MOLCAS_MEM=%d
 export MOLCAS_PRINT=2
@@ -496,7 +508,7 @@ rm -r $MOLCAS_WORKDIR
 
 %s
 """ % (
-        slcr, sltm, inputs, j + 1, slpt, int(slmm * slcr * 1.333), slmm, tomlcs,
+        slcr, sltm, inputs, j + 1, slpt, int(slmm * slcr * 1.333), shell, slmm, tomlcs,
         pri, add, restart + 1, start, end, inputs, in_path, inputs, addend
     )
 
@@ -507,7 +519,7 @@ def molcas(var):
     ## This function prepares MolCas calculation
     ## It generates .inp .StrOrb .xyz .velocity.xyz
     ## This function generates a backup slurm batch file for each calculation
-    inputname, inputpath, slpt, slmm, in_temp, in_orb, jobiph, qmmmkey, in_xyz, in_velo, tomlcs = var
+    inputname, inputpath, slpt, slmm, in_temp, in_orb, jobiph, qmmmkey, in_xyz, in_velo, tomlcs, shell = var
     if not os.path.exists('%s' % inputpath):
         os.makedirs('%s' % inputpath)
 
@@ -522,7 +534,7 @@ def molcas(var):
 #SBATCH --mem=%dmb
 #SBATCH --output=%%j.o.slurm
 #SBATCH --error=%%j.e.slurm
-
+%s
 if [ -d "/srv/tmp" ]
 then
  export LOCAL_TMP=/srv/tmp
@@ -546,7 +558,7 @@ mkdir -p $MOLCAS_WORKDIR/$MOLCAS_PROJECT
 cd $WORKDIR
 $MOLCAS/bin/pymolcas -f $INPUT.inp -b 1
 rm -r $MOLCAS_WORKDIR
-""" % (inputname, slpt, int(slmm * 1.333), inputname, inputpath, slmm, tomlcs)
+""" % (inputname, slpt, int(slmm * 1.333), shell, inputname, inputpath, slmm, tomlcs)
 
     with open('%s/%s.inp' % (inputpath, inputname), 'w') as out:
         out.write(in_temp)
@@ -588,7 +600,7 @@ def Markatom(xyz, marks):
 
 
 def gen_nxbagel(cpus, ensemble, inputs, slpt, sltm, slmm, slnd, slcr, sljb, slin, tontx, tobgl, lbbls, lblpk, lbslp,
-                lbbst, tomkl, tompi):
+                lbbst, tomkl, tompi, shell):
     ## This function groups nxbagel calculations in individual runset
     ## This function will call nxbagel_batch and nxbagel to prepare files
     ## This function need control.dyn for NxBagel calculation, therm.inp, sh.inp and jiri.inp are optional
@@ -637,11 +649,11 @@ def gen_nxbagel(cpus, ensemble, inputs, slpt, sltm, slmm, slnd, slcr, sljb, slin
             inputpath = '%s/%s' % (in_path, inputname)
             variables_wrapper.append([
                 inputname, inputpath, slcr, sljb, sltm, slpt, slmm, in_temp, in_xyz, in_velo, tontx, tobgl,
-                lbbls, lblpk, lbslp, lbbst, tomkl, tompi
+                lbbls, lblpk, lbslp, lbbst, tomkl, tompi, shell
             ])  # prepare calculations
 
         batch = nxbagel_batch(inputs, j, start, end, in_path, slcr, sljb, sltm, slpt, slmm, tontx, tobgl, lbbls, lblpk,
-                              lbslp, lbbst, tomkl, tompi)
+                              lbslp, lbbst, tomkl, tompi, shell)
 
         with open('./runset-%d.sh' % (j + 1), 'w') as out:
             out.write(batch)
@@ -665,7 +677,7 @@ def gen_nxbagel(cpus, ensemble, inputs, slpt, sltm, slmm, slnd, slcr, sljb, slin
 
 
 def nxbagel_batch(inputs, j, start, end, in_path, slcr, sljb, sltm, slpt, slmm, tontx, tobgl, lbbls, lblpk, lbslp,
-                  lbbst, tomkl, tompi):
+                  lbbst, tomkl, tompi, shell):
     ## This function will be called by gen_nxbagel
     ## This function generates runset for NxBagel calculation
 
@@ -682,7 +694,7 @@ def nxbagel_batch(inputs, j, start, end, in_path, slcr, sljb, sltm, slpt, slmm, 
 #SBATCH --mem=%dmb
 #SBATCH --output=%%j.o.slurm
 #SBATCH --error=%%j.e.slurm
-
+%s
 export MKL_DEBUG_CPU_TYPE=5
 
 export BAGEL_NUM_THREADS=1
@@ -712,8 +724,8 @@ do
 done
 wait
 """ % (
-        slcr, sltm, inputs, j + 1, slpt, int(slmm * slcr * 1.1), bagelpal, tontx, tobgl, tobgl, lbbls, lblpk, lbslp,
-        lbbst, tomkl, tompi, start, end, in_path, inputs)
+        slcr, sltm, inputs, j + 1, slpt, int(slmm * slcr * 1.1), shell, bagelpal, tontx, tobgl, tobgl, lbbls, lblpk,
+        lbslp, lbbst, tomkl, tompi, start, end, in_path, inputs)
 
     return batch
 
@@ -724,7 +736,7 @@ def nxbagel(var):
     ## This function generates a backup slurm batch file for each calculation
 
     inputname, inputpath, slcr, sljb, sltm, slpt, slmm, in_temp, in_xyz, in_velo, tontx, tobgl, lbbls, \
-        lblpk, lbslp, lbbst, tomkl, tompi = var
+        lblpk, lbslp, lbbst, tomkl, tompi, shell = var
     ### Note, this line doesn't check if slcr and sljb are appropriate for parallelization, be careful!!!
     bagelpal = int(slcr / sljb)
 
@@ -741,7 +753,7 @@ def nxbagel(var):
 #SBATCH --mem=%dmb
 #SBATCH --output=%%j.o.slurm
 #SBATCH --error=%%j.e.slurm
-
+%s
 export BAGEL_NUM_THREADS=1
 export MKL_NUM_THREADS=1
 export BAGELPAL=$SLURM_NTASKS
@@ -761,8 +773,8 @@ export PATH=$MPI/bin:$PATH
 export WORKDIR=%s
 cd $WORKDIR
 $NX/moldyn.pl > moldyn.log
-""" % (bagelpal, sltm, inputname, slpt, int(slmm * 1.1), tontx, tobgl, tobgl, lbbls, lblpk, lbslp, lbbst, tomkl, tompi,
-       inputpath)
+""" % (bagelpal, sltm, inputname, slpt, int(slmm * 1.1), shell, tontx, tobgl, tobgl, lbbls, lblpk, lbslp, lbbst, tomkl,
+       tompi, inputpath)
 
     with open('%s/%s.sh' % (inputpath, inputname), 'w') as out:
         out.write(runscript)
@@ -826,7 +838,7 @@ def Unpack(ensemble, prog):
     return xyz, velo
 
 
-def gen_pyrai2md(cpus, ensemble, inputs, slpt, sltm, slmm, slnd, slcr, sljb, slin, qm, iformat):
+def gen_pyrai2md(cpus, ensemble, inputs, slpt, sltm, slmm, slnd, slcr, sljb, slin, qm, iformat, shell):
     ## This function will group PyRAI2MD calculations to individual runset
     ## this function will call pyrai2md_batch and pyrai2md to prepare files
 
@@ -848,10 +860,10 @@ def gen_pyrai2md(cpus, ensemble, inputs, slpt, sltm, slmm, slnd, slcr, sljb, sli
             inputpath = '%s/%s' % (in_path, inputname)
             # prepare calculations
             variables_wrapper.append([
-                inputs, inputname, inputpath, slcr, sljb, sltm, slpt, slmm, in_temp, in_xyz, in_velo, qm
+                inputs, inputname, inputpath, slcr, sljb, sltm, slpt, slmm, in_temp, in_xyz, in_velo, qm, shell
             ])
 
-        batch = pyrai2md_batch(inputs, j, start, end, in_path, slcr, sltm, slpt, slmm)
+        batch = pyrai2md_batch(inputs, j, start, end, in_path, slcr, sltm, slpt, slmm, shell)
 
         with open('./runset-%d.sh' % (j + 1), 'w') as out:
             out.write(batch)
@@ -874,7 +886,7 @@ def gen_pyrai2md(cpus, ensemble, inputs, slpt, sltm, slmm, slnd, slcr, sljb, sli
     print('\n\n Done\n')
 
 
-def pyrai2md_batch(inputs, j, start, end, in_path, slcr, sltm, slpt, slmm):
+def pyrai2md_batch(inputs, j, start, end, in_path, slcr, sltm, slpt, slmm, shell):
     ## This function will be called by gen_pyrai2md
     ## This function generates runset for PyRAI2MD calculation
 
@@ -888,7 +900,7 @@ def pyrai2md_batch(inputs, j, start, end, in_path, slcr, sltm, slpt, slmm):
 #SBATCH --mem=%dmb
 #SBATCH --output=%%j.o.slurm
 #SBATCH --error=%%j.e.slurm
-
+%s
 export INPUT=input
 
 for ((i=%d;i<=%d;i++))
@@ -899,7 +911,7 @@ do
   sleep 5
 done
 wait
-""" % (slcr, sltm, inputs, j + 1, slpt, int(slmm * slcr * 1.1), start, end, in_path, inputs)
+""" % (slcr, sltm, inputs, j + 1, slpt, int(slmm * slcr * 1.1), shell, start, end, in_path, inputs)
 
     return batch
 
@@ -908,7 +920,7 @@ def pyrai2md(var):
     ## This function prepares PyRAI2MD calculation
     ## This function generates a backup slurm batch file for each calculation
 
-    inputs, inputname, inputpath, slcr, sljb, sltm, slpt, slmm, in_temp, in_xyz, in_velo, qm = var
+    inputs, inputname, inputpath, slcr, sljb, sltm, slpt, slmm, in_temp, in_xyz, in_velo, qm, shell = var
     ### Note, this line doesn't check if slcr and sljb are appropriate for parallelization, be careful!!!
     ncpu = int(
         slcr / sljb)
@@ -953,14 +965,14 @@ def pyrai2md(var):
 #SBATCH --mem=%dmb
 #SBATCH --output=%%j.o.slurm
 #SBATCH --error=%%j.e.slurm
-
+%s
 export INPUT=input
 export WORKDIR=%s
 
 cd $WORKDIR
 pyrai2md $INPUT
 
-""" % (ncpu, sltm, inputname, slpt, int(slmm * 1.1), inputpath)
+""" % (ncpu, sltm, inputname, slpt, int(slmm * 1.1), shell, inputpath)
 
     with open('%s/run_PyRAI2MD.sh' % inputpath, 'w') as out:
         out.write(runscript)
@@ -1000,7 +1012,7 @@ def UnpackXZ(ensemble):
     return xyz, velo
 
 
-def gen_fromage(cpus, ensemble, inputs, slpt, sltm, slmm, slnd, slcr, sljb, slin, tomlcs, toxtb, iformat):
+def gen_fromage(cpus, ensemble, inputs, slpt, sltm, slmm, slnd, slcr, sljb, slin, tomlcs, toxtb, iformat, shell):
     ## This function will group fromage calculations to individual runset
     ## this function will call fromage_batch and molcas to prepare files
 
@@ -1021,10 +1033,10 @@ def gen_fromage(cpus, ensemble, inputs, slpt, sltm, slmm, slnd, slcr, sljb, slin
             inputname = '%s-%s' % (inputs, i + start)
             inputpath = '%s/%s' % (in_path, inputname)
             variables_wrapper.append([
-                inputs, inputname, inputpath, slmm, in_xyz, in_velo, tomlcs, toxtb
+                inputs, inputname, inputpath, slmm, in_xyz, in_velo, tomlcs, toxtb, shell
             ])  # prepare calculations
 
-        batch = fromage_batch(inputs, j, start, end, in_path, slcr, sltm, slpt, slmm, tomlcs, toxtb)
+        batch = fromage_batch(inputs, j, start, end, in_path, slcr, sltm, slpt, slmm, tomlcs, toxtb, shell)
 
         with open('./runset-%d.sh' % (j + 1), 'w') as out:
             out.write(batch)
@@ -1048,7 +1060,7 @@ def gen_fromage(cpus, ensemble, inputs, slpt, sltm, slmm, slnd, slcr, sljb, slin
     print('\n\n Done\n')
 
 
-def fromage_batch(inputs, j, start, end, in_path, slcr, sltm, slpt, slmm, tomlcs, toxtb):
+def fromage_batch(inputs, j, start, end, in_path, slcr, sltm, slpt, slmm, tomlcs, toxtb, shell):
     ## This function will be called by gen_fromage function
     ## This function generates runset for fromage calculation
 
@@ -1062,7 +1074,7 @@ def fromage_batch(inputs, j, start, end, in_path, slcr, sltm, slpt, slmm, tomlcs
 #SBATCH --mem=%dmb
 #SBATCH --output=%%j.o.slurm
 #SBATCH --error=%%j.e.slurm
-
+%s
 export MOLCAS_NPROCS=1
 export MOLCAS_MEM=%d
 export MOLCAS_PRINT=2
@@ -1094,7 +1106,7 @@ done
 wait
 rm -r $MOLCAS_WORKDIR
 
-""" % (slcr, sltm, inputs, j + 1, slpt, int(slmm * slcr * 1.333), slmm, tomlcs, toxtb, start, end,
+""" % (slcr, sltm, inputs, j + 1, slpt, int(slmm * slcr * 1.333), shell, slmm, tomlcs, toxtb, start, end,
        inputs, in_path, inputs)
 
     return batch
@@ -1105,7 +1117,7 @@ def fromage(var):
     ## This function copy fromage.in shell.xyz and generates mol.init.xyz
     ## This function creates mh (mh.temp .StrOrb), ml (ml.temp xtb_charges.pc, xtb.input), rl (rl.temp) folders
     ## This function generates a backup slurm batch file for each calculation
-    inputs, inputname, inputpath, slmm, in_xyz, in_velo, tomlcs, toxtb = var
+    inputs, inputname, inputpath, slmm, in_xyz, in_velo, tomlcs, toxtb, shell = var
 
     if not os.path.exists('%s' % inputpath):
         os.makedirs('%s' % inputpath)
@@ -1121,7 +1133,7 @@ def fromage(var):
 #SBATCH --mem=%dmb
 #SBATCH --output=%%j.o.slurm
 #SBATCH --error=%%j.e.slurm
-
+%s
 if [ -d "/srv/tmp" ]
 then
  export LOCAL_TMP=/srv/tmp
@@ -1145,7 +1157,7 @@ export PATH=$PATH:/%s
 cd $WORKDIR
 fro_run.py
 rm -r $MOLCAS_WORKDIR
-""" % (inputname, int(slmm * 1.333), inputname, inputpath, slmm, tomlcs, toxtb)
+""" % (inputname, int(slmm * 1.333), shell, inputname, inputpath, slmm, tomlcs, toxtb)
 
     with open('%s/%s.sh' % (inputpath, inputname), 'w') as out:
         out.write(runscript)
@@ -1180,7 +1192,7 @@ rm -r $MOLCAS_WORKDIR
     shutil.copy2('rl.temp', '%s/rl/rl.temp' % inputpath)
 
 
-def gen_orca(cpus, ensemble, inputs, slpt, sltm, slmm, slnd, slcr, sljb, slin, toorca, iformat):
+def gen_orca(cpus, ensemble, inputs, slpt, sltm, slmm, slnd, slcr, sljb, slin, toorca, iformat, shell):
     ## This function will group Molcas calculations to individual runset
     ## this function will call molcas_batch and molcas to prepare files
 
@@ -1202,9 +1214,9 @@ def gen_orca(cpus, ensemble, inputs, slpt, sltm, slmm, slnd, slcr, sljb, slin, t
             inputname = '%s-%s' % (inputs, i + start)
             inputpath = '%s/%s' % (in_path, inputname)
             # prepare calculations
-            variables_wrapper.append([inputname, inputpath, slmm, in_temp, in_xyz, in_velo, toorca])
+            variables_wrapper.append([inputname, inputpath, slmm, in_temp, in_xyz, in_velo, toorca, shell])
 
-        batch = orca_batch(inputs, j, start, end, in_path, slcr, sltm, slpt, slmm, toorca)
+        batch = orca_batch(inputs, j, start, end, in_path, slcr, sltm, slpt, slmm, toorca, shell)
 
         with open('./runset-%d.sh' % (j + 1), 'w') as run:
             run.write(batch)
@@ -1226,7 +1238,7 @@ def gen_orca(cpus, ensemble, inputs, slpt, sltm, slmm, slnd, slcr, sljb, slin, t
     print('\n\n Done\n')
 
 
-def orca_batch(inputs, j, start, end, in_path, slcr, sltm, slpt, slmm, toorca):
+def orca_batch(inputs, j, start, end, in_path, slcr, sltm, slpt, slmm, toorca, shell):
     ## This function will be called by gen_orca function
     ## This function generates runset for ORCA calculation
 
@@ -1240,7 +1252,7 @@ def orca_batch(inputs, j, start, end, in_path, slcr, sltm, slpt, slmm, toorca):
 #SBATCH --mem=%dmb
 #SBATCH --output=%%j.o.slurm
 #SBATCH --error=%%j.e.slurm
-
+%s
 export ORCA_EXE=%s
 module load openmpi/openmpi-4.1.1
 
@@ -1257,7 +1269,7 @@ done
 wait
 
 """ % (
-        slcr, sltm, inputs, j + 1, slpt, int(slmm * slcr * 1.333), toorca,
+        slcr, sltm, inputs, j + 1, slpt, int(slmm * slcr * 1.333), shell, toorca,
         start, end, inputs, in_path, inputs)
 
     return batch
@@ -1268,7 +1280,7 @@ def orca(var):
     ## It generates .inp .StrOrb .xyz .velocity.xyz
     ## This function generates a backup slurm batch file for each calculation
 
-    inputname, inputpath, slmm, in_temp, in_xyz, in_velo, toorca = var
+    inputname, inputpath, slmm, in_temp, in_xyz, in_velo, toorca, shell = var
     if not os.path.exists('%s' % inputpath):
         os.makedirs('%s' % inputpath)
 
@@ -1282,7 +1294,7 @@ def orca(var):
 #SBATCH --mem=%dmb
 #SBATCH --output=%%j.o.slurm
 #SBATCH --error=%%j.e.slurm
-
+%s
 export INPUT=%s
 export WORKDIR=%s
 
@@ -1292,7 +1304,7 @@ module load openmpi/openmpi-4.1.1
 cd $WORKDIR
 $ORCA_EXE/orca $INPUT.inp > $INPUT.out
 
-""" % (inputname, int(slmm * 1.333), inputname, inputpath, toorca)
+""" % (inputname, int(slmm * 1.333), shell, inputname, inputpath, toorca)
 
     in_xyz = '\n'.join(in_xyz.splitlines()[2:])
     in_temp += in_xyz + '\n*\n'
