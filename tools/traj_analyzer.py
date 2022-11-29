@@ -2205,7 +2205,7 @@ def classify_output(title, snapshot_type, param, ntraj_list, ext, time, gap):
         else:
             structure_f[label] = [ntraj]
 
-    print('\nSave parameters for final snapshot to param-%s.%s' % (title, ext))
+    print('\nSave parameters for %s snapshot to param-%s.%s' % (snapshot_type, title, ext))
     with open('param-%s.%s' % (title, ext), 'w') as out:
         out.write(output_f)
 
