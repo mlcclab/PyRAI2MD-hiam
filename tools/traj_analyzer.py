@@ -2105,7 +2105,7 @@ def RUNpop(key_dict):
                 init_state = int(label[i_traj - 1][i_hop - 1].split()[7])
                 final_state = int(label[i_traj - 1][i_hop - 1].split()[9])
                 gap = np.abs(crt_pot[i_hop - 1][init_state] - crt_pot[i_hop - 1][final_state]) * 27.211
-                hop_energy += '%-5d %5d %5d %12.4f' % (i_traj, init_state, final_state, gap)
+                hop_energy += '%-5d %5d %5d %12.4f\n' % (i_traj, init_state, final_state, gap)
 
     avg_kin /= len(traj_index)
     avg_pot /= len(traj_index)
