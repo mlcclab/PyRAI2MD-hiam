@@ -857,7 +857,7 @@ def read_wrapper(var):
         index += 1
         if len(cond) > 0:
             natom = len(cond)
-            rmsd.append(np.mean((snapshot[: natom, 3: 6] - cond[:, 3: 6]) ** 2) ** 0.5)
+            rmsd.append(trans_rmsd(snapshot[: natom, 0: 3], cond[:, 0: 3]))
             snapshot[: natom, 3: 6] = cond[:, 3: 6]
         else:
             rmsd.append(0)
@@ -865,6 +865,17 @@ def read_wrapper(var):
         out += '%s' % write_init(index - 1, atom, snapshot)
 
     return n, out, rmsd
+
+def trans_rmsd(p, q):
+    ## This function compute RMSD at geometrical center
+
+    pc = np.mean(p, axis=0)
+    qc = np.mean(q, axis=0)
+    p -= pc
+    q -= qc
+    rmsd = np.mean((p - q) ** 2) ** 0.5
+
+    return rmsd
 
 def read_traj(file):
     filename = file.split('/')[-1]
