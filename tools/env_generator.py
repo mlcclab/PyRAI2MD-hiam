@@ -2,7 +2,7 @@
 ## Chemical environment generator - a script to automatically create solvent or aggregate environment
 ## ----------------------
 ##
-## New version Nov 3 2022 Jingbai Li
+## New version Dec 6 2022 Jingbai Li
 
 import os
 import sys
@@ -34,7 +34,7 @@ def main(argv):
 
       title         name of calculation
       cpus          1 # number of CPUs for merging and reading initial conditions
-      mode          create  # run mode, create, merge, or read
+      mode          create  # run mode, create, merge, read, or edit
       env_type      solvent  # type of environment, solvent or aggregate 
       solute        solute.xyz  # solute molecule xyz file
       solvent       solvent.xyz  # solvent molecule xyz file
@@ -64,7 +64,11 @@ def main(argv):
       skip          10  # number of MD step to be skipped before reading conditions
       freq          1  # frequency of reading conditions in each trajectory from the last snapshot  
       combine       yes  # combine the initial velocity with the corresponding atoms in the final condition
-
+      read_init     filename  # name of a .init or .init.xyz file
+      init_to_xyz   1  # convert a init file to xyz
+      scale         1  # scale the kinetic energy
+      edit_atom     []  # edit initial conditions for the selected atoms 
+      
     Running this script will print more information about the requisite keywords
 
     """
@@ -95,6 +99,7 @@ def main(argv):
     nb = None
     nc = None
     radius = None
+    align = None
 
     dist = 'wigner'
     ninitcond = 0
@@ -105,6 +110,11 @@ def main(argv):
     skip = 0
     freq = 1
     combine = 'yes'
+
+    read_init = None
+    init_to_xyz = 0
+    scale = 1
+    edit_atom = []
 
     if len(argv) <= 1:
         exit(usage)
@@ -165,6 +175,8 @@ def main(argv):
             nc = int(line.split()[1])
         elif 'radius' == key:
             radius = float(line.split()[1])
+        elif 'align' == key:
+            align = line.split()[1]
         elif 'method' == key:
             dist = line.split()[1].lower()
         elif 'ninitcond' == key:
@@ -183,6 +195,17 @@ def main(argv):
             freq = int(line.split()[1])
         elif 'combine' == key:
             combine = line.split()[1].lower()
+        elif 'read_init' == key:
+            read_init = line.split()[1]
+        elif 'init_to_xyz' == key:
+            init_to_xyz = int(line.split()[1])
+        elif 'scale' == key:
+            scale = float(line.split()[1])
+        elif 'edit_atom' == key:
+            edit_atom = line.split()[1:]
+
+    if len(edit_atom) > 0:
+        edit_atom = getindex(edit_atom)
 
     key_dict = {
         'title': title,
@@ -208,6 +231,7 @@ def main(argv):
         'nb': nb,
         'nc': nc,
         'radius': radius,
+        'align': align,
         'method': dist,
         'ninitcond': ninitcond,
         'iseed': iseed,
@@ -217,6 +241,10 @@ def main(argv):
         'skip': skip,
         'freq': freq,
         'combine': combine,
+        'read_init': read_init,
+        'init_to_xyz': init_to_xyz,
+        'scale': scale,
+        'edit_atom': edit_atom,
     }
 
     if mode == 'create':
@@ -225,9 +253,24 @@ def main(argv):
         merge_env(key_dict)
     elif mode == 'read':
         read_final_cond(key_dict)
+    elif mode == 'edit':
+        edit_cond(key_dict)
     else:
         exit('\n KeywordError: unrecognized mode %s\n' % mode)
 
+def getindex(index):
+    ## This function read single, range, separate range index and convert them to a list
+    index_list = []
+    for i in index:
+        if '-' in i:
+            a, b = i.split('-')
+            a, b = int(a), int(b)
+            index_list += range(a, b + 1)
+        else:
+            index_list.append(int(i))
+
+    index_list = sorted(list(set(index_list)))  # remove duplicates and sort from low to high
+    return index_list
 
 def create_env(key_dict):
     env_type = key_dict['env_type']
@@ -373,6 +416,7 @@ def create_aggregate(key_dict):
     nb        3  # number of translation in b direction
     nc        3  # number of translation in c direction
     radius    14  # cutoff radius to build aggregate
+    align     file.xyz  # align the orientation toward target xyz
 
     ''')
     in_dict = {
@@ -389,6 +433,7 @@ def create_aggregate(key_dict):
         'nb': key_dict['nb'],
         'nc': key_dict['nc'],
         'radius': key_dict['radius'],
+        'align': key_dict['align']
     }
 
     for key in in_dict.keys():
@@ -408,6 +453,7 @@ def create_aggregate(key_dict):
     nb = in_dict['nb']
     nc = in_dict['nc']
     radius = in_dict['radius']
+    align = in_dict['align']
 
     ## compute unit vectors
     alpha = alpha / 180 * np.pi
@@ -460,6 +506,8 @@ def create_aggregate(key_dict):
 
     supercell = cut_cell(supercell, center, radius)
     maxrad = np.amax([np.sum(x ** 2, axis=1) ** 0.5 for x in supercell])
+    if align:
+        supercell = align_cell(supercell, align)
     core = write_core(atom, supercell[0])
     output = write_supercell(atom, supercell)
 
@@ -471,6 +519,7 @@ def create_aggregate(key_dict):
 
     print(' building supercell')
     print(' cutting aggregate')
+    print(' aligning cell to %s' % align)
     print(' computing aggregate max radius ', maxrad)
     print(' writing center molecule > mol.xyz')
     print(' writing environment > env.xyz')
@@ -500,6 +549,33 @@ def cut_cell(supercell, nref, radius):
             cell.append(mol - center)
 
     return cell
+
+def align_cell(supercell, ref):
+    mol = supercell[0]
+    with open(ref, 'r') as inxyz:
+        xyz = inxyz.read().splitlines()
+    atom, ref = read_xyz(xyz)
+
+    p = mol.copy()
+    q = ref.copy()
+    pc = p.mean(axis=0)
+    qc = q.mean(axis=0)
+    p -= pc
+    q -= qc
+    c = np.dot(np.transpose(p), q)
+    v, s, w = np.linalg.svd(c)
+    d = (np.linalg.det(v) * np.linalg.det(w)) < 0.0
+    if d:  # ensure right-hand system
+        s[-1] = -s[-1]
+        v[:, -1] = -v[:, -1]
+    u = np.dot(v, w)
+
+    aligned_cell = []
+    for mol in supercell:
+        coord = np.dot(mol - pc, u) + qc
+        aligned_cell.append(coord)
+
+    return aligned_cell
 
 def write_core(atom, xyz):
     natom = len(xyz)
@@ -661,7 +737,8 @@ def merge(env, xyz):
     cond = np.concatenate((xyz, shell), axis=0).astype(float)
     cm = np.mean(cond[:, 0: 3], axis=0)
     cond[:, 0: 3] = cond[:, 0: 3] - cm
-    rmsd = np.mean((cond[:len(xyz), 0: 3] - xyz[:, 0: 3].astype(float)) ** 2) ** 0.5
+    rmsd = np.mean((env[:len(xyz), 0: 3] - xyz[:, 0: 3].astype(float)) ** 2) ** 0.5
+
     return cond, rmsd
 
 def write_init(idx, atom, cond):
@@ -709,9 +786,9 @@ def read_final_cond(key_dict):
             exit('\n KeyError: missing keyword in env_file: %s\n' % key)
 
     cpus = key_dict['cpus']
-    read = in_dict['read']
-    skip = in_dict['skip']
-    freq = in_dict['freq']
+    read = key_dict['read']
+    skip = key_dict['skip']
+    freq = key_dict['freq']
     combine = in_dict['combine']
 
     with open(read, 'r') as infile:
@@ -758,6 +835,12 @@ def read_final_cond(key_dict):
     print(' write final condition > final.init')
     print(' COMPLETE')
 
+    print('''
+    HINTS: 
+       you might want to visualize or edit the initial conditions
+       to do so, change mode to edit
+       ''')
+
     return None
 
 def read_wrapper(var):
@@ -774,8 +857,8 @@ def read_wrapper(var):
         index += 1
         if len(cond) > 0:
             natom = len(cond)
-            snapshot[: natom, 3: 6] = cond[:, 3: 6]
             rmsd.append(np.mean((snapshot[: natom, 3: 6] - cond[:, 3: 6]) ** 2) ** 0.5)
+            snapshot[: natom, 3: 6] = cond[:, 3: 6]
         else:
             rmsd.append(0)
 
@@ -809,6 +892,91 @@ def read_traj(file):
 
     return atom, traj
 
+def edit_cond(key_dict):
+    print('''
+    Tips for editing initial conditions from a init file   
+       the following keyword are optional
+
+       read_init     filename  # name of a .init or .init.xyz file 
+       init_to_xyz   1  # convert a init file to xyz
+       scale         1  # scale the kinetic energy isotropically
+       edit_atom     1-20  # apply edition for the selected atoms, default is all atoms
+
+       ''')
+
+    read_init = key_dict['read_init']
+    init_to_xyz = key_dict['init_to_xyz']
+    scale = key_dict['scale']
+    edit_atom = key_dict['edit_atom']
+
+    if read_init is None:
+        atom = []
+        initcond = []
+        exit('\n KeyError: missing keyword in env_file: read_init\n')
+    else:
+        atom, initcond = init_reader(read_init)
+
+    if len(edit_atom) == 0:
+        edit_atom = [x for x in range(len(atom))]
+
+    print(' reading %s initial conditions' % len(initcond))
+    print(' editing %s atoms per condition' % len(edit_atom))
+
+    if init_to_xyz == 1:
+        conv_initcond(atom, initcond, edit_atom)
+        print(' converting init file > initcond.xyz')
+
+    if scale != 1:
+        edit_initcond(atom, initcond, edit_atom, scale)
+        print(' scaling init kinetic energy > scaled.init')
+
+    print(' COMPLETE')
+
+    return None
+
+def init_reader(read_init):
+    with open(read_init, 'r') as data:
+        coord = data.read().splitlines()
+
+    natom = int(coord[0].split()[2])
+    atom = []
+    initcond = []
+    for n, line in enumerate(coord):  # geom_h[classify_state] is a dict
+        if 'Init' in line:
+            xyz = np.array([x.split() for x in coord[n + 1: n + 1 + natom]])
+            atom = xyz[:, 0].tolist()
+            cond = xyz[:, 1: 7].astype(float)
+            initcond.append(cond)
+
+    return atom, initcond
+
+def conv_initcond(atom, initcond, edit_atom):
+    output = ''
+    for idx, cond in enumerate(initcond):
+        xyz = cond[edit_atom]
+        natom = len(xyz)
+        output += '%s\nInit %s\n' % (natom, idx + 1)
+        for n, coord in enumerate(xyz):
+            output += '%-5s %24.15f %24.16f %24.16f\n' % (atom[n], coord[0], coord[1], coord[2])
+
+    with open('initcond.xyz', 'w') as out:
+        out.write(output)
+
+    return None
+
+def edit_initcond(atom, initcond, edit_atom, scale):
+    scale = scale ** 0.5
+    natom = len(atom)
+    output = ''
+    for idx, cond in enumerate(initcond):
+        output += 'Init %s %s X(A) Y(A) Z(A) Vx(au) Vy(au) Vz(au) g/mol e\n' % (idx + 1, natom)
+        cond[edit_atom, 3: 6] = cond[edit_atom, 3: 6] * scale
+        for n, xyz in enumerate(cond):
+            x, y, z, vx, vy, vz = xyz
+            output += '%-5s %24.16f %24.16f %24.16f %24.16f %24.16f %24.16f 0 0\n' % (atom[n], x, y, z, vx, vy, vz)
+
+    with open('scaled.init', 'w') as out:
+        out.write(output)
 
 if __name__ == '__main__':
     main(sys.argv)
