@@ -142,7 +142,7 @@ def main(argv):
         elif 'solvent' == key:
             solvent = line.split()[1]
         elif 'nshell' == key:
-            nshell = int(line.split()[1])
+            nshell = float(line.split()[1])
         elif 'density' == key:
             density = float(line.split()[1])
         elif 'mass' == key:
@@ -977,6 +977,7 @@ def edit_initcond(atom, initcond, edit_atom, scale):
 
     with open('scaled.init', 'w') as out:
         out.write(output)
+
 
 if __name__ == '__main__':
     main(sys.argv)
