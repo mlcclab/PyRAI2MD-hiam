@@ -196,14 +196,19 @@ class E2N2:
         ngpu = torch.cuda.device_count()
         if ngpu == 0:
             device = None
+            self.device = 'cpu'
         elif 0 < ngpu < 2:
             device = [0, 0, 0, 0, 0, 0][:len(self.hypers)]
+            self.device = 'gpu'
         elif 2 <= ngpu < 4:
             device = [0, 1, 0, 1, 0, 1][:len(self.hypers)]
+            self.device = 'gpu'
         elif 4 <= ngpu < 6:
             device = [0, 1, 2, 3, 2, 3][:len(self.hypers)]
+            self.device = 'gpu'
         else:
             device = [0, 1, 2, 3, 4, 5][:len(self.hypers)]
+            self.device = 'gpu'
 
         self.model = GCNNP(self.model_path, self.hypers, node_type, device=device)
 
@@ -250,7 +255,7 @@ class E2N2:
 
         xyz = np.concatenate((self.atoms.reshape((-1, self.natom, 1)), self.geos), axis=-1).tolist()
         self.model.build()
-        errors = self.model.train(xyz, self.y_dict, remote=True)
+        errors = self.model.train(xyz, self.y_dict, remote=True, device=self.device)
 
         if self.model_register['energy_grad']:
             eg_error = errors['energy_grad']
