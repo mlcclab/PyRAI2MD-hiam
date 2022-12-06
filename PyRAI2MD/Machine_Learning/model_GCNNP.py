@@ -11,6 +11,7 @@ import os
 import time
 import copy
 import numpy as np
+import torch.cuda
 
 from PyRAI2MD.Machine_Learning.hyper_gcnnp import set_e2n2_hyper_eg
 from PyRAI2MD.Machine_Learning.hyper_gcnnp import set_e2n2_hyper_nac
@@ -192,7 +193,19 @@ class E2N2:
         self.hypers = hyper_eg + hyper_nac + hyper_soc
 
         # initialize a model to load a trained method
-        self.model = GCNNP(self.model_path, self.hypers, node_type)
+        ngpu = torch.cuda.device_count()
+        if ngpu == 0:
+            device = None
+        elif 0 < ngpu < 2:
+            device = [0, 0, 0, 0, 0, 0][:len(self.hypers)]
+        elif 2 <= ngpu < 4:
+            device = [0, 1, 0, 1, 0, 1][:len(self.hypers)]
+        elif 4 <= ngpu < 6:
+            device = [0, 1, 2, 3, 2, 3][:len(self.hypers)]
+        else:
+            device = [0, 1, 2, 3, 4, 5][:len(self.hypers)]
+
+        self.model = GCNNP(self.model_path, self.hypers, node_type, device=device)
 
     def _heading(self):
 
