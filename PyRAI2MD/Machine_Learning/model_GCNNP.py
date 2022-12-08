@@ -28,7 +28,7 @@ class E2N2:
 
         Parameters:          Type:
             keywords         dict        keywords dict
-            id               int         calculation index
+            job_id           int         calculation index
 
         Attribute:           Type:
             hyp_eg           dict        Hyperparameters of energy gradient NN
@@ -76,6 +76,7 @@ class E2N2:
         soc_unit = variables['soc_unit']
         shuffle = variables['shuffle']
         splits = variables['nsplits']
+        gpu = variables['gpu']
         self.jobtype = keywords['control']['jobtype']
         self.version = keywords['version']
         self.ncpu = keywords['control']['ml_ncpu']
@@ -194,21 +195,26 @@ class E2N2:
 
         # initialize a model to load a trained method
         ngpu = torch.cuda.device_count()
-        if ngpu == 0:
-            device = None
-            self.device = 'cpu'
-        elif 0 < ngpu < 2:
-            device = [0, 0, 0, 0, 0, 0][:len(self.hypers)]
-            self.device = 'gpu'
-        elif 2 <= ngpu < 4:
-            device = [0, 1, 0, 1, 0, 1][:len(self.hypers)]
-            self.device = 'gpu'
-        elif 4 <= ngpu < 6:
-            device = [0, 1, 2, 3, 2, 3][:len(self.hypers)]
+        if ngpu > 0 and gpu > 0:
             self.device = 'gpu'
         else:
+            self.device = 'cpu'
+
+        if ngpu > 0:
+            self.device_name = torch.cuda.current_device()
+        else:
+            self.device_name = 'cpu'
+
+        if ngpu == 0:
+            device = None
+        elif 0 < ngpu < 2:
+            device = [0, 0, 0, 0, 0, 0][:len(self.hypers)]
+        elif 2 <= ngpu < 4:
+            device = [0, 1, 0, 1, 0, 1][:len(self.hypers)]
+        elif 4 <= ngpu < 6:
+            device = [0, 1, 2, 3, 2, 3][:len(self.hypers)]
+        else:
             device = [0, 1, 2, 3, 4, 5][:len(self.hypers)]
-            self.device = 'gpu'
 
         self.model = GCNNP(self.model_path, self.hypers, node_type, device=device)
 
@@ -230,12 +236,17 @@ class E2N2:
  Number of NAC:    %s
  Number of SOC:    %s
 
+ Device found: %s
+ Running device: %s
+ 
 """ % (
             self.version,
             self.natom,
             self.nstate,
             self.nnac,
-            self.nsoc
+            self.nsoc,
+            self.device_name,
+            self.device,
         )
 
         return headline

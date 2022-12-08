@@ -97,7 +97,7 @@ def gsh(traj):
         # if surface hopping event has occurred
         if event == 1:
             # Velocity must be adjusted because hop has occurred
-            vt, frustrated = adjust_velo(e[old_state - 1], e[state - 1], v, m, n[state - 1], adjust, reflect)
+            vt, frustrated = adjust_velo(e[old_state - 1], e[new_state - 1], v, m, n[state - 1], adjust, reflect)
 
             # if hop is frustrated, revert the new state to old state
             if frustrated == 1:

@@ -19,6 +19,7 @@ from PyRAI2MD.methods import QM
 from PyRAI2MD.Molecule.trajectory import Trajectory
 from PyRAI2MD.Dynamics.aimd import AIMD
 from PyRAI2MD.Machine_Learning.training_data import Data
+from PyRAI2MD.Machine_Learning.remote_train import RemoteTrain
 from PyRAI2MD.Utils.coordinates import print_coord
 from PyRAI2MD.Utils.sampling import sampling
 from PyRAI2MD.Utils.bonds import bond_lib
@@ -41,6 +42,7 @@ class AdaptiveSampling:
             ml               str         the ml method, which is the first item in qm list
             ml_ncpu          int         number of CPU for machine learning training
             qc_ncpu          int         number of CPU for quantum chemical calculation
+            remote_train     bool        train nn in remote mode compatible with SLURM
             maxiter          int         maximum number of adaptive sampling iteration
             refine           int         refine the sampling at crossing region
             refine_num       int         number of refinement geometries
@@ -143,6 +145,7 @@ class AdaptiveSampling:
         self.abinit = keywords['control']['abinit']
         self.ml_ncpu = keywords['control']['ml_ncpu']
         self.qc_ncpu = keywords['control']['qc_ncpu']
+        self.remote_train = keywords['control']['remote_train']
         self.maxiter = keywords['control']['maxiter']
         self.refine = keywords['control']['refine']
         self.refine_num = keywords['control']['refine_num']
@@ -812,7 +815,12 @@ class AdaptiveSampling:
         return self
 
     def _train_wrapper(self, _):
-        model = QM([self.ml], keywords=self.keywords, job_id=self.itr)
+        if self.remote_train:
+            calcdir = '%s/NN-%s-%s' % (os.getcwd(), self.title, self.itr)
+            model = RemoteTrain(keywords=self.keywords, calcdir=calcdir, use_hpc=1, retrieve=0)
+        else:
+            model = QM([self.ml], keywords=self.keywords, job_id=self.itr)
+
         model.train()
 
         return self

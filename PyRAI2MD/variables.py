@@ -20,6 +20,7 @@ def read_control(keywords, values):
         'qc_ncpu': ReadVal('i'),
         'ms_ncpu': ReadVal('i'),
         'gl_seed': ReadVal('i'),
+        'remote_train': ReadVal('i'),
         'jobtype': ReadVal('s'),
         'qm': ReadVal('sl'),
         'abinit': ReadVal('sl'),
@@ -90,6 +91,7 @@ def read_molecule(keywords, values):
         'factor': ReadVal('i'),
         'cavity': ReadVal('fl'),
         'center': ReadIndex('s'),
+        'compress': ReadVal('fl'),
         'primitive': ReadIndex('g'),
         'lattice': ReadIndex('s'),
     }
@@ -532,6 +534,7 @@ def read_input(ld_input):
         'qc_ncpu': 1,
         'ms_ncpu': 1,
         'gl_seed': 1,
+        'remote_train': 0,
         'jobtype': 'sp',
         'qm': 'nn',
         'abinit': ['molcas'],
@@ -589,6 +592,7 @@ def read_input(ld_input):
         'factor': 40,
         'cavity': [],
         'center': [],
+        'compress': [],
         'primitive': [],
         'lattice': [],
     }
@@ -732,19 +736,19 @@ def read_input(ld_input):
     }
 
     variables_search = {
-        'depth': [],
-        'nn_size': [],
-        'batch_size': [],
-        'reg_l1': [],
-        'reg_l2': [],
-        'dropout': [],
-        'node_features': [],
-        'n_features': [],
-        'n_edges': [],
-        'n_filters': [],
-        'n_blocks': [],
-        'n_rbf': [],
-        'use_hpc': 0,
+        'depth': [1],
+        'nn_size': [20],
+        'batch_size': [32],
+        'reg_l1': [1e-8],
+        'reg_l2': [1e-8],
+        'dropout': [0.005],
+        'n_features': [16],
+        'n_blocks': [3],
+        'l_max': [1],
+        'n_rbf': [8],
+        'rbf_layers': [2],
+        'rbf_neurons': [32],
+        'use_hpc': 1,
         'retrieve': 0,
     }
 
@@ -1206,10 +1210,10 @@ def read_input(ld_input):
         'schnet': variables_input['schnet'],
         'e2n2': variables_input['e2n2'],
         'file': variables_input['file'],
+        'search': variables_input['search']
     }
 
     ## update variables_nn
-    variables_all['nn']['search'] = variables_input['search']
     variables_all['nn']['eg'] = variables_input['eg']
     variables_all['nn']['nac'] = variables_input['nac']
     variables_all['nn']['soc'] = variables_input['soc']
@@ -1296,8 +1300,7 @@ def start_info(variables_all):
     variables_e2n2_eg = variables_e2n2['e2n2_eg']
     variables_e2n2_nac = variables_e2n2['e2n2_nac']
     variables_e2n2_soc = variables_e2n2['e2n2_soc']
-
-    variables_search = variables_nn['search']
+    variables_search = variables_all['search']
 
     control_info = """
   &control
@@ -1340,6 +1343,7 @@ def start_info(variables_all):
   External potential factor:  %-10s
   External potential radius:  %-10s
   External potential center:  %-10s
+  Compress potential shape    %-10s
   Primitive vectors:          %-10s
   Lattice constant:           %-10s
 -------------------------------------------------------
@@ -1359,6 +1363,7 @@ def start_info(variables_all):
         variables_molecule['factor'],
         variables_molecule['cavity'],
         variables_molecule['center'],
+        variables_molecule['compress'],
         variables_molecule['primitive'],
         variables_molecule['lattice']
     )
@@ -1369,6 +1374,7 @@ def start_info(variables_all):
   Ab initio:                  %-10s
   Load trained model:         %-10s
   Transfer learning:          %-10s
+  Remote training             %-10s
   Maxiter:                    %-10s
   Sampling number per traj:   %-10s
   Use dynamical Std:          %-10s
@@ -1405,6 +1411,7 @@ def start_info(variables_all):
         ' '.join(variables_control['abinit']),
         variables_control['load'],
         variables_control['transfer'],
+        variables_control['remote_train'],
         variables_control['maxiter'],
         variables_control['maxsample'],
         variables_control['dynsample'],
@@ -2412,12 +2419,20 @@ def start_info(variables_all):
     search_info = """
   &grid search
 -------------------------------------------------------
+  (nn/demo)
   Layers:                     %-10s
   Neurons/layer::             %-10s
   Batch:                      %-10s
   L1:                         %-10s
   L2:                         %-10s
   Dropout:                    %-10s
+  (e2n2)
+  n_features                  %-10s
+  n_blocks                    %-10s
+  l_max                       %-10s
+  n_rbf                       %-10s
+  rbf_layers                  %-10s
+  rbf_neurons                 %-10s
   Job distribution            %-10s
   Retrieve data               %-10s
 -------------------------------------------------------
@@ -2429,8 +2444,14 @@ def start_info(variables_all):
         variables_search['reg_l1'],
         variables_search['reg_l2'],
         variables_search['dropout'],
+        variables_search['n_features'],
+        variables_search['n_blocks'],
+        variables_search['l_max'],
+        variables_search['n_rbf'],
+        variables_search['rbf_layers'],
+        variables_search['rbf_neurons'],
         variables_search['use_hpc'],
-        variables_search['retrieve']
+        variables_search['retrieve'],
     )
 
     molcas_info = """

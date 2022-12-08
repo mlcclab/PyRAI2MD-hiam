@@ -31,6 +31,7 @@ class Constraint:
         frozen_atoms = keywords['molecule']['freeze']
         cavity = keywords['molecule']['cavity']
         center_frag = keywords['molecule']['center']
+        compressor = keywords['molecule']['compress']
 
         self.alpha = np.amax([keywords['molecule']['factor'], 2])
         self.shape = keywords['molecule']['shape']
@@ -72,8 +73,23 @@ class Constraint:
             self.has_potential = False
             self.cavity = np.ones(3)
 
-    def _polynomial_potential(self, coord):
+        if len(compressor) >= 2:
+            self.has_compressor = True
+            self.dr = (compressor[0] - 1) / compressor[1]
+            self.pos = compressor[1]
+        else:
+            self.has_compressor = False
+            self.dr = 0
+            self.pos = 0
+
+    def _polynomial_potential(self, coord, itr):
         cavity = np.ones_like(coord) * self.cavity
+
+        if self.has_compressor:
+            if itr < self.pos:
+                cavity *= 1 + self.dr * itr
+            else:
+                cavity *= 1 + self.dr * self.pos
 
         if self.shape == 'ellipsoid':
             r_over_r0 = np.sum(coord ** 2 / cavity ** 2, axis=1, keepdims=True)  # elementwise divide then atom-wise sum
@@ -106,11 +122,11 @@ class Constraint:
         shifted_coord = traj.coord - center
 
         if self.has_constrained:
-            ext_energy, ext_grad = self._polynomial_potential(shifted_coord[self.constrained_atoms])
+            ext_energy, ext_grad = self._polynomial_potential(shifted_coord[self.constrained_atoms], traj.itr)
             traj.energy += ext_energy  # numpy can automatic broad cast ext_energy
             traj.grad[:, self.constrained_atoms, :] += ext_grad  # numpy can automatic broad cast ext_grad
         else:
-            ext_energy, ext_grad = self._polynomial_potential(shifted_coord)
+            ext_energy, ext_grad = self._polynomial_potential(shifted_coord, traj.itr)
             traj.energy += ext_energy
             traj.grad += ext_grad
 

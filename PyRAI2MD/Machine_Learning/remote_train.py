@@ -12,6 +12,7 @@ import sys
 import subprocess
 import json
 import time
+import copy
 
 from PyRAI2MD.Utils.timing import how_long
 
@@ -20,7 +21,9 @@ class RemoteTrain:
 
         Parameters:          Type:
             keywords         dict        keyword dictionary
-            id               str         training id string
+            calcdir          str         calculation folder
+            use_hpc          int         run calculation on hpc
+            retrieve         int         retrieve trained results
 
         Attribute:           Type:
             keywords         dict        keyword dictionary
@@ -33,31 +36,36 @@ class RemoteTrain:
             train            dict        training metrics
     """
 
-    def __init__(self, keywords=None, id=None):
+    def __init__(self, keywords=None, calcdir=None, use_hpc=1, retrieve=0):
         ## get keywords info
-        self.keywords = keywords.copy()
+        self.keywords = copy.deepcopy(keywords)
         self.title = keywords['control']['title']
         self.keywords['control']['jobtype'] = 'train'
-        self.use_hpc = keywords['nn']['search']['use_hpc']
-        self.retrieve = keywords['nn']['search']['retrieve']
-
-        self.calcdir = '%s/grid-search/NN-%s-%s' % (os.getcwd(), self.title, id)
-
+        self.calcdir = calcdir
+        self.use_hpc = use_hpc
+        self.retrieve = retrieve
         self.runscript = """export INPUT=input.json
 export WORKDIR=%s
 
 cd $WORKDIR
 pyrai2md $INPUT
 """ % self.calcdir
+        ml = keywords['control']['qm'][0]
+        self.gpu = keywords[ml]['gpu']
 
     def _setup_hpc(self):
         ## setup HPC
         ## read slurm template from .slurm files
-        if os.path.exists('%s.slurm' % self.title):
+        if self.gpu:
+            ext = 'gres'
+        else:
+            ext = 'slurm'
+
+        if os.path.exists('%s.%s' % (self.title, ext)):
             with open('%s.slurm' % self.title) as template:
                 submission = template.read()
         else:
-            sys.exit('\n  FileNotFoundError\n  PyRAI2MD: looking for submission file %s.slurm' % self.title)
+            sys.exit('\n  FileNotFoundError\n  PyRAI2MD: looking for submission file %s.%s' % (self.title, ext))
 
         submission += self.runscript
 
@@ -115,12 +123,13 @@ pyrai2md $INPUT
         if nn1 and nn2:
             nn1 = [float(x) for x in nn1.split()]
             nn2 = [float(x) for x in nn2.split()]
+            status = 1
         else:
-            sys.exit('\n  RuntimeError\n  PyRAI2MD: looking for training log but not found')
+            status = 0
 
         metrics = {
             'path': self.calcdir,
-            'status': 1,
+            'status': status,
             'e1': nn1[0],
             'g1': nn1[1],
             'n1': nn1[2],
