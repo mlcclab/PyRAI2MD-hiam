@@ -55,7 +55,7 @@ def print_logo(version):
                      Excited-state Equivariant Neural Network
 
     Patrick Reiser - Fully connected neural networks (pyNNsMD)
-                   - SchNet (pyNNsMD)
+                     SchNet (pyNNsMD)
 
   Special acknowledgement to:
     Steven A. Lopez            - Project co-founder
