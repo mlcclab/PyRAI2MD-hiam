@@ -125,6 +125,8 @@ pyrai2md $INPUT
             nn2 = [float(x) for x in nn2.split()]
             status = 1
         else:
+            nn1 = [0, 0, 0, 0]
+            nn2 = [0, 0, 0, 0]
             status = 0
 
         metrics = {
