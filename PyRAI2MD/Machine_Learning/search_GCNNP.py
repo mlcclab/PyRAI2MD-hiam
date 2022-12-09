@@ -61,22 +61,22 @@ class SearchE2N2:
         key = 'f%s_b%s_l%s_n%s_%s_%s' % (n_features, n_blocks, l_max, n_rbf, rbf_layers, rbf_neurons)
         variables['e2n2']['e2n2_eg']['n_features'] = n_features
         variables['e2n2']['e2n2_eg']['n_blocks'] = n_blocks
-        variables['e2n2']['e2n2_eg']['n_features'] = l_max
-        variables['e2n2']['e2n2_eg']['n_blocks'] = n_rbf
-        variables['e2n2']['e2n2_eg']['n_features'] = rbf_layers
-        variables['e2n2']['e2n2_eg']['n_blocks'] = rbf_neurons
+        variables['e2n2']['e2n2_eg']['l_max'] = l_max
+        variables['e2n2']['e2n2_eg']['n_rbf'] = n_rbf
+        variables['e2n2']['e2n2_eg']['rbf_layers'] = rbf_layers
+        variables['e2n2']['e2n2_eg']['rbf_neurons'] = rbf_neurons
         variables['e2n2']['e2n2_nac']['n_features'] = n_features
         variables['e2n2']['e2n2_nac']['n_blocks'] = n_blocks
-        variables['e2n2']['e2n2_nac']['n_features'] = l_max
-        variables['e2n2']['e2n2_nac']['n_blocks'] = n_rbf
-        variables['e2n2']['e2n2_nac']['n_features'] = rbf_layers
-        variables['e2n2']['e2n2_nac']['n_blocks'] = rbf_neurons
+        variables['e2n2']['e2n2_nac']['l_max'] = l_max
+        variables['e2n2']['e2n2_nac']['n_rbf'] = n_rbf
+        variables['e2n2']['e2n2_nac']['rbf_layers'] = rbf_layers
+        variables['e2n2']['e2n2_nac']['rbf_neurons'] = rbf_neurons
         variables['e2n2']['e2n2_soc']['n_features'] = n_features
         variables['e2n2']['e2n2_soc']['n_blocks'] = n_blocks
-        variables['e2n2']['e2n2_soc']['n_features'] = l_max
-        variables['e2n2']['e2n2_soc']['n_blocks'] = n_rbf
-        variables['e2n2']['e2n2_soc']['n_features'] = rbf_layers
-        variables['e2n2']['e2n2_soc']['n_blocks'] = rbf_neurons
+        variables['e2n2']['e2n2_soc']['l_max'] = l_max
+        variables['e2n2']['e2n2_soc']['n_rbf'] = n_rbf
+        variables['e2n2']['e2n2_soc']['rbf_layers'] = rbf_layers
+        variables['e2n2']['e2n2_soc']['rbf_neurons'] = rbf_neurons
 
         return variables, key
 
