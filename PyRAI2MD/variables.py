@@ -322,10 +322,11 @@ def read_grid_search(keywords, values):
         'dropout': ReadVal('fl'),
         'node_features': ReadVal('il'),
         'n_features': ReadVal('il'),
-        'n_edges': ReadVal('il'),
-        'n_filters': ReadVal('il'),
         'n_blocks': ReadVal('il'),
+        'l_max': ReadVal('il'),
         'n_rbf': ReadVal('il'),
+        'rbf_layers': ReadVal('il'),
+        'rbf_neurons': ReadVal('il'),
         'use_hpc': ReadVal('i'),
         'retrieve': ReadVal('i'),
     }
