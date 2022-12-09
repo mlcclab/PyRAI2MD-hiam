@@ -11,10 +11,9 @@ import os
 import sys
 import subprocess
 import json
-import time
 import copy
 
-from PyRAI2MD.Utils.timing import how_long
+from PyRAI2MD.Utils.timing import readtime
 
 class RemoteTrain:
     """ NN remote training class
@@ -114,23 +113,30 @@ pyrai2md $INPUT
 
         nn1 = None
         nn2 = None
+        timing = 'Neural Networks End:  Y-M-D H:M:S Total:     0 days     0 hours     0 minutes    0 seconds'
         log = log[-10:]
         for n, line in enumerate(log):
             if """&nn validation mean absolute error""" in line:
                 nn1 = log[n + 4]
                 nn2 = log[n + 5]
+                timing = log[n + 7]
 
         if nn1 and nn2:
             nn1 = [float(x) for x in nn1.split()]
             nn2 = [float(x) for x in nn2.split()]
+            elapsed, walltime = readtime(timing)
             status = 1
         else:
             nn1 = [0, 0, 0, 0]
             nn2 = [0, 0, 0, 0]
+            elapsed = 0
+            walltime = '0'
             status = 0
 
         metrics = {
             'path': self.calcdir,
+            'time': elapsed,
+            'walltime': walltime,
             'status': status,
             'e1': nn1[0],
             'g1': nn1[1],
@@ -145,19 +151,11 @@ pyrai2md $INPUT
         return metrics
 
     def train(self):
-        start = time.time()
 
         if self.retrieve == 0:
             self._setup_training()
             self._start_training()
 
-        metrics: dict
         metrics = self._read_training()
-
-        end = time.time()
-        walltime = how_long(start, end)
-
-        metrics['time'] = end - start
-        metrics['walltime'] = walltime
 
         return metrics
