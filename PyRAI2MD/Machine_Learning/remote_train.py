@@ -61,7 +61,7 @@ pyrai2md $INPUT
             ext = 'slurm'
 
         if os.path.exists('%s.%s' % (self.title, ext)):
-            with open('%s.slurm' % self.title) as template:
+            with open('%s.%s' % (self.title, ext)) as template:
                 submission = template.read()
         else:
             sys.exit('\n  FileNotFoundError\n  PyRAI2MD: looking for submission file %s.%s' % (self.title, ext))
