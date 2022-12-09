@@ -30,10 +30,10 @@ timing = 'Neural Networks End:  Y-M-D H:M:S Total:     0 days     0 hours     0 
 
 def readtime(timing):
     timing = timing.split()
-    d = timing[6]
-    h = timing[8]
-    m = timing[10]
-    s = timing[12]
+    d = int(timing[6])
+    h = int(timing[8])
+    m = int(timing[10])
+    s = int(timing[12])
     elapsed = int(d * 86400 + h * 3600 + m * 60 + s)
     walltime = '%5d days %5d hours %5d minutes %5d seconds' % (d, h, m, s)
 
