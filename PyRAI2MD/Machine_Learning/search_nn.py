@@ -52,7 +52,7 @@ class SearchNN:
     def nsearch(self):
         return len(self.queue)
 
-    def queue(self):
+    def space(self):
         return self.queue
 
     def update_hypers(self, hypers):

@@ -68,7 +68,7 @@ class GridSearch:
 
     def _retrieve_data(self):
         ## retrieve training results in sequential or parallel mode
-        variables_wrapper = [[n, x] for n, x in enumerate(self.hspace.queue())]
+        variables_wrapper = [[n, x] for n, x in enumerate(self.hspace.space())]
 
         ## adjust multiprocessing if necessary
         ncpu = 1
@@ -87,7 +87,7 @@ class GridSearch:
 
     def _run_search_seq(self):
         ## run training in sequential mode
-        variables_wrapper = [[n, x] for n, x in enumerate(self.hspace.queue())]
+        variables_wrapper = [[n, x] for n, x in enumerate(self.hspace.space())]
 
         ## sequential mode
         ncpu = 1
@@ -125,7 +125,7 @@ class GridSearch:
 
     def _run_search_hpc(self):
         ## wrap variables for multiprocessing
-        variables_wrapper = [[n, x] for n, x in enumerate(self.hspace.queue())]
+        variables_wrapper = [[n, x] for n, x in enumerate(self.hspace.space())]
 
         ## adjust multiprocessing if necessary
         ncpu = np.amin([self.nsearch, self.ml_ncpu])
