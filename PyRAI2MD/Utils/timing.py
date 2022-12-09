@@ -25,9 +25,6 @@ def how_long(start, end):
         int(((walltime % 86400) % 3600) % 60))
     return walltime
 
-
-timing = 'Neural Networks End:  Y-M-D H:M:S Total:     0 days     0 hours     0 minutes    0 seconds'
-
 def readtime(timing):
     timing = timing.split()
     d = int(timing[6])
