@@ -26,12 +26,14 @@ register = {
     'trajectory': '/Molecule/trajectory.py',
     'pbc_helper': '/Molecule/pbc_helper.py',
     'qmmm_helper': '/Molecule/qmmm_helper.py',
+    'constraint': '/Molecule/constraint.py',
     'qc_molcas': '/Quantum_Chemistry/qc_molcas.py',
     'qc_bagel': '/Quantum_Chemistry/qc_bagel.py',
     'qc_molcas_tinker': '/Quantum_Chemistry/qc_molcas_tinker.py',
     'qc_orca': '/Quantum_Chemistry/qc_orca.py',
     'qc_xtb': '/Quantum_Chemistry/qc_xtb.py',
     'qmqm2': '/Quantum_Chemistry/qmqm2.py',
+    'model_demo': '/Machine_Learning/model_demo.py',
     'model_NN': '/Machine_Learning/model_NN.py',
     'model_pyNNsMD': '/Machine_Learning/model_pyNNsMD.py',
     'model_GCNNP': '/Machine_Learning/model_GCNNP.py',
@@ -43,6 +45,8 @@ register = {
     'permutation': '/Machine_Learning/permutation.py',
     'adaptive_sampling': '/Machine_Learning/adaptive_sampling.py',
     'grid_search': '/Machine_Learning/grid_search.py',
+    'search_nn': '/Machine_Learning/search_nn.py',
+    'search_GCNNP': '/Machine_Learning/search_GCNNP.py',
     'remote_train': '/Machine_Learning/remote_train.py',
     'aimd': '/Dynamics/aimd.py',
     'mixaimd': '/Dynamics/mixaimd.py',
@@ -94,6 +98,7 @@ def review(length, totline, totfile):
   |   |--atom.py                                   atomic properties class                     %8s
   |   |--molecule.py                               molecular properties class                  %8s
   |   |--trajectory.py                             trajectory properties class                 %8s
+  |   |--constraint.py                             external potential functions                %8s
   |   |--pbc_helper.py                             periodic boundary condition functions       %8s
   |    `-qmmm_helper.py                            qmmm functions                              %8s
   |
@@ -106,6 +111,7 @@ def review(length, totline, totfile):
   |    `-qmqm2                                     Multiscale calculation interface            %8s
   |
   |--Machine_Learning                              machine learning library interface folder
+  |   |--model_demo.py                             demo version neural network                 %8s
   |   |--model_NN.py                               native neural network interface             %8s
   |   |--model_pyNNsMD.py                          pyNNsMD interface                           %8s
   |   |--model_GCNNP.py                            GCNNP interface                             %8s
@@ -116,9 +122,12 @@ def review(length, totline, totfile):
   |   |--training_data.py                          training data manager                       %8s
   |   |--permutation.py                            data permutation functions                  %8s
   |   |--adaptive_sampling.py                      adaptive sampling class                     %8s
-  |   |--grid_search.py                            grid search class                           %8s
-  |   |--remote_train.py                           distribute remote training                  %8s
-  |    `-pyNNsMD                                   native neural network library                  (6375)
+  |   |--grid_search.py                            grid search manager                         %8s
+  |   |--search_nn.py                              grid search function for native nn          %8s
+  |   |--search_GCNNP.py                           grid search function for e2n2               %8s  
+  |   |--remote_train.py                           remote training function                    %8s
+  |   |--NNsMD                                     demo version neural network library  
+  |    `-pyNNsMD                                   native neural network library                  
   |
   |--Dynamics                                      ab initio molecular dynamics code folder
   |   |--aimd.py                                   molecular dynamics class                    %8s
@@ -134,7 +143,7 @@ def review(length, totline, totfile):
   |   |
   |    `-Propagators                               electronic propagation code folder
   |       |--surface_hopping.py                    surface hopping manager                     %8s
-  |	  |--setup_fssh.py                         setup file to compile the C-lib of fssh.pyx %8s
+  |       |--setup_fssh.py                         setup file to compile the C-lib of fssh.pyx %8s
   |       |--fssh.pyx                              fewest switches surface hopping method      %8s
   |       |--gsh.py                                generalized surface hopping method          %8s
   |        `-tsh_helper.py                         trajectory surface hopping tools            %8s
@@ -155,6 +164,7 @@ Total %4s/%4s files                                                             
        length['atom'],
        length['molecule'],
        length['trajectory'],
+       length['constraint'],
        length['pbc_helper'],
        length['qmmm_helper'],
        length['qc_molcas'],
@@ -163,6 +173,7 @@ Total %4s/%4s files                                                             
        length['qc_orca'],
        length['qc_xtb'],
        length['qmqm2'],
+       length['model_demo'],
        length['model_NN'],
        length['model_pyNNsMD'],
        length['model_GCNNP'],
@@ -174,6 +185,8 @@ Total %4s/%4s files                                                             
        length['permutation'],
        length['adaptive_sampling'],
        length['grid_search'],
+       length['search_nn'],
+       length['search_GCNNP'],
        length['remote_train'],
        length['aimd'],
        length['mixaimd'],
