@@ -49,8 +49,8 @@ class GridSearch:
         self.title = keywords['control']['title']
         self.ml = keywords['control']['qm'][0]
         self.ml_ncpu = keywords['control']['ml_ncpu']
-        self.use_hpc = keywords['nn']['search']['use_hpc']
-        self.retrieve = keywords['nn']['search']['retrieve']
+        self.use_hpc = keywords['search']['use_hpc']
+        self.retrieve = keywords['search']['retrieve']
         train_data = keywords[self.ml]['train_data']
         self.data = Data()
         self.data.load(train_data)
