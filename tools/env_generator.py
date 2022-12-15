@@ -67,7 +67,9 @@ def main(argv):
       read_init     filename  # name of a .init or .init.xyz file
       init_to_xyz   1  # convert a init file to xyz
       scale         1  # scale the kinetic energy
-      edit_atom     []  # edit initial conditions for the selected atoms 
+      edit_atom     []  # edit initial conditions for the selected atoms
+      append_init   filename  # name of the second .init or .init.xyz file
+      remove_init   []  # initial condition indices to remove from the original .init or init.xyz file
       
     Running this script will print more information about the requisite keywords
 
@@ -115,6 +117,8 @@ def main(argv):
     init_to_xyz = 0
     scale = 1
     edit_atom = []
+    append_init = None
+    remove_init = []
 
     if len(argv) <= 1:
         exit(usage)
@@ -203,9 +207,16 @@ def main(argv):
             scale = float(line.split()[1])
         elif 'edit_atom' == key:
             edit_atom = line.split()[1:]
+        elif 'append_init' == key:
+            append_init = line.split()[1]
+        elif 'remove_init' == key:
+            remove_init = line.split()[1:]
 
     if len(edit_atom) > 0:
         edit_atom = getindex(edit_atom)
+
+    if remove_init is not None:
+        remove_init = getindex(remove_init)
 
     key_dict = {
         'title': title,
@@ -245,6 +256,8 @@ def main(argv):
         'init_to_xyz': init_to_xyz,
         'scale': scale,
         'edit_atom': edit_atom,
+        'append_init': append_init,
+        'remove_init': remove_init,
     }
 
     if mode == 'create':
@@ -912,13 +925,17 @@ def edit_cond(key_dict):
        init_to_xyz   1  # convert a init file to xyz
        scale         1  # scale the kinetic energy isotropically
        edit_atom     1-20  # apply edition for the selected atoms, default is all atoms
-
+       append_init   filename  # name of the second .init or .init.xyz file
+       remove_init   1 3 5  # initial condition indices to remove from the original .init or init.xyz file
+      
        ''')
 
     read_init = key_dict['read_init']
     init_to_xyz = key_dict['init_to_xyz']
     scale = key_dict['scale']
     edit_atom = key_dict['edit_atom']
+    append_init = key_dict['append_init']
+    remove_init = key_dict['remove_init']
 
     if read_init is None:
         atom = []
@@ -940,6 +957,19 @@ def edit_cond(key_dict):
     if scale != 1:
         edit_initcond(atom, initcond, edit_atom, scale)
         print(' scaling init kinetic energy > scaled.init')
+
+    if append_init is not None:
+        atom, initcond2 = init_reader(append_init)
+        print(' number of the first set of initial condition %s' % len(initcond))
+        print(' number of the second set of initial condition %s' % len(initcond2))
+        append_initcond(atom, initcond, initcond2)
+        print(' append the second set of initial condition > appended.init')
+
+    if len(remove_init) > 0:
+        print(' number of the initial condition %s' % len(initcond))
+        print(' number of the removed initial condition %s' % len(remove_init))
+        remove_initcond(atom, initcond, remove_init)
+        print(' remove selected initial condition > removed.init')
 
     print(' COMPLETE')
 
@@ -987,6 +1017,27 @@ def edit_initcond(atom, initcond, edit_atom, scale):
             output += '%-5s %24.16f %24.16f %24.16f %24.16f %24.16f %24.16f 0 0\n' % (atom[n], x, y, z, vx, vy, vz)
 
     with open('scaled.init', 'w') as out:
+        out.write(output)
+
+def append_initcond(atom, initcond, initcond2):
+    initcond = initcond + initcond2
+    output = ''
+    for n, cond in enumerate(initcond):
+        output += '%s' % write_init(n + 1, atom, cond)
+
+    with open('appended.init', 'w') as out:
+        out.write(output)
+
+def remove_initcond(atom, initcond, remove_init):
+    output = ''
+    m = 0
+    for n, cond in enumerate(initcond):
+        if n + 1 in remove_init:
+            continue
+        m += 1
+        output += '%s' % write_init(m, atom, cond)
+
+    with open('removed.init', 'w') as out:
         out.write(output)
 
 
