@@ -1172,6 +1172,9 @@ def write_pmd_md():
         ktdc    compute nonadiabatic coupling from energies
     """)
         md += 'sfhp %s\nnactype %s\n' % (sfhp, nactype)
+        if nactype == 'nac':
+            md += 'phasecheck 1\n'
+
     elif sfhp == 'gsh':
         gap = input("""
     what is the energy gap threshold for gsh internal conversion? (in eV, e.g., 0.5)
