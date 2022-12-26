@@ -32,12 +32,12 @@ cdef kTDC(int s1, int s2, np.ndarray E, np.ndarray Ep, np.ndarray Epp, float dt)
 
     cdef float nacme, d2Vdt2, dVt, dVt_dt, dVt_2dt
 
-    dVt = avoid_singularity(E[s1], E[s2], s1, s2)
-    dVt_dt = avoid_singularity(Ep[s1], Ep[s2], s1, s2)
-    dVt_2dt = avoid_singularity(Epp[s1], Epp[s2], s1, s2)
-    d2Vdt2 = (dVt - 2 * dVt_dt + dVt_2dt) / dt ** 2
+    dVt = avoid_singularity(E[s1], E[s2], s1, s2)  # s1 < s2, thus dVt <0
+    dVt_dt = avoid_singularity(Ep[s1], Ep[s2], s1, s2)  # s1 < s2, thus dVt_dt <0
+    dVt_2dt = avoid_singularity(Epp[s1], Epp[s2], s1, s2)  # s1 < s2, thus dVt_2dt <0
+    d2Vdt2 = -(dVt - 2 * dVt_dt + dVt_2dt) / dt ** 2  # flip d2Vdt2 to positive
     if d2Vdt2 / dVt > 0:
-        nacme = (d2Vdt2 / dVt) ** 0.5 / 2
+        nacme = -(d2Vdt2 / dVt) ** 0.5 / 2  # flip nacme to negative due to s1 < s2
     else:
         nacme = 0
 
