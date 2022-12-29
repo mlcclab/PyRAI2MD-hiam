@@ -247,26 +247,28 @@ cpdef FSSH(dict traj):
             dAdt = dPdt(A, H, D)
             dAdt *= delt
             A += dAdt
-            dB = matB(A, H, D)
-            B += dB
 
             exceed = np.diag(np.real(A)) - 1
             deplet = 0 - np.diag(np.real(A))
             rstate = [np.argmax(exceed), np.argmax(deplet)][np.argmax([np.amax(exceed), np.amax(deplet)])]
             revert = np.amax([exceed[rstate], deplet[rstate]])
             if revert > 0:
-                A -= dAdt # * np.abs(revert / np.real(dAdt)[rstate, rstate])  # revert A
-                B -= dB # * np.abs(revert / np.real(dAdt)[rstate, rstate])
-                stop = 1 # stop if population exceed 1 or less than 0
+                if verbose > 2:
+                    print(' numerical instability in state population detected')
+                    print(' check A matrix')
+                    print(A)
 
-            if stop == 1:
-                # adjust population matrix between 0 and 1 before break
-                for rs, rp in enumerate(np.real(np.diag(A))):
-                    if rp > 1:
-                        A[rs, rs] = 1 + np.imag(A[rs, rs]) * 1j
-                    elif rp < 0:
-                        A[rs, rs] = 0 + np.imag(A[rs, rs]) * 1j
-                break
+                A -= dAdt * np.abs(revert / np.diag(np.real(dAdt))[rstate])  # adjust A
+
+                if verbose > 2:
+                    print(' adjust state ', rstate)
+                    print(' adjust magnitude ', revert)
+                    print(' adjust factor ', np.abs(revert / np.diag(np.real(dAdt))[rstate]))
+                    print(' adjusted A matrix')
+                    print(A)
+
+            dB = matB(A, H, D)
+            B += dB
 
             for j in range(nstate):
                 if j != state - 1:
