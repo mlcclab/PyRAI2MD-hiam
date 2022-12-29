@@ -272,14 +272,13 @@ cpdef FSSH(dict traj):
                     print(' exceed values')
                     print(exceed)
 
-                A -= dAdt * revert  # adjust A
+                # A -= dAdt * revert  # adjust A
 
-                if verbose > 2:
-                    print(' adjust state ', rstate)
-                    print(' adjust magnitude ', revert)
-                    print(' adjust factor ', np.abs(revert / np.diag(np.real(dAdt))[rstate]))
-                    print(' adjusted A matrix')
-                    print(A)
+                # if verbose > 2:
+                #    print(' adjust state ', rstate)
+                #    print(' adjust magnitude ', revert)
+                #    print(' adjusted A matrix')
+                #    print(A)
 
             dB = matB(A, H, D)
             B += dB
