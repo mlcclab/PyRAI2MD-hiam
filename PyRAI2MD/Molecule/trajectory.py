@@ -253,7 +253,7 @@ class Trajectory(Molecule):
         self.grad2 = np.copy(self.grad1)
         self.grad1 = np.copy(self.grad)
         self.last_soc = np.copy(self.soc)
-        self.last_nac = self._phase_correction(self.last_nac, self.nac)
+        self.last_nac = np.copy(self.nac)
 
         return self
 
@@ -266,19 +266,18 @@ class Trajectory(Molecule):
 
         return self
 
-    def _phase_correction(self, ref, nac):
+    def phase_correction(self):
         ## nac phase correction based on time overlap
-        if self.phasecheck == 0 or len(ref) == 0:
-            cnac = np.copy(nac)
-
-        else:
+        if self.phasecheck == 1 and len(self.last_nac) > 0 and len(self.nac) > 0:
             cnac = []
-            for n, d in enumerate(ref):
-                f = np.sign(np.sum(d * nac[n]))
-                cnac.append(f * nac[n])
+            for n, d in enumerate(self.last_nac):
+                f = np.sign(np.sum(d * self.nac[n]))
+                cnac.append(f * self.nac[n])
             cnac = np.array(cnac)
 
-        return cnac
+            self.nac = cnac
+
+        return self
 
     def random_velo(self):
         self.velo = random_velocity(self.mass, self.temp, self.freeze)

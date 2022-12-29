@@ -199,6 +199,9 @@ class AIMD:
         # compute potential energy surface
         self.traj = self._potential_energies(self.traj)
 
+        # apply phase nac correction if requested
+        self.traj.phase_correction()
+
         # apply external potential energy if requested
         self.traj = self.ext_pot.apply_potential(self.traj)
 
