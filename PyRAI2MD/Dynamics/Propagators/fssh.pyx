@@ -248,6 +248,7 @@ cpdef FSSH(dict traj):
             dAdt *= delt
             A += dAdt
 
+            exceed = []
             for rs in range(nstate):
                 rp = np.diag(np.real(A))[rs]
                 dp = np.abs(np.diag(np.real(dAdt)))[rs]
