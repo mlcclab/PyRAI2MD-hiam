@@ -267,6 +267,10 @@ cpdef FSSH(dict traj):
                     print(' numerical instability in state population detected')
                     print(' check A matrix')
                     print(A)
+                    print(' check dAdt')
+                    print(dAdt)
+                    print(' exceed values')
+                    print(exceed)
 
                 A -= dAdt * revert  # adjust A
 
