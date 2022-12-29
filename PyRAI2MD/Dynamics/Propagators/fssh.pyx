@@ -175,9 +175,9 @@ cpdef FSSH(dict traj):
 
     cdef str summary, info
     cdef int n, i, j, k, p, stop, hoped, nhop, event, s1, s2, frustrated, rstate, rs
-    cdef float deco, z, gsum, Asum, Amm, nacme, revert, hop_gsum, hop_z, rp
-    cdef list pair
-    cdef np.ndarray stateorder, statemap, Vt, g, tau, NAC, exceed, deplet, hop_g
+    cdef float deco, z, gsum, Asum, Amm, nacme, revert, hop_gsum, hop_z, rp, dp
+    cdef list pair, exceed
+    cdef np.ndarray stateorder, statemap, Vt, g, tau, NAC, hop_g
     hop_g = np.zeros(0)
     hoped = 0
     stop = 0
@@ -248,17 +248,26 @@ cpdef FSSH(dict traj):
             dAdt *= delt
             A += dAdt
 
-            exceed = np.diag(np.real(A)) - 1
-            deplet = 0 - np.diag(np.real(A))
-            rstate = [np.argmax(exceed), np.argmax(deplet)][np.argmax([np.amax(exceed), np.amax(deplet)])]
-            revert = np.amax([exceed[rstate], deplet[rstate]])
+            for rs in range(nstate):
+                rp = np.diag(np.real(A))[rs]
+                dp = np.abs(np.diag(np.real(dAdt)))[rs]
+                if pr > 1:
+                    exceed.append((pr - 1) / dp)
+                elif pr < 0:
+                    exceed.append((0 - pr) / dp)
+                else:
+                    exceed.append(0)
+
+            revert = np.amax(exceed)
+            rstate = np.argmax(exceed)
+
             if revert > 0:
                 if verbose > 2:
                     print(' numerical instability in state population detected')
                     print(' check A matrix')
                     print(A)
 
-                A -= dAdt * np.abs(revert / np.diag(np.real(dAdt))[rstate])  # adjust A
+                A -= dAdt * revert  # adjust A
 
                 if verbose > 2:
                     print(' adjust state ', rstate)
