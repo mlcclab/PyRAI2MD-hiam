@@ -251,9 +251,9 @@ cpdef FSSH(dict traj):
             for rs in range(nstate):
                 rp = np.diag(np.real(A))[rs]
                 dp = np.abs(np.diag(np.real(dAdt)))[rs]
-                if pr > 1:
+                if rp > 1:
                     exceed.append((pr - 1) / dp)
-                elif pr < 0:
+                elif rp < 0:
                     exceed.append((0 - pr) / dp)
                 else:
                     exceed.append(0)
