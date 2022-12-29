@@ -274,7 +274,7 @@ class Trajectory(Molecule):
         else:
             cnac = []
             for n, d in enumerate(ref):
-                f = np.sign(np.sum(ref * nac[n]))
+                f = np.sign(np.sum(d * nac[n]))
                 cnac.append(f * nac[n])
             cnac = np.array(cnac)
 
