@@ -390,17 +390,20 @@ class AIMD:
         ## add verbose info
         log_info += self._verbose_log_info(self.verbose)
 
+        ## add surface hopping info
+        log_info += """
+  &surface hopping information
+-------------------------------------------------------
+%s
+-------------------------------------------------------
+""" % self.traj.shinfo
+
         ## add error info
         if self.traj.err_energy is not None and \
                 self.traj.err_grad is not None and \
                 self.traj.err_nac is not None and \
                 self.traj.err_soc is not None:
-            log_info += """
-  &surface hopping information
--------------------------------------------------------
-%s
--------------------------------------------------------
-
+            log_info += """  
   &error iter %-10s
 -------------------------------------------------------
   Energy   MaxStDev:          %-10.4f
@@ -410,7 +413,6 @@ class AIMD:
 -------------------------------------------------------
 
 """ % (
-                self.traj.shinfo,
                 self.traj.itr,
                 self.traj.err_energy,
                 self.traj.err_grad,
