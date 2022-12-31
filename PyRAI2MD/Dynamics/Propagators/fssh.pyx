@@ -248,22 +248,22 @@ cpdef FSSH(dict traj):
             dAdt *= delt
             A += dAdt
 
-            exceed = []
-            for rs in range(nstate):
-                rp = np.diag(np.real(A))[rs]
-                dp = np.abs(np.diag(np.real(dAdt)))[rs]
-                if rp > 1:
-                    exceed.append((rp - 1) / dp)
-                elif rp < 0:
-                    exceed.append((0 - rp) / dp)
-                else:
-                    exceed.append(0)
+            if verbose > 2:
+                exceed = []
+                for rs in range(nstate):
+                    rp = np.diag(np.real(A))[rs]
+                    dp = np.abs(np.diag(np.real(dAdt)))[rs]
+                    if rp > 1:
+                        exceed.append((rp - 1) / (dp + 1e-16))
+                    elif rp < 0:
+                        exceed.append((0 - rp) / (dp + 1e-16))
+                    else:
+                        exceed.append(0)
 
-            revert = np.amax(exceed)
-            rstate = np.argmax(exceed)
+                revert = np.amax(exceed)
+                rstate = np.argmax(exceed)
 
-            if revert > 0:
-                if verbose > 2:
+                if revert > 0:
                     print(' numerical instability in state population detected')
                     print(' check A matrix')
                     print(A)
@@ -272,13 +272,13 @@ cpdef FSSH(dict traj):
                     print(' exceed values')
                     print(exceed)
 
-                # A -= dAdt * revert  # adjust A
+                    # A -= dAdt * revert  # adjust A
 
-                # if verbose > 2:
-                #    print(' adjust state ', rstate)
-                #    print(' adjust magnitude ', revert)
-                #    print(' adjusted A matrix')
-                #    print(A)
+                    # if verbose > 2:
+                    #    print(' adjust state ', rstate)
+                    #    print(' adjust magnitude ', revert)
+                    #    print(' adjusted A matrix')
+                    #    print(A)
 
             dB = matB(A, H, D)
             B += dB

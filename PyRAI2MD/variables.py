@@ -680,7 +680,7 @@ def read_input(ld_input):
         'activestate': 0,
         'sfhp': 'nosh',
         'nactype': 'ktdc',
-        'phasecheck': 0,
+        'phasecheck': 1,
         'gap': 0.5,
         'gapsoc': 0.5,
         'substep': 20,
@@ -2296,43 +2296,43 @@ def start_info(variables_all):
 
     e2n2_info += """
 
-      E2N2 (GCNNP)
+  E2N2 (GCNNP)
 
-      &hyperparameters            Energy+Gradient      Nonadiabatic         Spin-orbit
-    ----------------------------------------------------------------------------------------------
-      Edges:                      %-20s %-20s %-20s
-      Maxradius:                  %-20s %-20s %-20s
-      Node features:              %-20s %-20s %-20s 
-      Interaction blocks:      	  %-20s %-20s %-20s
-      Rotation order              %-20s %-20s %-20s
-      Irreps parity:              %-20s %-20s %-20s
-      Radial basis:               %-20s %-20s %-20s
-      Radial basis trainable:     %-20s %-20s %-20s
-      Envelop func cutoff:        %-20s %-20s %-20s
-      Radial net layers:          %-20s %-20s %-20s
-      Radial net neurons:         %-20s %-20s %-20s
-      Radial net activation:      %-20s %-20s %-20s
-      Radial net activation a:    %-20s %-20s %-20s
-      Y normalization scheme:     %-20s %-20s %-20s
-      Normalize Y:                %-20s %-20s %-20s
-      Self connection:            %-20s %-20s %-20s
-      Resnet update:              %-20s %-20s %-20s
-      Use gate activation:        %-20s %-20s %-20s
-      Even scalars activation:    %-20s %-20s %-20s
-      Odd scalars activation:     %-20s %-20s %-20s
-      Even gates activation:      %-20s %-20s %-20s
-      Odd gates activation:       %-20s %-20s %-20s
-      Initialize weight:          %-20s %-20s %-20s
-      Loss weights:               %-20s %-20s %-20s
-      Epoch:                      %-20s %-20s %-20s
-      Epoch step:                 %-20s %-20s %-20s
-      Subset:                     %-20s %-20s %-20s
-      Scaler:                     %-20s %-20s %-20s
-      Batch:                      %-20s %-20s %-20s
-      Nbatch:                     %-20s %-20s %-20s
-    ----------------------------------------------------------------------------------------------
+  &hyperparameters            Energy+Gradient      Nonadiabatic         Spin-orbit
+----------------------------------------------------------------------------------------------
+  Edges:                      %-20s %-20s %-20s
+  Maxradius:                  %-20s %-20s %-20s
+  Node features:              %-20s %-20s %-20s 
+  Interaction blocks:      	  %-20s %-20s %-20s
+  Rotation order              %-20s %-20s %-20s
+  Irreps parity:              %-20s %-20s %-20s
+  Radial basis:               %-20s %-20s %-20s
+  Radial basis trainable:     %-20s %-20s %-20s
+  Envelop func cutoff:        %-20s %-20s %-20s
+  Radial net layers:          %-20s %-20s %-20s
+  Radial net neurons:         %-20s %-20s %-20s
+  Radial net activation:      %-20s %-20s %-20s
+  Radial net activation a:    %-20s %-20s %-20s
+  Y normalization scheme:     %-20s %-20s %-20s
+  Normalize Y:                %-20s %-20s %-20s
+  Self connection:            %-20s %-20s %-20s
+  Resnet update:              %-20s %-20s %-20s
+  Use gate activation:        %-20s %-20s %-20s
+  Even scalars activation:    %-20s %-20s %-20s
+  Odd scalars activation:     %-20s %-20s %-20s
+  Even gates activation:      %-20s %-20s %-20s
+  Odd gates activation:       %-20s %-20s %-20s
+  Initialize weight:          %-20s %-20s %-20s
+  Loss weights:               %-20s %-20s %-20s
+  Epoch:                      %-20s %-20s %-20s
+  Epoch step:                 %-20s %-20s %-20s
+  Subset:                     %-20s %-20s %-20s
+  Scaler:                     %-20s %-20s %-20s
+  Batch:                      %-20s %-20s %-20s
+  Nbatch:                     %-20s %-20s %-20s
+----------------------------------------------------------------------------------------------
 
-        """ % (
+    """ % (
         variables_e2n2_eg['n_edges'],
         variables_e2n2_nac['n_edges'],
         variables_e2n2_soc['n_edges'],
