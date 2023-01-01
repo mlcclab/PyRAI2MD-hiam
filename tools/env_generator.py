@@ -2,7 +2,7 @@
 ## Chemical environment generator - a script to automatically create solvent or aggregate environment
 ## ----------------------
 ##
-## New version Dec 6 2022 Jingbai Li
+## New version Jan 1 2023 Jingbai Li
 
 import os
 import sys
@@ -946,6 +946,8 @@ def edit_cond(key_dict):
 
     if len(edit_atom) == 0:
         edit_atom = [x for x in range(len(atom))]
+    else:
+        edit_atom = [x - 1 for x in edit_atom]
 
     print(' reading %s initial conditions' % len(initcond))
     print(' editing %s atoms per condition' % len(edit_atom))
