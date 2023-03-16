@@ -81,18 +81,27 @@ def write_molcas_alaska(cas, grad, nac):
     nstate = cas['nstate']
     alaska = ''
 
+    if grad > nstate:
+        grad = nstate
+
     if grad == 1:
         grad_list = [x + 1 for x in range(nstate)]
+    elif grad > 1:
+        grad_list = [x + 1 for x in range(grad)]
     else:
         grad_list = []
 
     for i in grad_list:
         alaska += '&ALASKA\nROOT=%s\n' % i
 
-    if nac == 2:
+    if nac == 2 and grad <= 1:
         nac_list = all_pairs(nstate)
-    elif nac == 1:
+    elif nac == 1 and grad <= 1:
         nac_list = neighbors(nstate)
+    elif nac == 2 and grad > 1:
+        nac_list = all_pairs(grad)
+    elif nac == 1 and grad > 1:
+        nac_list = neighbors(grad)
     else:
         nac_list = []
 
@@ -263,14 +272,18 @@ def molcas_input(title):
     do you want to compute gradients for all states? (yes/no)
         for dynamics using activestate 1, choose no
         for dynamics using gsh, choose yes
+        for adaptive sampling, enter the number of states for training NN (<= number of states)
     """)
-
-    grad = bool_dict[grad]
+    try:
+        grad = int(grad)
+    except ValueError:
+        grad = bool_dict[grad]
 
     nac = input("""
     do you want to compute nonadiabatic couplings? (yes/no)
         for dynamics using fssh with nac, choose yes
         for dynamics using gsh or fssh with ktdc, choose no
+        for adaptive sampling, choose yes to train NN for NAC prediction. Otherwise, choose no.
     """)
 
     nac = bool_dict[nac]

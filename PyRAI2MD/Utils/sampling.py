@@ -341,7 +341,7 @@ def read_g16(ld_input):
     achrg = np.array(achrg)
     achrg = achrg.reshape((natom, 1))
 
-    modes = np.array([i / amass ** 0.5 for i in modes])  # convert to unnormalized unmass-weighted
+    modes = np.array([i / la.norm(i * amass ** 0.5) for i in modes])  # convert to unnormalized unmass-weighted
 
     freqdata = {
         'nfreq': nmode,  # number of degrees
@@ -434,7 +434,7 @@ def read_orca(ld_input):
     achrg = np.array(achrg)
     achrg = achrg.reshape((natom, 1))
 
-    modes = np.array([i / amass ** 0.5 for i in modes])  # convert to unnormalized unmass-weighted
+    modes = np.array([i / la.norm(i * amass ** 0.5) for i in modes])  # convert to unnormalized unmass-weighted
 
     freqdata = {
         'nfreq': nmode,  # number of degrees
