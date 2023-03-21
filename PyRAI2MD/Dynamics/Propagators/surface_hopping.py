@@ -39,11 +39,19 @@ def surfhop(traj):
         at, ht, dt, v, hoped, old_state, state, info = gsh(traj)
 
     elif sfhp.lower() == 'nosh':
-        traj.shinfo = 'no surface hopping is performed'
+        traj.shinfo = '  no surface hopping is performed'
+        at = np.zeros([traj.nstate, traj.nstate])
+        at[traj.state - 1, traj.state - 1] = 1
+        traj.a = np.copy(at)
+
         return traj
 
     else:
-        traj.shinfo = 'no surface hopping is performed'
+        traj.shinfo = '  no surface hopping is performed'
+        at = np.zeros([traj.nstate, traj.nstate])
+        at[traj.state - 1, traj.state - 1] = 1
+        traj.a = np.copy(at)
+
         return traj
 
     traj.a = np.copy(at)

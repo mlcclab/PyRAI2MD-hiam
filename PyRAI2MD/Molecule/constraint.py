@@ -9,8 +9,9 @@
 
 import numpy as np
 
+
 class Constraint:
-    """ Molecular property class
+    """ Molecular constraint class
 
             Parameters:          Type:
                 keywords         dict        trajectory keyword list
@@ -137,3 +138,83 @@ class Constraint:
             traj.grad[:, self.frozen_atoms, :] = np.zeros_like(traj.grad[:, self.frozen_atoms, :])
 
         return traj
+
+
+class GeomTracker:
+    """ Geometry tracker class
+
+            Parameters:          Type:
+                keywords         dict        trajectory keyword list
+
+            Attribute:           Type:
+                track_type       str         type of geometric parameters
+                track_index      list        atom indices of a list of distances or fragment
+                track_thrhd      list        a list of threshold of the tracking parameters
+
+            Function:            Returns:
+                apply_potential  self        apply external potential then update energy and gradients
+                freeze_atom      self        zero out gradients of the frozen atoms
+
+        """
+
+    def __init__(self, keywords=None):
+        self.track_type = keywords['molecule']['track_type']
+        self.track_index = keywords['molecule']['track_index']
+        self.track_thrhd = keywords['molecule']['track_thrhd']
+
+        diff = len(self.track_index) - len(self.track_thrhd)
+
+        if diff > 0:
+            add = [self.track_thrhd[-1] for _ in range(diff)]
+            self.track_thrhd = self.track_thrhd + add
+        else:
+            self.track_thrhd = self.track_thrhd[:len(self.track_index)]
+
+    @staticmethod
+    def _check_param(coord, src, dst, thrhd):
+        a = np.mean(coord[src], axis=0)
+        b = np.mean(coord[dst], axis=0)
+        d = np.sum((a - b) ** 2) ** 0.5
+
+        if d > thrhd:
+            return True
+
+        return False
+
+    def check(self, traj):
+        # track_index [[a, b, c, ...],[d, e, f, ...], ...]
+        stop = False
+
+        if self.track_type == 'frag':
+
+            if len(self.track_index) < 2:
+                exit('\n  ValueError\n  PyRAI2MD: track_index requires to list of index but found one %s' %
+                     self.track_index
+                     )
+
+            stop = self._check_param(
+                coord=traj.coord,
+                src=self.track_index[0],
+                dst=self.track_index[1],
+                thrhd=self.track_thrhd[0]
+            )
+
+        elif self.track_type == 'dist':
+            for n, indx in enumerate(self.track_index):
+
+                if len(indx) < 2:
+                    exit('\n  ValueError\n  PyRAI2MD: track_index requires two indices but found one %s' % indx)
+
+                stop = self._check_param(
+                    coord=traj.coord,
+                    src=[indx[0]],
+                    dst=[indx[1]],
+                    thrhd=self.track_thrhd[n],
+                )
+
+                if stop:
+                    break
+        else:
+            stop = False
+
+        return stop

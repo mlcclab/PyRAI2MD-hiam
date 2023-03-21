@@ -92,6 +92,9 @@ def read_molecule(keywords, values):
         'cavity': ReadVal('fl'),
         'center': ReadIndex('s'),
         'compress': ReadVal('fl'),
+        'track_type': ReadVal('s'),
+        'track_index': ReadIndex('g'),
+        'track_thrhd': ReadVal('fl'),
         'primitive': ReadIndex('g'),
         'lattice': ReadIndex('s'),
     }
@@ -595,6 +598,9 @@ def read_input(ld_input):
         'cavity': [],
         'center': [],
         'compress': [],
+        'track_type': None,
+        'track_index': [],
+        'track_thrhd': [],
         'primitive': [],
         'lattice': [],
     }
@@ -1349,6 +1355,9 @@ def start_info(variables_all):
   External potential radius:  %-10s
   External potential center:  %-10s
   Compress potential shape    %-10s
+  Track geometry type         %-10s
+  Track indices               %-10s
+  Track threshold             %-10s                  
   Primitive vectors:          %-10s
   Lattice constant:           %-10s
 -------------------------------------------------------
@@ -1369,6 +1378,9 @@ def start_info(variables_all):
         variables_molecule['cavity'],
         variables_molecule['center'],
         variables_molecule['compress'],
+        variables_molecule['track_type'],
+        variables_molecule['track_index'],
+        variables_molecule['track_thrhd'],
         variables_molecule['primitive'],
         variables_molecule['lattice']
     )

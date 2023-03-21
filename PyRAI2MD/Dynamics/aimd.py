@@ -22,6 +22,7 @@ from PyRAI2MD.Utils.timing import how_long
 from PyRAI2MD.Utils.coordinates import print_coord
 from PyRAI2MD.Utils.coordinates import print_charge
 from PyRAI2MD.Molecule.constraint import Constraint
+from PyRAI2MD.Molecule.constraint import GeomTracker
 
 
 class AIMD:
@@ -95,6 +96,8 @@ class AIMD:
 
         ## create a constraint object
         self.ext_pot = Constraint(keywords=keywords)
+        ## create a geometry tracker object
+        self.geom_tracker = GeomTracker(keywords=keywords)
         ## create a trajectory object
         self.traj = trajectory
 
@@ -327,6 +330,33 @@ class AIMD:
         elif self.traj.status == 0:
             self.stop = 2
 
+    def _chkpopulation(self):
+        ## This function check the state population
+        ## This function stop MD if the state population is nan
+        ## This function stop MD if the state population exceed 0.01 or below - 0.01
+
+        for p in np.diag(np.real(self.traj.a)):
+            if np.isnan(p):
+                self.stop = 3
+                return self
+
+        if np.amax(np.diag(np.real(self.traj.a))) > 1.01:
+            self.stop = 4
+
+        if np.amin(np.diag(np.real(self.traj.a))) < -0.01:
+            self.stop = 4
+
+        return self
+
+    def _chkgeom(self):
+        ## This function check the geometry
+        ## This function stop MD if the geometry satisfies the requirement
+
+        if self.geom_tracker.check(self.traj):
+            self.stop = 5
+
+        return self
+
     def _chkpoint(self):
         ## record the last a few MD step
         self.traj.record()
@@ -396,6 +426,7 @@ class AIMD:
 -------------------------------------------------------
 %s
 -------------------------------------------------------
+
 """ % self.traj.shinfo
 
         ## add error info
@@ -639,7 +670,9 @@ class AIMD:
                 print('surfacehop', time.time())
 
             ## check errors and checkpointing
+            self._chkgeom()
             self._chkerror()
+            self._chkpopulation()
             self._chkpoint()
 
             if self.timing == 1:
@@ -651,6 +684,15 @@ class AIMD:
                 break
             elif self.stop == 2:
                 warning = 'Trajectory terminated because the QM calculation failed.'
+                break
+            elif self.stop == 3:
+                warning = 'Trajectory terminated because the state population is nan.'
+                break
+            elif self.stop == 4:
+                warning = 'Trajectory terminated because the state population exceed 0–1.'
+                break
+            elif self.stop == 5:
+                warning = 'Trajectory terminated because it meets the geometry requirement.'
                 break
 
         end = time.time()
