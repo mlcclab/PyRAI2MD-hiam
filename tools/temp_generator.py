@@ -37,7 +37,7 @@ def write_molcas_rasscf(cas):
     fel = cas['fel']
     nel = cas['nel']
     norb = cas['norb']
-    nstate = cas['nstate']
+    astate = cas['astate']
 
     if mult == 'singlet':
         fileorb = 'fileorb=$MOLCAS_PROJECT.StrOrb'
@@ -46,7 +46,7 @@ def write_molcas_rasscf(cas):
         fileorb = 'LumOrb'
         spin = 3
     rasscf = '&RASSCF\n%s\nSpin=%s\nNactel=%s 0 0\nInactive=%s\nRas2=%s\nITERATIONS=200,100\nCIRoot=%s %s 1' % (
-        fileorb, spin, nel, fel, norb, nstate, nstate
+        fileorb, spin, nel, fel, norb, astate, astate
     )
 
     return rasscf
@@ -166,17 +166,25 @@ def read_molcas(mult):
     how many activate orbitals does the %s have?
     """ % mult)
 
+    astate = input("""
+    how many %s states does the CASSCF calculation average?
+    """ % mult)
+
     nstate = input("""
-    how many states does the %s average?
+    how many %s state does the NAMD propagate (<= CASSCF states)?
     """ % mult)
 
     print('\n    -----------------------------------------------------------------\n')
+
+    if nstate > astate:
+        nstate = astate
 
     key_dict = {
         'mult': mult,
         'fel': int(fel),
         'nel': int(nel),
         'norb': int(norb),
+        'astate': int(astate),
         'nstate': int(nstate),
     }
 
@@ -272,12 +280,10 @@ def molcas_input(title):
     do you want to compute gradients for all states? (yes/no)
         for dynamics using activestate 1, choose no
         for dynamics using gsh, choose yes
-        for adaptive sampling, enter the number of states for training NN (<= number of states)
+        for adaptive sampling, choose yes
     """)
-    try:
-        grad = int(grad)
-    except ValueError:
-        grad = bool_dict[grad]
+
+    grad = bool_dict[grad]
 
     nac = input("""
     do you want to compute nonadiabatic couplings? (yes/no)
@@ -319,25 +325,25 @@ def write_pmd_control(title, jobtype):
 
     if jobtype == 'train':
         ml_ncpu = 4
-        qm_ncpu = 1
+        qc_ncpu = 1
 
     elif jobtype == 'search':
         ml_ncpu = input("""
     how many threads do you want to use for grid search? (e.g., 20)
     """)
-        qm_ncpu = 1
+        qc_ncpu = 1
 
     elif jobtype == 'adaptive':
         ml_ncpu = input("""
     how many threads do you want to use for ml-namd calculations? (e.g., 20)
     """)
-        qm_ncpu = input("""
+        qc_ncpu = input("""
     how many threads do you want to use for qm calculations? (e.g., 75)
     """)
 
     else:
         ml_ncpu = 1
-        qm_ncpu = 1
+        qc_ncpu = 1
 
     qm = input("""
     what is the qm method? (enter one of the following options)
@@ -357,8 +363,8 @@ def write_pmd_control(title, jobtype):
 
     methods = qm.split()[0:]
 
-    control = '&CONTROL\ntitle %s\njobtype %s\nqm_ncpu %s\nml_ncpu %s\nqm %s\n' % (
-        title, jobtype, qm_ncpu, ml_ncpu, qm
+    control = '&CONTROL\ntitle %s\njobtype %s\nqc_ncpu %s\nml_ncpu %s\nqm %s\n' % (
+        title, jobtype, qc_ncpu, ml_ncpu, qm
     )
 
     if methods[0] in ['nn', 'e2n2'] and jobtype == 'md':
