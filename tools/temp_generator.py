@@ -568,6 +568,31 @@ def write_pmd_molecule():
     """)
             molecule += 'center %s\n' % center
 
+    track = input("""
+    do you want to track the distance changes during NAMD? (yes/no)
+    """)
+
+    track = bool_dict[track]
+
+    if track == 1:
+        track_type = input("""
+    chose the type of distance to track during NAMD, e.g.:
+        frag - tracking distance between two fragments
+        dist - tracking distances between several pairs of atoms
+    """)
+
+        track_index = input("""
+    enter the atom indices to define fragments or atom pairs, e.g.:
+        frag - 1 2 3 4, 5 6 7 8
+        dist - 1 2, 3 4, 5 6, 7 8
+    """)
+
+        track_thrhd = input("""
+    enter threshold to early stop trajectories if tracked distance(s) exceed the threshold (in Angstrom).
+    """)
+
+        molecule += 'track_type %s\ntrack_index %s\ntrack_thrhd %s\n' % (track_type, track_index, track_thrhd)
+
     molecule += '\n'
 
     return molecule
@@ -931,7 +956,7 @@ def write_pmd_molcas(_):
     """)
         pmd_molcas += 'molcas_calcdir %s\n' % calcdir
     else:
-        print('\nmolcas calculation will run in the current folder\n')
+        print('\n    molcas calculation will run in the current folder\n')
 
     set_workdir = input("""
     do you want to run molcas on local disk? (yes/no) 
@@ -942,7 +967,7 @@ def write_pmd_molcas(_):
     if set_workdir == 1:
         pmd_molcas += 'molcas_workdir AUTO\n'
     else:
-        print('\nmolcas calculation will run in the current folder\n')
+        print('\n    molcas calculation will run in the current folder\n')
 
     hpc = input("""
     do you want to submit molcas calculations to job schedular? (yes/no)
