@@ -159,7 +159,7 @@ class GeomTracker:
 
     def __init__(self, keywords=None):
         self.track_type = keywords['molecule']['track_type']
-        self.track_index = keywords['molecule']['track_index']
+        self.track_index = np.array(keywords['molecule']['track_index']) - 1
         self.track_thrhd = keywords['molecule']['track_thrhd']
 
         diff = len(self.track_index) - len(self.track_thrhd)
