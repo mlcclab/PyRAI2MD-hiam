@@ -460,7 +460,7 @@ def read_e2n2(keywords, values):
     ## This function read variables from &e2n2_eg,&e2n2_nac,&e2n2_soc
     keyfunc = {
         'n_edges': ReadVal('i'),
-        'maxradius': ReadVal('i'),
+        'maxradius': ReadVal('f'),
         'n_features': ReadVal('i'),
         'n_blocks': ReadVal('i'),
         'l_max': ReadVal('i'),
