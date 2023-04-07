@@ -490,6 +490,7 @@ def read_e2n2(keywords, values):
         'epostep': ReadVal('i'),
         'subset': ReadVal('f'),
         'batch_size': ReadVal('i'),
+        'val_batch_size': ReadVal('i'),
         'nbatch': ReadVal('i'),
         'learning_rate': ReadVal('f'),
         'learning_rate_step': ReadVal('fl'),
@@ -1042,6 +1043,7 @@ def read_input(ld_input):
         'epostep': 10,
         'subset': 0,
         'batch_size': 64,
+        'val_batch_size': 0,
         'nbatch': 0,
         'learning_rate': 1e-3,
         'learning_rate_step': [1e-3, 1e-4, 1e-5, 1e-6],
@@ -1083,6 +1085,7 @@ def read_input(ld_input):
         'epostep': 10,
         'subset': 0,
         'batch_size': 64,
+        'val_batch_size': 0,
         'nbatch': 0,
         'learning_rate': 1e-3,
         'learning_rate_step': [1e-3, 1e-4, 1e-5, 1e-6],
@@ -1124,6 +1127,7 @@ def read_input(ld_input):
         'epostep': 10,
         'subset': 0,
         'batch_size': 64,
+        'val_batch_size': 0,
         'nbatch': 0,
         'learning_rate': 1e-3,
         'learning_rate_step': [1e-3, 1e-4, 1e-5, 1e-6],
@@ -2341,6 +2345,7 @@ def start_info(variables_all):
   Subset:                     %-20s %-20s %-20s
   Scaler:                     %-20s %-20s %-20s
   Batch:                      %-20s %-20s %-20s
+  Validation batch            %-20s %-20s %-20s
   Nbatch:                     %-20s %-20s %-20s
 ----------------------------------------------------------------------------------------------
 
@@ -2432,6 +2437,9 @@ def start_info(variables_all):
         variables_e2n2_eg['batch_size'],
         variables_e2n2_nac['batch_size'],
         variables_e2n2_soc['batch_size'],
+        variables_e2n2_eg['val_batch_size'],
+        variables_e2n2_nac['val_batch_size'],
+        variables_e2n2_soc['val_batch_size'],
         variables_e2n2_eg['nbatch'],
         variables_e2n2_nac['nbatch'],
         variables_e2n2_soc['nbatch'],
