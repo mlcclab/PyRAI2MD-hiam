@@ -101,6 +101,7 @@ def set_e2n2_hyper_eg(hyp, unit, info, splits, shuffle):
             'shuffle': shuffle,  # shuffle full training set or subset
             'subset': hyp['subset'],  # ratio of train data used for training
             'batch_size': hyp['batch_size'],  # batch size
+            'val_batch_size': hyp['val_batch_size'],  # batch size in validation
             'nbatch': hyp['nbatch'],  # number of batch, larger than 0 will overwrite batch size
             'epo_step': hyp['epostep'],  # steps of epochs for validation
             'callbacks': hyp['callbacks'],
@@ -205,6 +206,7 @@ def set_e2n2_hyper_nac(hyp, unit, info, splits, shuffle):
             'shuffle': shuffle,  # shuffle full training set or subset
             'subset': hyp['subset'],  # ratio of train data used for training
             'batch_size': hyp['batch_size'],  # batch size
+            'val_batch_size': hyp['val_batch_size'],  # batch size in validation
             'nbatch': hyp['nbatch'],  # number of batch, larger than 0 will overwrite batch size
             'epo_step': hyp['epostep'],  # steps of epochs for validation
             'callbacks': hyp['callbacks'],
@@ -310,6 +312,7 @@ def set_e2n2_hyper_soc(hyp, unit, info, splits, shuffle):
             'shuffle': shuffle,  # shuffle full training set or subset
             'subset': hyp['subset'],  # ratio of train data used for training
             'batch_size': hyp['batch_size'],  # batch size
+            'val_batch_size': hyp['val_batch_size'],  # batch size in validation
             'nbatch': hyp['nbatch'],  # number of batch, larger than 0 will overwrite batch size
             'epo_step': hyp['epostep'],  # steps of epochs for validation
             'callbacks': hyp['callbacks'],
