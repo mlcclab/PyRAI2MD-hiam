@@ -26,7 +26,9 @@ setup(
         'numpy>=1.20.0',
         'matplotlib>=3.5.0',
         'tensorflow>=2.3.0',
-        'cython>=0.29.0'],
+        'cython>=0.29.0',
+        'scikit-learn'
+    ],
     extras_require={
         "pyNNsMD": ["pyNNsMD>=2.0.0"],
         # "GCNNP": ["GCNNP>=0.1.0"],
