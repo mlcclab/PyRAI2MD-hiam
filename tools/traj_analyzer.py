@@ -1149,7 +1149,7 @@ def read_raw_data_molcas(files):
     version = 19
     for line in log:
         n += 1
-        if 'version:' in line:
+        if 'version' in line:
             try:
                 version = float(line.split()[-1])
             except ValueError:
@@ -1179,6 +1179,10 @@ def read_raw_data_molcas(files):
             else:
                 event_checker = log[n + 4]
                 event_info = log[n + 6]
+                if np.abs(float(line.split()[-1])) < 2:
+                    num_state = len(line.split()) - 1
+                else:
+                    num_state = int((len(line.split()) - 2) / 2)
                 crt_pop = line.split()[1:]
                 crt_pop = [float(i) for i in crt_pop]
 
