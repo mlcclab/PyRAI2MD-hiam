@@ -6,6 +6,7 @@
 # May 21 2021
 #
 ######################################################
+import os.path
 
 import sys
 import random
@@ -268,8 +269,130 @@ def read_molden(ld_input):
 
     return freqdata
 
-
 def read_g16(ld_input):
+    if os.path.exists('%s.freq.fchk' % ld_input):
+        print('G16: read fchk and log')
+        return read_g16_fchk(ld_input)
+    else:
+        print('G16: read log only')
+        return read_g16_log(ld_input)
+
+def read_g16_log(ld_input):
+    ## This function only read .freq.g16 file (Gaussian .log file) return all data as a dict
+    ## The freqdata has clear descriptions for all used variables
+    ## The G16 saves normalized unmass-weighted normal modes
+
+    with open('%s.freq.g16' % ld_input, 'r') as raw:
+        log = raw.read().splitlines()
+
+    ## extracting data from log
+    freqs_list = []
+    rmass_list = []
+    inten_list = []
+    cart_list = []
+    vect_list = []
+    natom = 0
+    for n, line in enumerate(log):
+        if 'Stoichiometry' in line:
+            formula = line.split()[-1]
+            natom = count_atom(formula)
+
+        if 'Input orientation' in line:
+            cart_list = log[n + 5: n + 5 + natom]
+
+        if 'Frequencies -- ' in line:
+            f = line.split(' -- ')[-1]
+            freqs_list.append(f)
+
+        if 'Red. masses -- ' in line:
+            r = line.split(' -- ')[-1]
+            rmass_list.append(r)
+
+        if 'IR Inten    --' in line:
+            i = line.split(' -- ')[-1]
+            inten_list.append(i)
+
+        if ' Atom  AN ' in line:
+            v = log[n + 1: n + 1 + natom]
+            vect_list.append(v)
+
+    atoms, xyz = g16_xyz(cart_list)
+    atoms = np.array([Element(str(int(i))).get_symbol() for i in atoms])
+
+    freqs = g16_format(freqs_list, [-1, 1])
+    rmass = g16_format(rmass_list, [-1, 1])
+    inten = g16_format(inten_list, [-1])
+
+    modes = g16_modes(vect_list)
+
+    amass = [Element(i).get_mass() for i in atoms]
+    amass = np.array(amass)
+    amass = amass.reshape((natom, 1))
+
+    achrg = [Element(i).get_nuc() for i in atoms]
+    achrg = np.array(achrg)
+    achrg = achrg.reshape((natom, 1))
+
+    modes = np.array([i / la.norm(i * amass ** 0.5) for i in modes])  # convert to unnormalized unmass-weighted
+
+    freqdata = {
+        'nfreq': freqs.shape[0],  # number of degrees
+        'freqs': freqs,  # frequencies in cm-1, [N of degree[x]]
+        'inten': inten,  # ir intensity
+        'natom': natom,  # number of atoms
+        'atoms': atoms,  # atom list
+        'xyz': xyz,  # cartesian coordinates, [N of atoms [x,y,z]]
+        'vib': modes,  # vibrations in cartesian, [N of degrees [N of atoms [x,y,z]]]
+        'rmass': rmass,  # reduced masses, [N of degree [x]]
+        'amass': amass,  # atomic masses, [N of atoms [x]]
+        'achrg': achrg,  # atomic charges, [N of atoms [x]]
+    }
+
+    return freqdata
+
+
+def count_atom(formula):
+    na = ''
+    natom = 0
+    for x in formula + 'X':
+        if x in '01234567890':
+            na += x
+        else:
+            try:
+                natom += int(na)
+                na = ''
+            except ValueError:
+                pass
+
+    return natom
+
+
+def g16_xyz(cart_list):
+    atoms = []
+    xyz = []
+    for line in cart_list:
+        _, a, t, x, y, z = line.split()
+        atoms.append(int(a))
+        xyz.append([float(x), float(y), float(z)])
+
+    return atoms, xyz
+
+
+def g16_modes(vect_list):
+    modes = []
+    for block in vect_list:
+        block = np.array([x.split()[2:] for x in block]).T
+        modes += block.tolist()
+
+    nmode = int(len(modes) / 3)
+    natom = len(modes[0])
+    modes = np.array(modes).reshape((3, nmode, natom)).astype(float)
+    modes = np.transpose(modes, (1, 2, 0))
+
+    return modes
+
+
+def read_g16_fchk(ld_input):
     ## This function read .freq.g16 file (Gaussian .log file) and .freq.fchk and return all data as a dict
     ## The freqdata has clear descriptions for all used variables
     ## The G16 saves normalized unmass-weighted normal modes
@@ -331,7 +454,8 @@ def read_g16(ld_input):
     atoms = g16_format(atom_list, [-1])
     atoms = np.array([Element(str(int(i))).get_symbol() for i in atoms])
     xyz = g16_format(cart_list, [natom, 3])
-    modes = g16_format(vect_list, [nmode, natom, 3])
+    modes = g16_format(vect_list, [nmode, 3, natom])
+    modes = np.transpose(modes, (0, 2, 1))
 
     amass = [Element(i).get_mass() for i in atoms]
     amass = np.array(amass)
@@ -409,7 +533,8 @@ def read_orca(ld_input):
                 row = m % (nmode + 1) - 1
                 if row >= 0:
                     modes[row] += [float(j) for j in i.split()[1:]]
-            modes = np.array(modes).T.reshape((nmode, int(nmode / 3), 3))  # Transpose array !!!
+            modes = np.array(modes).T.reshape((nmode, 3, int(nmode / 3)))  # Transpose array !!!
+            modes = np.transpose(modes, (0, 2, 1))
 
     natom = len(atoms)
     # filter out imaginary and trans-rot freqs and modes
