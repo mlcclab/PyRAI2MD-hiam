@@ -618,7 +618,8 @@ def read_bagel(ld_input):
     freqs = np.array(freqs)
     inten = np.array(inten)
     xyz = np.array(xyz)
-    modes = np.array(modes).T.reshape((nmode, natom, 3))  # Transpose array !!!
+    modes = np.array(modes).T.reshape((nmode, 3, natom))  # Transpose array !!!
+    modes = np.transpose(modes, (0, 2, 1))
 
     # filter out imaginary and trans-rot freqs and modes
     realfreq = []
