@@ -724,17 +724,23 @@ def boltzmann(sample):
     return initcond
 
 
+def fac_loop(n):
+    yield 0, 1.
+    r = 1.
+    for m in range(1, n + 1):
+        r *= float(n - m + 1) / m ** 2
+        yield m, r
+
+    return
+
+
 def laguerre(n, x):
     ## This function calculates laguerre polynomial
     ## L = n!/[(n-m)! * (m!)**2] = n*(n-1)*...*(n-m+1)/(m!)**2 = n/1**2 * (n-1)/2**2 *...*(n-m+1)/m**2, 0 <= m <= n
+    ## limited to n <= 150
 
-    lag = 1  # L=1 when m=0
-
-    for m in range(1, n + 1):
-        r = 1
-        for mm in range(1, m + 1):
-            r *= float(n - mm + 1) / mm ** 2
-
+    lag = 0
+    for m, r in fac_loop(n):
         lag += (-1) ** m * r * x ** m
 
     return lag
@@ -768,6 +774,11 @@ def wignerfunc(mu, temp):
             n += 1
             if random_state <= i:  # find the lowest state that has more population than the random state
                 break
+
+        if n > 150:  # avoid too high vibrational states
+            print('Sampled vibrational state is higher than 150, adjusted to 150')
+            n = 150
+
         q = random.uniform(0, 1) * 10.0 - 5.0
         p = random.uniform(0, 1) * 10.0 - 5.0
         rho2 = 2 * (q ** 2 + p ** 2)
