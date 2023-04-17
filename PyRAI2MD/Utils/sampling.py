@@ -381,13 +381,12 @@ def g16_xyz(cart_list):
 def g16_modes(vect_list):
     modes = []
     for block in vect_list:
-        block = np.array([x.split()[2:] for x in block]).T
-        modes += block.tolist()
+        block = np.array([x.split()[2:] for x in block]).astype(float)
+        nmode = int(block.shape[1] / 3)
+        for n in range(nmode):
+            modes.append(block[:, n: n + 3])
 
-    nmode = int(len(modes) / 3)
-    natom = len(modes[0])
-    modes = np.array(modes).reshape((3, nmode, natom)).astype(float)
-    modes = np.transpose(modes, (1, 2, 0))
+    modes = np.array(modes)
 
     return modes
 
@@ -408,15 +407,15 @@ def read_g16_fchk(ld_input):
     inten_list = []
 
     for line in log:
-        if 'Frequencies' in line:
+        if 'Frequencies -- ' in line:
             f = line.split(' -- ')[-1]
             freqs_list.append(f)
 
-        if 'Red. masses' in line:
+        if 'Red. masses -- ' in line:
             r = line.split(' -- ')[-1]
             rmass_list.append(r)
 
-        if 'IR Inten' in line:
+        if 'IR Inten    --' in line:
             i = line.split(' -- ')[-1]
             inten_list.append(i)
 
@@ -454,8 +453,7 @@ def read_g16_fchk(ld_input):
     atoms = g16_format(atom_list, [-1])
     atoms = np.array([Element(str(int(i))).get_symbol() for i in atoms])
     xyz = g16_format(cart_list, [natom, 3])
-    modes = g16_format(vect_list, [nmode, 3, natom])
-    modes = np.transpose(modes, (0, 2, 1))
+    modes = g16_format(vect_list, [nmode, natom, 3])
 
     amass = [Element(i).get_mass() for i in atoms]
     amass = np.array(amass)
@@ -533,8 +531,7 @@ def read_orca(ld_input):
                 row = m % (nmode + 1) - 1
                 if row >= 0:
                     modes[row] += [float(j) for j in i.split()[1:]]
-            modes = np.array(modes).T.reshape((nmode, 3, int(nmode / 3)))  # Transpose array !!!
-            modes = np.transpose(modes, (0, 2, 1))
+            modes = np.array(modes).T.reshape((nmode, int(nmode / 3), 3))  # Transpose array !!!
 
     natom = len(atoms)
     # filter out imaginary and trans-rot freqs and modes
@@ -618,8 +615,7 @@ def read_bagel(ld_input):
     freqs = np.array(freqs)
     inten = np.array(inten)
     xyz = np.array(xyz)
-    modes = np.array(modes).T.reshape((nmode, 3, natom))  # Transpose array !!!
-    modes = np.transpose(modes, (0, 2, 1))
+    modes = np.array(modes).T.reshape((nmode, natom, 3))  # Transpose array !!!
 
     # filter out imaginary and trans-rot freqs and modes
     realfreq = []
