@@ -25,7 +25,7 @@
     2019 – 2022      Department of Chemistry and Chemical Biology
                      Northeastern University, Boston, USA
 
-                          version:   2.2 alpha
+                          version:   2.3 alpha
                           
 
   With contribution from (in alphabetic order):
