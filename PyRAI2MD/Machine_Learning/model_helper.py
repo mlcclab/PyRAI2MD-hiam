@@ -34,6 +34,7 @@ class DummyModel:
             'MLP': 'pyNNsMD',
             'Schnet': 'pyNNsMD',
             'E2N2': 'GCNNP',
+            'DimenetModel': 'DimenetNAC',
             'job_id': job_id
         }
 

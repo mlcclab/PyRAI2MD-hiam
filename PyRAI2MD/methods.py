@@ -33,6 +33,12 @@ try:
 except ModuleNotFoundError:
     E2N2 = DummyModel
 
+try:
+    from PyRAI2MD.Machine_Learning.model_DimeNet import DimenetModel
+
+except ModuleNotFoundError:
+    DimenetModel = DummyModel
+
 class QM:
     """ Electronic structure method class
 
@@ -65,6 +71,7 @@ class QM:
             'mlp': MLP,
             'schnet': Schnet,
             'e2n2': E2N2,
+            'dimenet': DimenetModel,
         }
 
         # methods available for QM 1 region calculation
@@ -77,6 +84,7 @@ class QM:
             'mlp': MLP,
             'schnet': Schnet,
             'e2n2': E2N2,
+            'dimenet': DimenetModel,
         }
 
         # methods available for QM 2 region calculation

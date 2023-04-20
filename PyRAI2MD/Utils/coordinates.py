@@ -148,13 +148,11 @@ def read_initcond(mol):
             atoms.append(e)
             coord.append([x, y, z])
             velo[i, 0: 3] = float(vx), float(vy), float(vz)
-
         elif 9 > len(line) >= 7:
             e, x, y, z, vx, vy, vz = line[0:7]
             atoms.append(e)
             coord.append([x, y, z])
             velo[i, 0: 3] = float(vx), float(vy), float(vz)
-
         else:
             e, x, y, z = line[0:4]
             atoms.append(e)

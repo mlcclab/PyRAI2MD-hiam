@@ -155,7 +155,7 @@ def read_molcas(mult):
     print('\n    Setting up sections for %s\n' % mult)
     fel = input("""
     -----------------------------------------------------------------
-    how many frozen electrons does the %s have?
+    how many frozen orbitals does the %s have?
     """ % mult)
 
     nel = input("""

@@ -10,6 +10,7 @@
 import sys
 import os
 import shutil
+import json
 import multiprocessing
 
 ## import initial condition sampling module
@@ -105,6 +106,8 @@ def main(argv):
         shell = infile[1]
         inputfile = infile[0].splitlines() + infile[2].splitlines()
     else:
+        shell = None
+        inputfile = None
         exit('\n SyntaxError: require 2 >shell delimiters, but found %s\n' % (len(infile) - 1))
 
     for line in inputfile:
@@ -184,6 +187,12 @@ def main(argv):
                 print('\n!!! Molcas orbital file %s.StrOrb or JobIph not found !!!' % inputs)
                 print(usage)
                 print('!!! Molcas orbital file %s.StrOrb or JobIph not found !!!\n' % inputs)
+                exit()
+        elif prog == 'bagel':
+            if not os.path.exists('%s.bagel' % inputs):
+                print('\n!!! Bagel template input %s.bagel not found !!!' % inputs)
+                print(usage)
+                print('\n!!! Bagel template input %s.bagel not found !!!' % inputs)
                 exit()
         elif prog == 'nxbagel':
             if not os.path.exists('control.dyn'):
@@ -313,6 +322,9 @@ def main(argv):
 
     if prog == 'molcas':
         gen_molcas(cpus, ensemble, inputs, slpt, sltm, slmm, slnd, slcr, sljb, slin, tomlcs, iformat, shell)
+    elif prog == 'bagel':
+        gen_bagel(cpus, ensemble, inputs, slpt, sltm, slmm, slnd, slcr, sljb, slin, tobgl,
+                  lbbls, lblpk, lbslp, lbbst, tomkl, tompi, shell)
     elif prog == 'nxbagel':
         gen_nxbagel(cpus, ensemble, inputs, slpt, sltm, slmm, slnd, slcr, sljb, slin, tontx, tobgl,
                     lbbls, lblpk, lbslp, lbbst, tomkl, tompi, shell)
@@ -332,6 +344,7 @@ def main(argv):
         gen_fromage(cpus, ensemble, inputs, slpt, sltm, slmm, slnd, slcr, sljb, slin, tomlcs, toxtb, iformat, shell)
     elif prog == 'orca':
         gen_orca(cpus, ensemble, inputs, slpt, sltm, slmm, slnd, slcr, sljb, slin, toorca, iformat, shell)
+
 
 def gen_molcas(cpus, ensemble, inputs, slpt, sltm, slmm, slnd, slcr, sljb, slin, tomlcs, iformat, shell):
     ## This function will group Molcas calculations to individual runset
@@ -402,6 +415,7 @@ def gen_molcas(cpus, ensemble, inputs, slpt, sltm, slmm, slnd, slcr, sljb, slin,
 
     os.system("chmod 777 runall.sh")
     print('\n\n Done\n')
+
 
 def molcas_batch(inputs, j, start, end, in_path, slcr, sltm, slpt, slmm, tomlcs, shell):
     ## This function will be called by gen_molcas function
@@ -597,6 +611,204 @@ def Markatom(xyz, marks):
         new_xyz += '%-5s%30s%30s%30s\n' % (e, x, y, z)
 
     return new_xyz
+
+
+def gen_bagel(cpus, ensemble, inputs, slpt, sltm, slmm, slnd, slcr, sljb, slin, tobgl, lbbls, lblpk, lbslp,
+              lbbst, tomkl, tompi, shell):
+    ## This function generate bagel calculations in individual runset
+    ## This function will call bagel_batch and bagel to prepare files
+
+    if os.path.exists('%s.charge' % inputs):
+        with open('%s.charge' % inputs, 'r') as infile:
+            charge = infile.read().splitlines()
+            nq = int(charge[0])
+            charge = [line.split()[0: 4] for line in charge[2: 2 + nq]]
+    else:
+        charge = None
+
+    with open('%s.bagel' % inputs, 'r') as infile:
+        in_temp = json.load(infile)
+
+    in_path = os.getcwd()
+    variables_wrapper = []
+    runall = ''
+    for j in range(slnd):
+        runall += 'sbatch runset-%d.sh\n' % (j + 1)
+        start = slin + j * sljb
+        end = start + sljb - 1
+        for i in range(sljb):
+            in_xyz, in_velo = Unpack(ensemble[i + j * sljb], 'bagel')  # unpack initial condition to xyz and velocity
+            inputname = '%s-%s' % (inputs, i + start)
+            inputpath = '%s/%s' % (in_path, inputname)
+            variables_wrapper.append([
+                inputname, inputpath, slcr, sljb, sltm, slpt, slmm, in_temp, in_xyz, in_velo, charge, tobgl,
+                lbbls, lblpk, lbslp, lbbst, tomkl, tompi, shell
+            ])  # prepare calculations
+
+        batch = bagel_batch(inputs, j, start, end, in_path, slcr, sljb, sltm, slpt, slmm, tobgl, lbbls, lblpk,
+                            lbslp, lbbst, tomkl, tompi, shell)
+
+        with open('./runset-%d.sh' % (j + 1), 'w') as out:
+            out.write(batch)
+
+        os.system("chmod 777 runset-%d.sh" % (j + 1))
+
+    task = len(variables_wrapper)
+    cpus = min([task, cpus])
+    pool = multiprocessing.Pool(processes=cpus)
+    n = 0
+    for _ in pool.imap_unordered(bagel, variables_wrapper):
+        n += 1
+        sys.stdout.write('CPU: %3d generating trajectory: %d/%d\r' % (cpus, n, task))
+    pool.close()
+
+    with open('./runall.sh', 'w') as out:
+        out.write(runall)
+
+    os.system("chmod 777 runall.sh")
+    print('\n\n Done\n')
+
+
+def bagel_batch(inputs, j, start, end, in_path, slcr, sljb, sltm, slpt, slmm, tobgl, lbbls, lblpk, lbslp,
+                lbbst, tomkl, tompi, shell):
+    ## This function will be called by gen_bagel
+    ## This function generates runset for Bagel calculation
+
+    ### Note, this line doesn't check if slcr and sljb are appropriate for parallelization, be careful!!!
+    bagelpal = int(slcr / sljb)
+
+    batch = """#!/bin/sh
+## script for BAGEL
+#SBATCH --nodes=1
+#SBATCH --ntasks=%d
+#SBATCH --time=%s
+#SBATCH --job-name=%s-%d
+#SBATCH --partition=%s
+#SBATCH --mem=%dmb
+#SBATCH --output=%%j.o.slurm
+#SBATCH --error=%%j.e.slurm
+%s
+
+export MKL_DEBUG_CPU_TYPE=5
+
+# run BAGEL in multi thread mode
+export BAGELPAL=%s
+export BAGEL_NUM_THREADS=$BAGELPAL
+export OMP_NUM_THREADS=$BAGELPAL
+export MKL_NUM_THREADS=$BAGELPAL
+
+export BAGEL=%s/bin/BAGEL
+export BLAS_LIB=%s
+export LAPACK_LIB=%s
+export SCALAPACK_LIB=%s
+export BOOST_LIB=%s/lib
+
+#source %s/setvars.sh ## This is not used if you don't use intel/oneAPI for mkl and mpi
+#export MPI=%s ## mpi is not used here
+#export LD_LIBRARY_PATH$MPI/lib:$LD_LIBRARY_PATH
+#export PATH=$MPI/bin:$PATH
+
+export LD_LIBRARY_PATH=$BAGEL/lib:$BLAS_LIB:$LAPACK_LIB:$SCALAPACK_LIB:$BOOST_LIB:$LD_LIBRARY_PATH
+
+echo $SLURM_JOB_NAME
+
+for ((i=%d;i<=%d;i++))
+do
+  export WORKDIR=%s/%s-$i
+  cd $WORKDIR
+  $BAGEL $INPUT.json > $INPUT.log
+  sleep 5
+done
+wait
+""" % (
+        slcr, sltm, inputs, j + 1, slpt, int(slmm * slcr * 1.1), shell, bagelpal, tobgl, lbbls, lblpk,
+        lbslp, lbbst, tomkl, tompi, start, end, in_path, inputs)
+
+    return batch
+
+
+def bagel(var):
+    ## This function prepares NxBagel calculation
+    ## It generates TRAJECTORIES/TRAJ#/JOB_NAD, geom, veloc, controd.dyn for NxBagel calculations
+    ## This function generates a backup slurm batch file for each calculation
+
+    inputname, inputpath, slcr, sljb, sltm, slpt, slmm, in_temp, in_xyz, in_velo, charge, tobgl, lbbls, lblpk, lbslp, \
+        lbbst, tomkl, tompi, shell = var
+
+    if not os.path.exists('%s' % inputpath):
+        os.makedirs('%s' % inputpath)
+
+    ### Note, this line doesn't check if slcr and sljb are appropriate for parallelization, be careful!!!
+    bagelpal = int(slcr / sljb)
+
+    runscript = """#!/bin/sh
+## script for BAGEL
+#SBATCH --nodes=1
+#SBATCH --ntasks=%s
+#SBATCH --time=%s
+#SBATCH --job-name=%s
+#SBATCH --partition=%s
+#SBATCH --mem=%dmb
+#SBATCH --output=%%j.o.slurm
+#SBATCH --error=%%j.e.slurm
+%s
+
+# run BAGEL in multi thread mode
+export BAGELPAL=%s
+export BAGEL_NUM_THREADS=$BAGELPAL
+export OMP_NUM_THREADS=$BAGELPAL
+export MKL_NUM_THREADS=$BAGELPAL
+
+export BAGEL=%s/bin/BAGEL
+export BLAS_LIB=%s
+export LAPACK_LIB=%s
+export SCALAPACK_LIB=%s
+export BOOST_LIB=%s/lib
+
+#source %s/setvars.sh ## This is not used if you don't use intel/oneAPI for mkl and mpi
+#export MPI=%s ## mpi is not used here
+#export LD_LIBRARY_PATH$MPI/lib:$LD_LIBRARY_PATH
+#export PATH=$MPI/bin:$PATH
+
+export LD_LIBRARY_PATH=$BAGEL/lib:$BLAS_LIB:$LAPACK_LIB:$SCALAPACK_LIB:$BOOST_LIB:$LD_LIBRARY_PATH
+
+export WORKDIR=%s
+cd $WORKDIR
+$BAGEL $INPUT.json > $INPUT.log
+""" % (bagelpal, sltm, inputname, slpt, int(slmm * 1.1), shell, bagelpal, tobgl, lbbls, lblpk, lbslp, lbbst,
+       tomkl, tompi, inputpath)
+
+    with open('%s/%s.sh' % (inputpath, inputname), 'w') as out:
+        out.write(runscript)
+
+    jxyz = write_json_xyz(in_xyz, charge)
+    si_input = in_temp.copy()
+    si_input['bagel'][0]['geometry'] = jxyz
+
+    with open('%s/%s.json' % (inputpath, inputname), 'w') as out:
+        json.dump(si_input, out, indent=2)
+
+    os.system("chmod 777 %s/%s.sh" % (inputpath, inputname))
+
+
+def write_json_xyz(x, q=None):
+    ## write coordinate file
+    ## convert xyz from array to bagel format (Bohr)
+
+    a2b = 1 / 0.529177249  # angstrom to bohr
+    jxyz = []
+    for line in x:
+        e, x, y, z = line
+        jxyz.append({"atom": e, "xyz": [float(x) * a2b, float(y) * a2b, float(z) * a2b]})
+
+    ## convert point charge from array to bagel format
+    if q:
+        for charge in q:
+            jxyz.append(
+                {"atom": "Q", "xyz": [float(charge[1]), float(charge[2]), float(charge[3])], "charge": charge[0]}
+            )
+
+    return jxyz
 
 
 def gen_nxbagel(cpus, ensemble, inputs, slpt, sltm, slmm, slnd, slcr, sljb, slin, tontx, tobgl, lbbls, lblpk, lbslp,
@@ -834,6 +1046,12 @@ def Unpack(ensemble, prog):
             xyz += '%-5s%6.1f%30.16f%30.16f%30.16f%30.16f\n' % (
                 i[0], float(i[8]), float(i[1]) * 1.88973, float(i[2]) * 1.88973, float(i[3]) * 1.88973, float(i[7]))
             velo += '%30.16f%30.16f%30.16f\n' % (float(i[4]), float(i[5]), float(i[6]))
+    elif prog == 'bagel':
+        xyz = []
+        velo = []
+        for i in ensemble:
+            xyz.append([i[0], float(i[1]), float(i[2]), float(i[3])])
+            velo.append([float(i[4]), float(i[5]), float(i[6])])
 
     return xyz, velo
 

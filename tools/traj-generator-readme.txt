@@ -6,7 +6,7 @@
    !!! 	       	       	       	       	       	       	  !!!
    !!!                 Important Notes       	       	  !!!
    !!! 	       	       	       	       	       	       	  !!!
-   !!! Normal Mode Foramt:                                !!!
+   !!! Normal Mode Format:                                !!!
    !!! Molcas   - unmass-weighted unnormalized            !!!
    !!! Gaussian - unmass-weighted   normalized            !!!
    !!! BAGEL    -   mass-weighted   normalized            !!!
@@ -31,13 +31,13 @@
     Molcas   -  file_name.freq.molden (need &MCKINLEY)
 
     Gaussian -  file_name.freq.g16 (Gaussian .log file)
-             -  file_name.freq.fchk (Gaussian .fchk file, need Freq=SaveNormalModes in input)             
+             -  file_name.freq.fchk (Gaussian .fchk file, need Freq=SaveNormalModes in input)
 
     BAGEL    -  file_name.freq.bagel (BAGEL .log file, need "title" : hessian)
 
     ORCA     - file_name.freq.orca (ORCA .hess file)
 
-    NewtonX  - file_name.init.newtonx (NetonX sampled initial conditions, final_output)
+    NewtonX  - file_name.init.newtonx (NewtonX sampled initial conditions, final_output)
     
     XYZ      - file_name.init.xyz (traj_generator.py sampled initial conditions, .init)
 
@@ -47,7 +47,7 @@
              - file_name.inp (Molcas molecular dynamics input, need velocities=1)
 
     NewtonX/ -  bagelinput.basis.inp (BAGEL basis info)
-    BAGEL    -  bagelinput.part1.inp (BAGEL head line)
+    BAGEL    -  bagelinput.part1.inp (BAGEL headline)
              -  bagelinput.part2.inp (BAGEL gradient info)
              -  bagelinput.part3.inp (BAGEL method info)
              -  control.dyn (Newton molecular dynamics input)
@@ -70,7 +70,7 @@
 
 3. Input file  
 ------------------------------------------------------------------------
-    The name of input file is abitary. It follows a tow-clumns format 
+    The name of input file is arbitrary. It follows a tow-columns format
     (keywords on the left and values on the right) in free order:
 
       input      file_name.freq.molden
@@ -94,14 +94,14 @@
            keyword                 Value    
     ------------------------------------------------------
             input       This is the input file (file_name.freq.molden).
-                        The Molca input template (file_name.inp) must be in current directory!!!
+                        The Molcas input template (file_name.inp) must be in current directory!!!
                         The orbital file (file_name.StrOrb) must be in current directory!!!
 
             iseed       Random number seed. 
                         Default is -1, means a random seed. 
-                        You can chose any integer from 0 to + infinite to make sampling reproducable.
+                        You can choose any integer from 0 to + infinite to make sampling reproducible.
 
-            temp        Samling temperature in K.
+            temp        Sampling temperature in K.
                         Default is 273.15 K.
                         This temperature only control the sampling but NOT the trajectory calculation.
                         Make sure the temperature matches with the actual calculation.
@@ -110,7 +110,7 @@
                         Default is boltzmann.
                         Available sampling methods are Boltzmann and Wigner distribution. 
 
-            partition   Slurm partion.
+            partition   Slurm partition.
        	       	       	Default	is normal.
 
             time        Slurm time limit.
@@ -124,7 +124,7 @@
 
             nodes       Slurm nodes number.
        	       	       	Default is 1.
-                        For each node, individual runscripts will be generated.
+                        For each node, individual runscript will be generated.
 
             cores       Slurm cores number.
                         Default is 1.
@@ -136,8 +136,8 @@
 
             index       Job initial index.
                         Default is 1.
-                        The trajectory calculions are named as file_name-index. Change the inital index
-                        can setup new calculcations following exsited ones. 
+                        The trajectory calculations are named as file_name-index. Change the initial index
+                        can set up new calculations following the existed ones.
 
             ncpus       Number of CPUs for generating trajectory in parallel
                         Default is 1.
@@ -146,11 +146,11 @@
                         Default is 0. Use all sampled conditions
 
             notraj      Only perform initial condition sampling
-                        Deafult is 0. Generate trajectories after sampling
+                        Default is 0. Generate trajectories after sampling
 
             molcas      Path to Molcas.
                         Default is /share/apps/molcas-ext
-                        This path is used to setup molcas root in slurm submission script
+                        This path is used to set up molcas root in slurm submission script
 
 
 5. Additional keywords
@@ -175,10 +175,10 @@
     lib_boost           Path to Boost library
                         Default is /share/apps/boost_1_80_0
 
-    mkl                 Path to Intel MKL
+    mkl                 Path to Intel MKL (Not used anymore)
                         Default is /share/apps/intel/oneapi
 
-    mpi                 Path to Intel MPI
+    mpi                 Path to Intel MPI (Not used anymore)
                         Default is None
 
 

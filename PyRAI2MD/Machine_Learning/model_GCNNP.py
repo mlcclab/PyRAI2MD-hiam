@@ -201,9 +201,9 @@ class E2N2:
             self.device = 'cpu'
 
         if ngpu > 0:
-            self.device_name = torch.cuda.current_device()
+            self.device_name = '%s gpu' % ngpu
         else:
-            self.device_name = 'cpu'
+            self.device_name = '%s cpu' % os.environ['OMP_NUM_THREADS']
 
         if ngpu == 0:
             device = None
@@ -245,8 +245,8 @@ class E2N2:
             self.nstate,
             self.nnac,
             self.nsoc,
-            self.device_name,
             self.device,
+            self.device_name,
         )
 
         return headline

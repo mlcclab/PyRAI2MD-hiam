@@ -215,7 +215,7 @@ cd $BAGEL_WORKDIR
 
         ## save xyz file
         with open('%s/%s.json' % (self.workdir, self.project), 'w') as out:
-            json.dump(si_input, out)
+            json.dump(si_input, out, indent=2)
 
     def _run_bagel(self):
         ## run BAGEL calculation
