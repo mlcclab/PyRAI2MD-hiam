@@ -92,6 +92,7 @@ class SinglePoint:
   Inactive atoms:   %s
   Link atoms:       %s
   Highlevel atoms:  %s
+  Midlevel atoms:   %s
   Lowlevel atoms:   %s
  
 """ % (
@@ -104,6 +105,7 @@ class SinglePoint:
             self.traj.ninac,
             self.traj.nlink,
             self.traj.nhigh,
+            self.traj.nmid,
             self.traj.nlow
         )
 

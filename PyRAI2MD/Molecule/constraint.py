@@ -39,21 +39,21 @@ class Constraint:
 
         if len(frozen_atoms) > 0:
             self.has_frozen = True
-            self.frozen_atoms = np.array(frozen_atoms) - 1
+            self.frozen_atoms = np.array(frozen_atoms)
         else:
             self.has_frozen = False
             self.frozen_atoms = np.zeros(0)
 
         if len(center_frag) > 0:
             self.has_center = True
-            self.center_frag = np.array(center_frag) - 1
+            self.center_frag = np.array(center_frag)
         else:
             self.has_center = False
             self.center_frag = np.zeros(0)
 
         if len(constrained_atoms) > 0 and self.has_center:
             self.has_constrained = True
-            self.constrained_atoms = np.array(constrained_atoms) - 1
+            self.constrained_atoms = np.array(constrained_atoms)
         else:
             self.has_constrained = False
             self.constrained_atoms = np.zeros(0)
@@ -126,10 +126,12 @@ class Constraint:
             ext_energy, ext_grad = self._polynomial_potential(shifted_coord[self.constrained_atoms], traj.itr)
             traj.energy += ext_energy  # numpy can automatic broad cast ext_energy
             traj.grad[:, self.constrained_atoms, :] += ext_grad  # numpy can automatic broad cast ext_grad
+            traj.ext_pot = ext_energy
         else:
             ext_energy, ext_grad = self._polynomial_potential(shifted_coord, traj.itr)
             traj.energy += ext_energy
             traj.grad += ext_grad
+            traj.ext_pot = ext_energy
 
         return traj
 
@@ -159,7 +161,7 @@ class GeomTracker:
 
     def __init__(self, keywords=None):
         self.track_type = keywords['molecule']['track_type']
-        self.track_index = np.array(keywords['molecule']['track_index']) - 1
+        self.track_index = np.array(keywords['molecule']['track_index'])
         self.track_thrhd = keywords['molecule']['track_thrhd']
 
         diff = len(self.track_index) - len(self.track_thrhd)
@@ -177,9 +179,9 @@ class GeomTracker:
         d = np.sum((a - b) ** 2) ** 0.5
 
         if d > thrhd:
-            return True
+            return True, d
 
-        return False
+        return False, d
 
     def check(self, traj):
         # track_index [[a, b, c, ...],[d, e, f, ...], ...]
@@ -192,29 +194,37 @@ class GeomTracker:
                      self.track_index
                      )
 
-            stop = self._check_param(
+            stop, d = self._check_param(
                 coord=traj.coord,
                 src=self.track_index[0],
                 dst=self.track_index[1],
                 thrhd=self.track_thrhd[0]
             )
 
+            info = '  Fragment distance: %8.4f %8.4f %s\n' % (d, self.track_thrhd[0], stop)
+
         elif self.track_type == 'dist':
+            info = ''
             for n, indx in enumerate(self.track_index):
 
                 if len(indx) < 2:
                     exit('\n  ValueError\n  PyRAI2MD: track_index requires two indices but found one %s' % indx)
 
-                stop = self._check_param(
+                stop, d = self._check_param(
                     coord=traj.coord,
                     src=[indx[0]],
                     dst=[indx[1]],
                     thrhd=self.track_thrhd[n],
                 )
 
+                info += '  %-5s %5s %5s %8.4f %8.4f %s\n' % (
+                    n + 1, indx[0] + 1, indx[1] + 1, d, self.track_thrhd[n], stop
+                )
+
                 if stop:
                     break
         else:
             stop = False
+            info = None
 
-        return stop
+        return stop, info

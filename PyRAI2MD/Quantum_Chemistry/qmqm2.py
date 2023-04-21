@@ -54,12 +54,20 @@ class QMQM2:
 
     def __init__(self, methods=None, keywords=None, job_id_1=None, job_id_2=None):
 
-        qm1 = methods[0]
+        qm = methods[0]
         qm2 = methods[1]
-        ## TODO: add GFN-FF as qm3 for NN/QM'/MM scheme
-        self.qm1_high = qm1(keywords=keywords, job_id=job_id_1, runtype='qmmm')
-        self.qm1_low = qm2(keywords=keywords, job_id=job_id_2, runtype='qmmm')
-        self.qm2_low = qm2(keywords=keywords, job_id=job_id_2, runtype='qmmm_low')
+        mm = methods[2]
+        self.qm_high = qm(keywords=keywords, job_id=job_id_1, runtype='qm_high')
+        self.qm2_high = qm2(keywords=keywords, job_id=job_id_2, runtype='qm2_high')
+        self.qm2_mid = qm2(keywords=keywords, job_id=job_id_2, runtype='qm2_high_mid')
+
+        if mm:
+            self.do_mm = True
+            self.mm_mid = mm(keywords=keywords, job_id=job_id_2, runtype='mm_high_mid')
+            self.mm_low = mm(keywords=keywords, job_id=job_id_2, runtype='mm_high_mid_low')
+        else:
+            self.do_mm = False
+
         self.nprocs = keywords['control']['ms_ncpu']
         self.project = ''
         self.workdir = ''
@@ -71,9 +79,13 @@ class QMQM2:
 
     def load(self):
         # This should load model
-        self.qm1_high.load()
-        self.qm1_low.load()
-        self.qm2_low.load()
+        self.qm_high.load()
+        self.qm2_high.load()
+        self.qm2_mid.load()
+
+        if self.do_mm:
+            self.mm_mid.load()
+            self.mm_low.load()
 
         return self
 
@@ -85,9 +97,9 @@ class QMQM2:
     def eval_wrapper(self, var):
         ifunc, traj = var
         if ifunc == 0:
-            func = self.qm1_high.evaluate
+            func = self.qm_high.evaluate
         elif ifunc == 1:
-            func = self.qm1_low.evaluate
+            func = self.qm2_high.evaluate
         else:
             func = None
 
@@ -96,14 +108,18 @@ class QMQM2:
         return ifunc, results
 
     def evaluate(self, traj):
+        natom = traj.natom
+        nstate = traj.nstate
         index_high = traj.highlevel
+        index_qmqm2 = traj.qmqm2_index
+
         traj_1 = copy.deepcopy(traj)
         traj_2 = copy.deepcopy(traj)
         traj_3 = copy.deepcopy(traj)
 
-        # first compute charge
-        traj_qm2_low = self.qm2_low.evaluate(traj_1)
-        traj.charges = traj_qm2_low.charges
+        # first compute charge for high level and middle level region
+        traj_qm2_mid = self.qm2_mid.evaluate(traj_1)
+        traj.charges = traj_qm2_mid.charges
 
         # traj_results = [None, None]
         # eval_func = [[0, traj], [1, traj]]
@@ -113,52 +129,71 @@ class QMQM2:
         #     traj_results[ifunc] = results
         # pool.close()
 
-        traj_qm1_high = self.qm1_high.evaluate(traj_2)
-        traj_qm1_low = self.qm1_low.evaluate(traj_3)
+        traj_qm_high = self.qm_high.evaluate(traj_2)
+        traj_qm2_high = self.qm2_high.evaluate(traj_3)
 
-        qm1_high_completion = traj_qm1_high.status
-        qm1_low_completion = traj_qm1_low.status
-        qm2_low_completion = traj_qm2_low.status
+        qm_high_completion = traj_qm_high.status
+        qm2_high_completion = traj_qm2_high.status
+        qm2_mid_completion = traj_qm2_mid.status
 
-        traj.err_energy = traj_qm1_high.err_energy
-        traj.err_grad = traj_qm1_high.err_grad
-        traj.err_nac = traj_qm1_high.err_nac
-        traj.err_soc = traj_qm1_high.err_soc
-        traj.status = np.amin([qm1_high_completion, qm1_low_completion, qm2_low_completion])
+        traj.err_energy = traj_qm_high.err_energy
+        traj.err_grad = traj_qm_high.err_grad
+        traj.err_nac = traj_qm_high.err_nac
+        traj.err_soc = traj_qm_high.err_soc
+        traj.status = np.amin([qm_high_completion, qm2_high_completion, qm2_mid_completion])
 
-        traj.qm_energy = traj_qm1_high.energy
-        traj.qm_grad = traj_qm1_high.grad
-        traj.qm_nac = traj_qm1_high.nac
-        traj.qm_soc = traj_qm1_high.soc
+        traj.qm_energy = traj_qm_high.energy
+        traj.qm_grad = traj_qm_high.grad
+        traj.qm_nac = traj_qm_high.nac
+        traj.qm_soc = traj_qm_high.soc
 
-        traj.qm1_charge = traj_qm1_high.qm1_charge
-        traj.qm2_charge = traj_qm1_high.qm2_charge
-        
+        traj.qm1_charge = traj_qm_high.qm1_charge
+        traj.qm2_charge = traj_qm_high.qm2_charge
+
         # combine energy
-        energy_qm1_high = traj_qm1_high.energy
-        nstate = len(energy_qm1_high)
-        energy_qm1_low = np.repeat(traj_qm1_low.energy, nstate)
-        energy_qm2_low = np.repeat(traj_qm2_low.energy, nstate)
-        traj.energy = energy_qm2_low - energy_qm1_low + energy_qm1_high
+        energy_qm_high = traj_qm_high.energy
+        energy_qm2_high = np.repeat(traj_qm2_high.energy, nstate)
+        energy_qm2_mid = np.repeat(traj_qm2_mid.energy, nstate)
+        traj.energy = energy_qm2_mid - energy_qm2_high + energy_qm_high
+        traj.energy_qm2_1 = energy_qm2_high
+        traj.energy_qm2_2 = energy_qm2_mid
 
         # combine grad
-        grad_qm1_high = traj_qm1_high.grad
-        nstate = len(grad_qm1_high)
-        grad_qm1_low = np.repeat(traj_qm1_low.grad, nstate, axis=0)
-        grad_qm2_low = np.repeat(traj_qm2_low.grad, nstate, axis=0)
-        traj.grad = grad_qm2_low
-        traj.grad[:, index_high, :] = grad_qm2_low[:, index_high, :] - grad_qm1_low + grad_qm1_high
+        grad_qm_high = traj_qm_high.grad
+        grad_qm2_high = np.repeat(traj_qm2_high.grad, nstate, axis=0)
+        grad_qm2_mid = np.repeat(traj_qm2_mid.grad, nstate, axis=0)
+        traj.grad = np.zeros((nstate, natom, 3))
+        traj.grad[:, index_high, :] = grad_qm2_mid[:, index_high, :] - grad_qm2_high + grad_qm_high
 
         # combine nac
-        nac_qm1_high = traj_qm1_high.nac
-        nnac = len(nac_qm1_high)
-        natom = traj.natom
+        nac_qm_high = traj_qm_high.nac
+        nnac = len(nac_qm_high)
         if nnac > 0:
             traj.nac = np.zeros((nnac, natom, 3))
-            traj.nac[:, index_high, :] = nac_qm1_high
+            traj.nac[:, index_high, :] = nac_qm_high
 
         # combine soc
-        traj.soc = traj_qm1_high.soc
+        traj.soc = traj_qm_high.soc
+
+        # do mm calculation, mm1 for qmqm2 region, mm2 for qmqm2mm region
+        if self.do_mm:
+            traj_4 = copy.deepcopy(traj)
+            traj_5 = copy.deepcopy(traj)
+            traj_mm_mid = self.mm_mid.evaluate(traj_4)
+            traj_mm_low = self.mm_low.evaluate(traj_5)
+            mm_mid_completion = traj_mm_mid.status
+            mm_low_completion = traj_mm_low.status
+            traj.status = np.amin([traj.status, mm_mid_completion, mm_low_completion])
+
+            energy_mm_mid = traj_mm_mid.energy
+            energy_mm_low = traj_mm_low.energy
+            traj.energy = energy_mm_low - energy_mm_mid + traj.energy
+            traj.energy_mm1 = energy_mm_mid
+            traj.energy_mm2 = energy_mm_low
+
+            grad_mm_mid = np.repeat(traj_mm_mid.grad, nstate, axis=0)
+            grad_mm_low = np.repeat(traj_mm_low.grad, nstate, axis=0)
+            traj.grad[:, index_qmqm2, :] = grad_mm_low[:, index_qmqm2, :] - grad_mm_mid + traj.grad[:, index_qmqm2, :]
 
         return traj
 

@@ -32,7 +32,7 @@ class MolcasTinker(Molcas):
             evaluate         self         run qmmm calculation
     """
 
-    def __init__(self, keywords=None, job_id=None, runtype='qm'):
+    def __init__(self, keywords=None, job_id=None, runtype='qm_high_mid_low'):
         super().__init__(keywords=keywords, job_id=job_id, runtype=runtype)
         self.qmmm_key = keywords['molecule']['qmmm_key']
         self.tinker = keywords['molcas']['tinker']

@@ -21,6 +21,7 @@ class KeyMolecule:
             'spin': [0],
             'coupling': [],
             'highlevel': [],
+            'midlevel': [],
             'embedding': 1,
             'boundary': [],
             'freeze': [],
@@ -50,17 +51,18 @@ class KeyMolecule:
             'qmmm_key': ReadVal('s'),
             'qmmm_xyz': ReadVal('s'),
             'highlevel': ReadIndex('s', start=1),
+            'midlevel': ReadIndex('s', start=1),
             'embedding': ReadVal('i'),
             'boundary': ReadIndex('g'),
-            'freeze': ReadIndex('s'),
-            'constrain': ReadIndex('s'),
+            'freeze': ReadIndex('s', start=1),
+            'constrain': ReadIndex('s', start=1),
             'shape': ReadVal('s'),
             'factor': ReadVal('i'),
             'cavity': ReadVal('fl'),
-            'center': ReadIndex('s'),
+            'center': ReadIndex('s', start=1),
             'compress': ReadVal('fl'),
             'track_type': ReadVal('s'),
-            'track_index': ReadIndex('g'),
+            'track_index': ReadIndex('g', start=1),
             'track_thrhd': ReadVal('fl'),
             'primitive': ReadIndex('g'),
             'lattice': ReadIndex('s'),
@@ -88,6 +90,7 @@ class KeyMolecule:
           QMMM keyfile:               %-10s
           QMMM xyzfile:               %-10s
           High level region:          %-10s ...
+          Middel level region:        %-10s ...
           Boundary:                   %-10s ...
           Embedding charges:          %-10s
           Frozen atoms:               %-10s
@@ -111,6 +114,7 @@ class KeyMolecule:
             keywords['qmmm_key'],
             keywords['qmmm_xyz'],
             keywords['highlevel'][0:10],
+            keywords['midlevel'][0:10],
             keywords['boundary'][0:5],
             keywords['embedding'],
             keywords['freeze'],

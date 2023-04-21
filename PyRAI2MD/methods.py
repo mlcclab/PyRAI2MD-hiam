@@ -92,6 +92,11 @@ class QM:
             'xtb': Xtb,
         }
 
+        # methods available for MM calculation
+        mm_list = {
+            'xtb': Xtb,
+        }
+
         if len(qm) == 1:
             if isinstance(job_id, list):
                 job_id = job_id[0]
@@ -104,7 +109,13 @@ class QM:
                 job_id_2 = job_id[1]
             qm1 = qm1_list[qm[0]]
             qm2 = qm2_list[qm[1]]
-            self.method = QMQM2(methods=[qm1, qm2], keywords=keywords, job_id_1=job_id_1, job_id_2=job_id_2)
+
+            if len(qm) >= 3:
+                mm = mm_list[qm[2]]
+            else:
+                mm = False
+
+            self.method = QMQM2(methods=[qm1, qm2, mm], keywords=keywords, job_id_1=job_id_1, job_id_2=job_id_2)
 
     def train(self):
         metrics = self.method.train()

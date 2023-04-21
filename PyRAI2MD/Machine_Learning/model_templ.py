@@ -52,7 +52,7 @@ class NN_class:
 
     """
 
-    def __init__(self, keywords=None, job_id=None, runtype='qm'):
+    def __init__(self, keywords=None, job_id=None, runtype='qm_high_mid_low'):
 
         # basic setting, don't change
         self.runtype = runtype
@@ -328,8 +328,8 @@ class NN_class:
 
         return self
 
-    def _qmmm(self, traj):
-        ## run psnnsmd for QMQM2 calculation
+    def _high (self, traj):
+        ## run this model for high level region in QM calculation
         traj = traj.apply_qmmm()
 
         xyz = traj.qm_coord.reshape((1, self.natom, 3))
@@ -370,8 +370,8 @@ class NN_class:
 
         return energy, gradient, nac, soc, err_e, err_g, err_n, err_s
 
-    def _qm(self, traj):
-        ## run psnnsmd for QM calculation
+    def _high_mid_low(self, traj):
+        ## run this model for high level region, middle level region, and low level region in QM calculation
 
         xyz = traj.coord.reshape((1, self.natom, 3))
         y_pred, y_std = self.model.call(xyz)
@@ -484,10 +484,10 @@ class NN_class:
         if self.jobtype == 'prediction' or self.jobtype == 'predict':
             self._predict(self.pred_geos)
         else:
-            if self.runtype == 'qmmm':
-                energy, gradient, nac, soc, err_energy, err_grad, err_nac, err_soc = self._qmmm(traj)
+            if self.runtype == 'qm_high':
+                energy, gradient, nac, soc, err_energy, err_grad, err_nac, err_soc = self._high(traj)
             else:
-                energy, gradient, nac, soc, err_energy, err_grad, err_nac, err_soc = self._qm(traj)
+                energy, gradient, nac, soc, err_energy, err_grad, err_nac, err_soc = self._high_mid_low(traj)
             traj.energy = np.copy(energy)
             traj.grad = np.copy(gradient)
             traj.nac = np.copy(nac)

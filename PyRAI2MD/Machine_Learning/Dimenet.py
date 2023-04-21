@@ -8,7 +8,6 @@
 ######################################################
 
 import torch
-import statistics
 import numpy as np
 import pandas as pd
 from sklearn.utils import shuffle
@@ -101,9 +100,9 @@ class DimenetNAC:
             symbol = xyz_np[:, 0]
             z = [Element(s).Z for s in symbol]
             coord = xyz_np[:, 1: 4].astype(np.float64)
-            node_pos = torch.tensor(coord, dtype=torch.float)
-            node_z = torch.tensor(z, dtype=torch.int)
-            y = torch.tensor(nac_np, dtype=torch.float)
+            node_pos = torch.tensor(coord, dtype=torch.float, device=self.device)  # Jingbai: create tensor on device
+            node_z = torch.tensor(z, dtype=torch.int, device=self.device)          # avoid .to(device) in train loop
+            y = torch.tensor(nac_np, dtype=torch.float, device=self.device)
             data = Data(z=node_z, y=y, pos=node_pos)
             dataset.append(data)
 
@@ -135,7 +134,6 @@ class DimenetNAC:
     def train_epoch(self, loader):
         self.model.train()
         for data in loader:
-            data = data.to(self.device)
             self.optimizer.zero_grad()
             out = self.model(data.z, data.pos, data.batch)
             pred = torch.flatten(out)
@@ -149,7 +147,6 @@ class DimenetNAC:
         pred_all_batches = []
         target_all_batches = []
         for data in loader:
-            data = data.to(self.device)
             out = self.model(data.z, data.pos, data.batch)
             pred = torch.flatten(out.cpu()).detach().numpy().tolist()
             pred_all_batches = pred_all_batches + pred
@@ -191,31 +188,47 @@ class DimenetNAC:
         ferr = {'nac': [float(best_val_error)]}
         return ferr
 
-    def predict(self, loader):
-        self.load_model()
-        self.model.to(self.device)
+    def set_loader_test(self, xyz_list):
+        # xyz_list:[nmolecule,natom,4]
+        dataset_pred = []
+        for j in xyz_list:  # loop through molecules
+            xyz_np = np.array(j)
+            symbol = xyz_np[:, 0]
+            z = [Element(s).Z for s in symbol]
+            coord = xyz_np[:, 1: 4].astype(np.float64)
+            node_pos = torch.tensor(coord, dtype=torch.float, device=self.device)  # Jingbai: create tensor on device
+            node_z = torch.tensor(z, dtype=torch.int, device=self.device)          # avoid .to(device) in train loop
+            data = Data(z=node_z, pos=node_pos)
+            dataset_pred.append(data)
+        test_loader = DataLoader(dataset_pred, batch_size=1, shuffle=False)
+
+        return test_loader
+
+    def predict(self, xyz_list):
         self.model.eval()
         pred_all_batches = []
+        loader = self.set_loader_test(xyz_list)
         for data in loader:
-            data = data.to(self.device)
-            out = self.model(data.z, data.pos, data.batch)
+            out = self.model(data.z, data.pos, data.batch).reshape(-1, 3)
             pred = torch.flatten(out.cpu()).detach().numpy().tolist()
             pred_all_batches = pred_all_batches + pred
         pred_all = torch.tensor(pred_all_batches)
         pred_all = pred_all.reshape(-1, self.nac_size)
-        pred_norms = []
-        for i in range(len(pred_all)):
-            pred_norm = float(np.linalg.norm(pred_all[i]))
-            pred_norms.append(pred_norm)
-        pred_mean = statistics.mean(pred_norms)
-        pred_std = statistics.stdev(pred_norms)
-        mean_dict = {'nac': [pred_mean]}
-        std_dict = {'nac': [pred_std]}
-        mean_std_tuple = (mean_dict, std_dict)
-        # return a tuple contain mean and std of predictions
-        # does this function need to also return predicted nacs tensor? in the shape as the target,
-        # or flattened out if fine?
-        return mean_std_tuple
+        pred_all_1 = []
+        for i in pred_all:
+            pred_all_1.append(i.reshape(-1, 3).tolist())
+
+        # Jingbai: the mean_dict['nac'] stores the mean value of two models, but we only have one at the moment
+        mean_dict = {
+            'nac': pred_all_1,  # pred_all_1 is a list containing all predicted NACs in [nmolecules,natoms,4]
+        }
+
+        # Jingbai: the std_dict['nac'] stores the std value of two models, but we only have one, so std is 0.
+        std_dict = {
+            'nac': 0,
+        }
+
+        return mean_dict, std_dict
 
     def save_model(self, epoch):
         torch.save({
@@ -225,10 +238,10 @@ class DimenetNAC:
         }, self.model_path)
 
     def load_model(self):
-        checkpoint = torch.load(self.model_path)
+        checkpoint = torch.load(self.model_path, map_location=self.device)
         self.model.load_state_dict(checkpoint['model_state_dict'])
         self.optimizer.load_state_dict(checkpoint['optimizer_state_dict'])
-
+        self.model.to(self.device)
 
 # net = Dimenet_nac(Param)
 # a=net.predict(net.val_loader)
