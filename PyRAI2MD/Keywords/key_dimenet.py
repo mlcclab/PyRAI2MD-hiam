@@ -80,7 +80,7 @@ class KeyDimeNet:
 
   &hyperparameters            Energy+Gradient      Nonadiabatic         Spin-orbit
 ----------------------------------------------------------------------------------------------
-  Model type:                 DimeNet%-20s DimeNet%-20s DimeNet%-20s
+  Model type:                 DimeNet%-13s DimeNet%-13s DimeNet%-13s
   Batch size:                 %-20s %-20s %-20s
   Validation size:            %-20s %-20s %-20s 
   Number of hidden channels:  %-20s %-20s %-20s
