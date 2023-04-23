@@ -118,14 +118,14 @@ class SinglePoint:
 
         if self.traj.energy_qm2_1 != 0:
             log_info += """
-          &multiscale energy
-        -------------------------------------------------------
-          QM2(high) %16.8f 
-          QM2(mid)  %16.8f
-          MM(mid)   %16.8f 
-          MM(low)   %16.8f
-        -------------------------------------------------------
-        """ % (
+  &multiscale energy
+-------------------------------------------------------
+  QM2(high) %16.8f 
+  QM2(mid)  %16.8f
+  MM(mid)   %16.8f 
+  MM(low)   %16.8f
+-------------------------------------------------------
+""" % (
                 self.traj.energy_qm2_1,
                 self.traj.energy_qm2_2,
                 self.traj.energy_mm1,
