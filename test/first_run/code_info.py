@@ -235,7 +235,7 @@ Total %4s/%4s files                                                             
        length['model_NN'],
        length['model_pyNNsMD'],
        length['model_GCNNP'],
-       length['model_Dimenet'],
+       length['model_DimeNet'],
        length['model_templ'],
        length['model_helper'],
        length['hyper_nn'],
