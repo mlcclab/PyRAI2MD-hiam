@@ -63,7 +63,7 @@ class MLP:
         set_gpu([])  # No GPU for prediction
         self.runtype = runtype
         title = keywords['control']['title']
-        variables = keywords['nn'].copy()
+        variables = keywords['mlp'].copy()
         modeldir = variables['modeldir']
         data = variables['data']
         nn_eg_type = variables['nn_eg_type']
