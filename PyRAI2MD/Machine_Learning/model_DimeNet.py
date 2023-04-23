@@ -136,7 +136,7 @@ class DimenetModel:
 
         ## pack training data
         self.data = {
-            'xyz': np.concatenate((data.atoms.reshape((-1, data.natom, 1)), data.geos), axis=-1).tolist(),
+            'xyz': np.concatenate((np.array(data.atoms).reshape((-1, data.natom, 1)), data.geos), axis=-1).tolist(),
             'nac': data.nac
         }
 
