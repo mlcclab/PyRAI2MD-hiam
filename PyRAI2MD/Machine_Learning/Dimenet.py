@@ -22,7 +22,6 @@ class DimenetNAC:
 
     def __init__(self, param):
         self.param = deep_update(DEFAULT_PARAM, param)  # Jingbai: update the default param with the input param
-        self.data_file = self.param['data_file']
         self.batch_size = self.param['batch_size']
         self.val_size = self.param['val_size']
         self.criterion = self.param['criterion']
@@ -101,7 +100,7 @@ class DimenetNAC:
             z = [Element(s).Z for s in symbol]
             coord = xyz_np[:, 1: 4].astype(np.float64)
             node_pos = torch.tensor(coord, dtype=torch.float, device=self.device)  # Jingbai: create tensor on device
-            node_z = torch.tensor(z, dtype=torch.int, device=self.device)          # avoid .to(device) in train loop
+            node_z = torch.tensor(z, dtype=torch.int, device=self.device)  # avoid .to(device) in train loop
             y = torch.tensor(nac_np, dtype=torch.float, device=self.device)
             data = Data(z=node_z, y=y, pos=node_pos)
             dataset.append(data)
@@ -197,7 +196,7 @@ class DimenetNAC:
             z = [Element(s).Z for s in symbol]
             coord = xyz_np[:, 1: 4].astype(np.float64)
             node_pos = torch.tensor(coord, dtype=torch.float, device=self.device)  # Jingbai: create tensor on device
-            node_z = torch.tensor(z, dtype=torch.int, device=self.device)          # avoid .to(device) in train loop
+            node_z = torch.tensor(z, dtype=torch.int, device=self.device)  # avoid .to(device) in train loop
             data = Data(z=node_z, pos=node_pos)
             dataset_pred.append(data)
         test_loader = DataLoader(dataset_pred, batch_size=1, shuffle=False)
@@ -242,6 +241,7 @@ class DimenetNAC:
         self.model.load_state_dict(checkpoint['model_state_dict'])
         self.optimizer.load_state_dict(checkpoint['optimizer_state_dict'])
         self.model.to(self.device)
+
 
 # net = Dimenet_nac(Param)
 # a=net.predict(net.val_loader)
