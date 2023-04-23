@@ -26,6 +26,21 @@ register = {
     'trajectory': '/Molecule/trajectory.py',
     'pbc_helper': '/Molecule/pbc_helper.py',
     'qmmm_helper': '/Molecule/qmmm_helper.py',
+    'key_bagel': '/Keywords/key_bagel.py',
+    'key_control': '/Keywords/key_control.py',
+    'key_dimenet': '/Keywords/key_dimenet.py',
+    'key_e2n2': '/Keywords/key_e2n2.py',
+    'key_grid_search': '/Keywords/key_grid_search.py',
+    'key_md': '/Keywords/key_md.py',
+    'key_mlp': '/Keywords/key_mlp.py',
+    'key_molcas': '/Keywords/key_molcas.py',
+    'key_molecule': '/Keywords/key_molecule.py',
+    'key_nn': '/Keywords/key_nn.py',
+    'key_orca': '/Keywords/key_orca.py',
+    'key_read_file': '/Keywords/key_read_file.py',
+    'key_schnet': '/Keywords/key_schnet.py',
+    'key_templ': '/Keywords/key_templ.py',
+    'key_xtb': '/Keywords/key_xtb.py',
     'constraint': '/Molecule/constraint.py',
     'qc_molcas': '/Quantum_Chemistry/qc_molcas.py',
     'qc_bagel': '/Quantum_Chemistry/qc_bagel.py',
@@ -33,14 +48,19 @@ register = {
     'qc_orca': '/Quantum_Chemistry/qc_orca.py',
     'qc_xtb': '/Quantum_Chemistry/qc_xtb.py',
     'qmqm2': '/Quantum_Chemistry/qmqm2.py',
+    'Dimenet': '/Machine_Learning/Dimenet.py',
     'model_demo': '/Machine_Learning/model_demo.py',
     'model_NN': '/Machine_Learning/model_NN.py',
     'model_pyNNsMD': '/Machine_Learning/model_pyNNsMD.py',
     'model_GCNNP': '/Machine_Learning/model_GCNNP.py',
+    'model_DimeNet': '/Machine_Learning/model_DimeNet.py',
+    'model_templ': '/Machine_Learning/model_templ.py',
     'model_helper': '/Machine_Learning/model_helper.py',
     'hyper_nn': '/Machine_Learning/hyper_nn.py',
     'hyper_pynnsmd': '/Machine_Learning/hyper_pynnsmd.py',
     'hyper_gcnnp': '/Machine_Learning/hyper_gcnnp.py',
+    'hyper_dimenet': '/Machine_Learning/hyper_dimenet.py',
+    'hyper_templ': '/Machine_Learning/hyper_templ.py',
     'training_data': '/Machine_Learning/training_data.py',
     'permutation': '/Machine_Learning/permutation.py',
     'adaptive_sampling': '/Machine_Learning/adaptive_sampling.py',
@@ -92,8 +112,26 @@ def review(length, totline, totfile):
 --------------------------------------------------------------------------------------------------------
  PyRAI2MD                                          source codes folder
   |--pyrai2md.py                                   PyRAI2MD main function                      %8s
-  |--variables.py                                  PyRAI2MD input reader                       %8s
   |--method.py                                     PyRAI2MD method manager                     %8s
+  |--variables.py                                  PyRAI2MD input reader                       %8s
+  |
+  |--Keywords                                      default input values folder
+  |   |--key_control.py                            keywords for calculation control            %8s
+  |   |--key_molecule.py                           keywords for molecule specification         %8s
+  |   |--key_md.py                                 keywords for molecular dynamic settings     %8s
+  |   |--key_nn.py                                 keywords for neural network settings        %8s
+  |   |--key_grid_search.py                        keywords for grid search settings           %8s
+  |   |--key_molcas.py                             keywords for molcas calculation             %8s
+  |   |--key_bagel.py                              keywords for bagel calculation              %8s
+  |   |--key_orca                                  keywords for orca calculation               %8s
+  |   |--key_xtb.py                                keywords for xtb calculation                %8s
+  |   |--key_mlp.py                                keywords for mlp settings                   %8s
+  |   |--key_schnet.py                             keywords for schnet settings                %8s
+  |   |--key_e2n2.py                               keywords for e2n2 settings                  %8s
+  |   |--key_dimenet.py                            keywords for dimenet (NAC model) setting    %8s
+  |   |--key_read_file.py                          keywords for reading training data          %8s
+  |    `-key_templ.py                              keywords class template                     %8s
+  |
   |--Molecule                                      atom, molecule, trajectory code folder
   |   |--atom.py                                   atomic properties class                     %8s
   |   |--molecule.py                               molecular properties class                  %8s
@@ -115,10 +153,14 @@ def review(length, totline, totfile):
   |   |--model_NN.py                               native neural network interface             %8s
   |   |--model_pyNNsMD.py                          pyNNsMD interface                           %8s
   |   |--model_GCNNP.py                            GCNNP interface                             %8s
+  |   |--model_DimeNet.py                          DimeNet NAC model interface                 %s
+  |   |--model_templ.py                            NN interface template                       %s
   |   |--model_helper.py                           additional tools for neural network         %8s
   |   |--hyper_nn.py                               native neural network hyperparameter        %8s
   |   |--hyper_pynnsmd.py                          pyNNsMD hyperparameter                      %8s
   |   |--hyper_gcnnp.py                            GCNNP hyperparameter                        %8s
+  |   |--hyper_dimenet.py                          DimeNet NAC model hyperparameter            %8s
+  |   |--hyper_templ.py                            hyperparameter template                     %8s
   |   |--training_data.py                          training data manager                       %8s
   |   |--permutation.py                            data permutation functions                  %8s
   |   |--adaptive_sampling.py                      adaptive sampling class                     %8s
@@ -126,6 +168,7 @@ def review(length, totline, totfile):
   |   |--search_nn.py                              grid search function for native nn          %8s
   |   |--search_GCNNP.py                           grid search function for e2n2               %8s  
   |   |--remote_train.py                           remote training function                    %8s
+  |   |--Dimenet.py                                Dimenet NAC model                           %8s
   |   |--NNsMD                                     demo version neural network library  
   |    `-pyNNsMD                                   native neural network library                  
   |
@@ -159,8 +202,23 @@ def review(length, totline, totfile):
 --------------------------------------------------------------------------------------------------------
 Total %4s/%4s files                                                                          %8s
 """ % (length['pyrai2md'],
-       length['variables'],
        length['methods'],
+       length['variables'],
+       length['key_control'],
+       length['key_molecule'],
+       length['key_md'],
+       length['key_nn'],
+       length['key_grid_search'],
+       length['key_molcas'],
+       length['key_bagel'],
+       length['key_orca'],
+       length['key_xtb'],
+       length['key_mlp'],
+       length['key_schnet'],
+       length['key_e2n2'],
+       length['key_dimenet'],
+       length['key_read_file'],
+       length['key_templ'],
        length['atom'],
        length['molecule'],
        length['trajectory'],
@@ -177,10 +235,14 @@ Total %4s/%4s files                                                             
        length['model_NN'],
        length['model_pyNNsMD'],
        length['model_GCNNP'],
+       length['model_dimenet'],
+       length['model_templ'],
        length['model_helper'],
        length['hyper_nn'],
        length['hyper_pynnsmd'],
        length['hyper_gcnnp'],
+       length['hyper_dimenet'],
+       length['hyper_templ'],
        length['training_data'],
        length['permutation'],
        length['adaptive_sampling'],
@@ -188,6 +250,7 @@ Total %4s/%4s files                                                             
        length['search_nn'],
        length['search_GCNNP'],
        length['remote_train'],
+       length['Dimenet'],
        length['aimd'],
        length['mixaimd'],
        length['single_point'],
