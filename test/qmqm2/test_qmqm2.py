@@ -431,7 +431,7 @@ def RunORCA_tddft(testdir):
     subprocess.run('pyrai2md qmqm2_orca > stdout 2>&1', shell=True)
     os.chdir(maindir)
     results = Collect(testdir, 'qmqm2_orca')
-    if len(results.splitlines()) < 13:
+    if len(results.splitlines()) < 14:
         code = 'FAILED(ORCA QM1 runtime error)'
     else:
         code = 'PASSED'
@@ -457,7 +457,7 @@ def RunBAGEL_CASPT2(testdir):
     subprocess.run('pyrai2md qmqm2_bagel >> stdout 2>&1', shell=True)
     os.chdir(maindir)
     results = Collect(testdir, 'qmqm2_bagel')
-    if len(results.splitlines()) < 13:
+    if len(results.splitlines()) < 14:
         code = 'FAILED(BAGEL QM1 runtime error)'
     else:
         code = 'PASSED'
@@ -484,7 +484,7 @@ def RunMOLCAS_CASPT2(testdir):
     subprocess.run('pyrai2md qmqm2_molcas >> stdout 2>&1', shell=True)
     os.chdir(maindir)
     results = Collect(testdir, 'qmqm2_molcas')
-    if len(results.splitlines()) < 13:
+    if len(results.splitlines()) < 14:
         code = 'FAILED(Molcas QM1 runtime error)'
     else:
         code = 'PASSED'

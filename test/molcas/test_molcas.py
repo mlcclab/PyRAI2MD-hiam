@@ -195,7 +195,7 @@ def RunCASPT2(testdir):
     subprocess.run('pyrai2md test_inp', shell=True)
     os.chdir(maindir)
     results = Collect(testdir)
-    if len(results.splitlines()) < 13:
+    if len(results.splitlines()) < 14:
         code = 'FAILED(coupling runtime error)'
     else:
         code = 'PASSED'

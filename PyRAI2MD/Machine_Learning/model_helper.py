@@ -31,10 +31,10 @@ class DummyModel:
     def __init__(self, keywords=None, job_id=None):
         model_name = keywords['control']['qm'][0]
         lib = {
-            'MLP': 'pyNNsMD',
-            'Schnet': 'pyNNsMD',
-            'E2N2': 'GCNNP',
-            'DimenetModel': 'DimenetNAC',
+            'mlp': 'pyNNsMD',
+            'schnet': 'pyNNsMD',
+            'e2n2': 'GCNNP',
+            'dimenet': 'DimenetNAC',
             'job_id': job_id
         }
 

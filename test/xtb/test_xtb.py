@@ -130,7 +130,7 @@ def RunxTB(testdir):
     subprocess.run('pyrai2md test_inp > stdout 2>&1', shell=True)
     os.chdir(maindir)
     results = Collect(testdir)
-    if len(results.splitlines()) < 13:
+    if len(results.splitlines()) < 14:
         code = 'FAILED(GFN-xTB runtime error)'
     else:
         code = 'PASSED'
