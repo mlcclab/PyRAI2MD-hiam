@@ -91,22 +91,16 @@ class DimenetModel:
             modeldir = self.name
 
         ## update default hyperparameters
-        hyp_nac = variables['nac'].copy()
+        hyp_nac = variables['dime_nac'].copy()
         hyp_dict_nac = set_hyper_nac(modeldir, hyp_nac, shuffle, gpu)
         """
         ## below are template for updating parameters of the energy_grad, nac, and soc models
-        hyp_eg = variables['eg'].copy()
-        hyp_eg2 = variables['eg2'].copy()
-        hyp_nac = variables['nac'].copy()
-        hyp_nac2 = variables['nac2'].copy()
-        hyp_soc = variables['soc'].copy()
-        hyp_soc2 = variables['soc2'].copy()
+        hyp_eg = variables['dime_eg'].copy()
+        hyp_nac = variables['dime_nac'].copy()
+        hyp_soc = variables['dime_soc'].copy()
         hyp_dict_eg = set_hyper_eg(hyp_eg, eg_unit, data.info, splits)
-        hyp_dict_eg2 = set_hyper_eg(hyp_eg2, eg_unit, data.info, splits)
         hyp_dict_nac = set_hyper_nac(hyp_nac, nac_unit, data.info, splits)
-        hyp_dict_nac2 = set_hyper_nac(hyp_nac2, nac_unit, data.info, splits)
         hyp_dict_soc = set_hyper_soc(hyp_soc, soc_unit, data.info, splits)
-        hyp_dict_soc2 = set_hyper_soc(hyp_soc2, soc_unit, data.info, splits)
         """
         self.silent = variables['silent']
         self.geos = data.geos

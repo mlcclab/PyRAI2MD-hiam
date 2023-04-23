@@ -49,13 +49,13 @@ def set_hyper_nac(model_path, hyp, shuffle, gpu):
     """
 
     ## setup hypers dict
-    if hyp['model'] == 'pp':
+    if hyp['model_type'] == 'pp':
         model_type = 'Dimenet++'
     else:
         model_type = 'Dimenet'
 
     hyp_dict = {
-        'model': model_type,
+        'model_type': model_type,
         'optimizer': 'Adam',
         'batch_size': hyp['batch_size'],
         'val_size': hyp['val_size'],

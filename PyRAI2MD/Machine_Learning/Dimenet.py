@@ -248,7 +248,7 @@ class DimenetNAC:
 
 ## Jingbai: here store some default parameters
 DEFAULT_PARAM = {
-    'model': 'Dimenet',
+    'model_type': 'Dimenet',
     # 'data_file': 'nac_data.json',
     'optimizer': 'Adam',
     'batch_size': 30,
