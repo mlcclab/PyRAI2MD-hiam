@@ -155,8 +155,8 @@ class QMQM2:
         energy_qm2_high = np.repeat(traj_qm2_high.energy, nstate)
         energy_qm2_mid = np.repeat(traj_qm2_mid.energy, nstate)
         traj.energy = energy_qm2_mid - energy_qm2_high + energy_qm_high
-        traj.energy_qm2_1 = energy_qm2_high
-        traj.energy_qm2_2 = energy_qm2_mid
+        traj.energy_qm2_1 = energy_qm2_high[0]
+        traj.energy_qm2_2 = energy_qm2_mid[0]
 
         # combine grad
         grad_qm_high = traj_qm_high.grad
@@ -185,11 +185,11 @@ class QMQM2:
             mm_low_completion = traj_mm_low.status
             traj.status = np.amin([traj.status, mm_mid_completion, mm_low_completion])
 
-            energy_mm_mid = traj_mm_mid.energy
-            energy_mm_low = traj_mm_low.energy
+            energy_mm_mid = np.repeat(traj_mm_mid.energy, nstate)
+            energy_mm_low = np.repeat(traj_mm_low.energy, nstate)
             traj.energy = energy_mm_low - energy_mm_mid + traj.energy
-            traj.energy_mm1 = energy_mm_mid
-            traj.energy_mm2 = energy_mm_low
+            traj.energy_mm1 = energy_mm_mid[0]
+            traj.energy_mm2 = energy_mm_low[0]
 
             grad_mm_mid = np.repeat(traj_mm_mid.grad, nstate, axis=0)
             grad_mm_low = np.repeat(traj_mm_low.grad, nstate, axis=0)

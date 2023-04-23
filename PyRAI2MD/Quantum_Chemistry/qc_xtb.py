@@ -280,7 +280,7 @@ cd $XTB_WORKDIR
         coord, energy, gradient, nac, soc = self._read_data(nxyz)
 
         charges = self.charges
-        self.charges = np.zeros(traj.natom)
+        self.charges = np.zeros((traj.natom, 4))
         self.charges[traj.qmqm2_index] = np.concatenate((charges.reshape((-1, 1)), traj.qmqm2_coord), axis=1)
 
         ## project force and coupling
@@ -329,7 +329,7 @@ cd $XTB_WORKDIR
         soc = []
         completion = 0
 
-        if self.runtype == 'qm_high':  # qm or qm2 calculation for h region
+        if self.runtype == 'qm_high' or self.runtype == 'qm2_high':  # qm or qm2 calculation for h region
             energy, gradient, nac, soc = self._high(traj)
         elif self.runtype == 'qm2_high_mid':  # qm or qm2 calculation for h + m region
             energy, gradient, nac, soc = self._high_mid(traj)
