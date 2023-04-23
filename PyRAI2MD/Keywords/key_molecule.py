@@ -82,30 +82,30 @@ class KeyMolecule:
     @staticmethod
     def info(keywords):
         summary = """
-          &molecule
-        -------------------------------------------------------
-          States:                     %-10s
-          Spin:                       %-10s
-          Interstates:                %-10s
-          QMMM keyfile:               %-10s
-          QMMM xyzfile:               %-10s
-          High level region:          %-10s ...
-          Middel level region:        %-10s ...
-          Boundary:                   %-10s ...
-          Embedding charges:          %-10s
-          Frozen atoms:               %-10s
-          Constrained atoms:          %-10s
-          External potential shape:   %-10s
-          External potential factor:  %-10s
-          External potential radius:  %-10s
-          External potential center:  %-10s
-          Compress potential shape    %-10s
-          Track geometry type         %-10s
-          Track indices               %-10s
-          Track threshold             %-10s                  
-          Primitive vectors:          %-10s
-          Lattice constant:           %-10s
-        -------------------------------------------------------
+  &molecule
+-------------------------------------------------------
+  States:                     %-10s
+  Spin:                       %-10s
+  Interstates:                %-10s
+  QMMM keyfile:               %-10s
+  QMMM xyzfile:               %-10s
+  High level region:          %-10s ...
+  Middel level region:        %-10s ...
+  Boundary:                   %-10s ...
+  Embedding charges:          %-10s
+  Frozen atoms:               %-10s
+  Constrained atoms:          %-10s
+  External potential shape:   %-10s
+  External potential factor:  %-10s
+  External potential radius:  %-10s
+  External potential center:  %-10s
+  Compress potential shape    %-10s
+  Track geometry type         %-10s
+  Track indices               %-10s
+  Track threshold             %-10s                  
+  Primitive vectors:          %-10s
+  Lattice constant:           %-10s
+-------------------------------------------------------
 
         """ % (
             keywords['ci'],

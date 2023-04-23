@@ -75,22 +75,22 @@ class KeyNN:
 
     def info(self, keywords):
         summary = """
-          &%s
-        -------------------------------------------------------
-          Train data:                 %-10s
-          Prediction data:            %-10s
-          Train mode:                 %-10s
-          Silent mode:                %-10s
-          Data splits:                %-10s
-          NN EG type:                 %-10s
-          NN NAC type:                %-10s
-          NN SOC type:                %-10s
-          Multiscale:                 %-10s
-          Shuffle data:               %-10s
-          EG unit:                    %-10s
-          NAC unit:                   %-10s
-          Data permutation            %-10s
-        -------------------------------------------------------
+  &%s
+-------------------------------------------------------
+  Train data:                 %-10s
+  Prediction data:            %-10s
+  Train mode:                 %-10s
+  Silent mode:                %-10s
+  Data splits:                %-10s
+  NN EG type:                 %-10s
+  NN NAC type:                %-10s
+  NN SOC type:                %-10s
+  Multiscale:                 %-10s
+  Shuffle data:               %-10s
+  EG unit:                    %-10s
+  NAC unit:                   %-10s
+  Data permutation            %-10s
+-------------------------------------------------------
 
         """ % (
             self.nn_type,

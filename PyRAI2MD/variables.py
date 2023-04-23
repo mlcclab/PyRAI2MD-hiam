@@ -132,14 +132,14 @@ def read_input(ld_input):
             KeySchNet().info(variables_all['sch_eg'], variables_all['sch_nac'], variables_all['sch_soc']),
         'e2n2':
             KeyNN(nn_type='e2n2').info(variables_all['nn']) +
-            KeyE2N2().info(['e2n2_eg'], variables_all['e2n2_nac'], variables_all['e2n2_soc']),
+            KeyE2N2().info(variables_all['e2n2_eg'], variables_all['e2n2_nac'], variables_all['e2n2_soc']),
         'dimenet':
             KeyNN(nn_type='dimenet').info(variables_all['nn']) +
-            KeyDimeNet().info(variables_all['e2n2_nac']),
+            KeyDimeNet().info(variables_all['dime_nac']),
         'molcas': KeyMolcas().info(variables_all['molcas']),
         'mlctkr': KeyMolcas().info(variables_all['molcas']),
         'bagel': KeyBagel().info(variables_all['bagel']),
-        'orca': KeyOrca().info(variables_all['bagel']),
+        'orca': KeyOrca().info(variables_all['orca']),
         'xtb': KeyXtb().info(variables_all['xtb']),
     }
 

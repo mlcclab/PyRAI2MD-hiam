@@ -74,23 +74,23 @@ class KeyBagel:
     @staticmethod
     def info(keywords):
         summary = """
-          &bagel
-        -------------------------------------------------------
-          BAGEL:                    %-10s
-          BAGEL_nproc:              %-10s
-          BAGEL_project:            %-10s
-          BAGEL_workdir:            %-10s
-          BAGEL_archive:            %-10s
-          MPI:                      %-10s
-          BLAS:                     %-10s
-          LAPACK:                   %-10s
-          BOOST:                    %-10s
-          MKL:                      %-10s
-          Architecture:             %-10s
-          Omp_num_threads:          %-10s
-          Keep tmp_bagel:           %-10s
-          Job distribution:         %-10s
-        -------------------------------------------------------
+  &bagel
+-------------------------------------------------------
+  BAGEL:                    %-10s
+  BAGEL_nproc:              %-10s
+  BAGEL_project:            %-10s
+  BAGEL_workdir:            %-10s
+  BAGEL_archive:            %-10s
+  MPI:                      %-10s
+  BLAS:                     %-10s
+  LAPACK:                   %-10s
+  BOOST:                    %-10s
+  MKL:                      %-10s
+  Architecture:             %-10s
+  Omp_num_threads:          %-10s
+  Keep tmp_bagel:           %-10s
+  Job distribution:         %-10s
+-------------------------------------------------------
         """ % (
             keywords['bagel'],
             keywords['bagel_nproc'],

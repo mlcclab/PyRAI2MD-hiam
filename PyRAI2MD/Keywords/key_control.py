@@ -131,17 +131,17 @@ class KeyControl:
     @staticmethod
     def info(keywords):
         summary = """
-          &control
-        -------------------------------------------------------
-          Title:                      %-10s
-          NPROCS for ML:              %-10s
-          NPROCS for QC:              %-10s
-          NPROCS for Multiscale:      %-10s 
-          Seed:                       %-10s
-          Job: 	                      %-10s
-          QM:          	       	      %-10s
-          Ab initio:                  %-10s
-        -------------------------------------------------------
+  &control
+-------------------------------------------------------
+  Title:                      %-10s
+  NPROCS for ML:              %-10s
+  NPROCS for QC:              %-10s
+  NPROCS for Multiscale:      %-10s 
+  Seed:                       %-10s
+  Job: 	                      %-10s
+  QM:          	       	      %-10s
+  Ab initio:                  %-10s
+-------------------------------------------------------
 
         """ % (
             keywords['title'],

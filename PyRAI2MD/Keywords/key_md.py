@@ -130,13 +130,13 @@ class KeyMD:
     @staticmethod
     def info(keywords):
         summary = """
-          &initial condition
-        -------------------------------------------------------
-          Generate initial condition: %-10s
-          Number:                     %-10s
-          Method:                     %-10s 
-          Format:                     %-10s
-        -------------------------------------------------------
+  &initial condition
+-------------------------------------------------------
+  Generate initial condition: %-10s
+  Number:                     %-10s
+  Method:                     %-10s 
+  Format:                     %-10s
+-------------------------------------------------------
 
         """ % (
             keywords['initcond'],
@@ -146,34 +146,34 @@ class KeyMD:
         )
 
         summary += """
-          &md
-        -------------------------------------------------------
-          Initial state:              %-10s
-          Initialize random velocity  %-10s
-          Temperature (K):            %-10s
-          Step:                       %-10s
-          Dt (au):                    %-10s
-          Only active state grad      %-10s
-          Surface hopping:            %-10s
-          NAC type:                   %-10s
-          Phase correction            %-10s
-          Substep:                    %-10s
-          Integrate probability       %-10s
-          Decoherence:                %-10s
-          Adjust velocity:            %-10s
-          Reflect velocity:           %-10s
-          Maxhop:                     %-10s
-          Thermodynamic:              %-10s
-          Thermodynamic delay:        %-10s
-          Print level:                %-10s
-          Direct output:              %-10s
-          Buffer output:              %-10s
-          Record MD data:             %-10s
-          Record MD steps:            %-10s
-          Checkpoint steps:           %-10s 
-          Restart function:           %-10s
-          Additional steps:           %-10s
-        -------------------------------------------------------
+  &md
+-------------------------------------------------------
+  Initial state:              %-10s
+  Initialize random velocity  %-10s
+  Temperature (K):            %-10s
+  Step:                       %-10s
+  Dt (au):                    %-10s
+  Only active state grad      %-10s
+  Surface hopping:            %-10s
+  NAC type:                   %-10s
+  Phase correction            %-10s
+  Substep:                    %-10s
+  Integrate probability       %-10s
+  Decoherence:                %-10s
+  Adjust velocity:            %-10s
+  Reflect velocity:           %-10s
+  Maxhop:                     %-10s
+  Thermodynamic:              %-10s
+  Thermodynamic delay:        %-10s
+  Print level:                %-10s
+  Direct output:              %-10s
+  Buffer output:              %-10s
+  Record MD data:             %-10s
+  Record MD steps:            %-10s
+  Checkpoint steps:           %-10s 
+  Restart function:           %-10s
+  Additional steps:           %-10s
+-------------------------------------------------------
 
         """ % (
             keywords['root'],
@@ -204,15 +204,15 @@ class KeyMD:
         )
 
         summary += """
-          &md velocity control
-        -------------------------------------------------------
-          Excess kinetic energy       %-10s
-          Scale kinetic energy        %-10s
-          Target kinetic energy       %-10s
-          Gradient descent path       %-10s
-          Reset velocity:             %-10s
-          Reset step:                 %-10s
-        -------------------------------------------------------
+  &md velocity control
+-------------------------------------------------------
+  Excess kinetic energy       %-10s
+  Scale kinetic energy        %-10s
+  Target kinetic energy       %-10s
+  Gradient descent path       %-10s
+  Reset velocity:             %-10s
+  Reset step:                 %-10s
+-------------------------------------------------------
 
         """ % (
             keywords['excess'],
@@ -228,13 +228,13 @@ class KeyMD:
     @staticmethod
     def info_hybrid(keywords):
         summary = """
-          &hybrid namd
-        -------------------------------------------------------
-          Mix Energy                  %-10s
-          Mix Gradient                %-10s
-          Mix NAC                     %-10s
-          Mix SOC                     %-10s
-        -------------------------------------------------------
+  &hybrid namd
+-------------------------------------------------------
+  Mix Energy                  %-10s
+  Mix Gradient                %-10s
+  Mix NAC                     %-10s
+  Mix SOC                     %-10s
+-------------------------------------------------------
 
         """ % (
             keywords['ref_energy'],

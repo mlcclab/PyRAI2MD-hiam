@@ -220,7 +220,7 @@ class KeyE2N2:
   Edges:                      %-20s %-20s %-20s
   Maxradius:                  %-20s %-20s %-20s
   Node features:              %-20s %-20s %-20s 
-  Interaction blocks:      	  %-20s %-20s %-20s
+  Interaction blocks:         %-20s %-20s %-20s
   Rotation order              %-20s %-20s %-20s
   Irreps parity:              %-20s %-20s %-20s
   Radial basis:               %-20s %-20s %-20s
