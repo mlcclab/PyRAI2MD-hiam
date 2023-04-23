@@ -265,12 +265,13 @@ title         qmqm2_orca
 qc_ncpu       1
 ms_ncpu       2
 jobtype       sp
-qm            orca xtb
+qm            orca xtb xtb
 
 &MOLECULE
 ci   3
 spin 0
 highlevel     1-6
+midlevel      7-12
 
 &ORCA
 orca          %s
@@ -296,7 +297,7 @@ title         qmqm2_bagel
 qc_ncpu       2
 ms_ncpu       2
 jobtype       sp
-qm            bagel xtb
+qm            bagel xtb xtb
 
 &Bagel
 bagel         %s
@@ -317,6 +318,7 @@ ci       3
 spin     0
 coupling 1 2, 2 3
 highlevel     1-6
+midlevel      7-12
 
 &MD
 root 1
@@ -336,7 +338,7 @@ activestate 1
 title         qmqm2_molcas
 qc_ncpu       1
 jobtype       sp
-qm            molcas xtb
+qm            molcas xtb xtb
 
 &Molcas
 molcas         %s
@@ -351,6 +353,7 @@ ci       3 2
 spin     0 1
 coupling 1 2, 2 3, 4 5, 2 4, 2 5 
 highlevel     1-6
+midlevel      7-12
 
 &MD
 root 4
