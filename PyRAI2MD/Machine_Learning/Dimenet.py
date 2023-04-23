@@ -54,7 +54,7 @@ class DimenetNAC:
     def set_model(self):
 
         # model_param = Param['model_param']  # Jingbai: we can put Param in __init__ then use self.param
-        if self.param['model'] == 'Dimenet':
+        if self.param['model_type'] == 'Dimenet':
             self.model = DimeNet(
                 hidden_channels=self.param['model_param']['hidden_channels'],
                 out_channels=self.param['model_param']['out_channels'],
@@ -63,7 +63,7 @@ class DimenetNAC:
                 num_spherical=self.param['model_param']['num_spherical'],
                 num_radial=self.param['model_param']['num_radial']
             )
-        elif self.param['model'] == 'Dimenet++':
+        elif self.param['model_type'] == 'Dimenet++':
             self.model = DimeNetPlusPlus(
                 hidden_channels=self.param['model_param']['hidden_channels'],
                 out_channels=self.param['model_param']['out_channels'],
