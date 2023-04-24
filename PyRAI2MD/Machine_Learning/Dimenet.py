@@ -222,7 +222,7 @@ class DimenetNAC:
 
         # Jingbai: the std_dict['nac'] stores the std value of two models, but we only have one, so std is 0.
         std_dict = {
-            'nac': [0],
+            'nac': [0 for _ in range(len(pred_all))],
         }
 
         return mean_dict, std_dict
