@@ -92,7 +92,7 @@ class DimenetModel:
 
         ## update default hyperparameters
         hyp_nac = variables['dime_nac'].copy()
-        hyp_dict_nac = set_hyper_nac(modeldir, hyp_nac, shuffle, gpu)
+        hyp_dict_nac = set_hyper_nac(modeldir, hyp_nac, data.info, shuffle, gpu)
         """
         ## below are template for updating parameters of the energy_grad, nac, and soc models
         hyp_eg = variables['dime_eg'].copy()

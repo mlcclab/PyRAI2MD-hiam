@@ -20,7 +20,6 @@ class KeyDimeNet:
             'batch_size': 30,
             'val_size': 2000,
             'hidden_channels': 256,
-            'out_channels': 36,
             'blocks': 6,
             'bilinear': 8,
             'spherical': 7,
@@ -51,7 +50,6 @@ class KeyDimeNet:
             'batch_size': ReadVal('i'),
             'val_size': ReadVal('i'),
             'hidden_channels': ReadVal('i'),
-            'out_channels': ReadVal('i'),
             'blocks': ReadVal('i'),
             'bilinear': ReadVal('i'),
             'spherical': ReadVal('i'),
@@ -84,7 +82,6 @@ class KeyDimeNet:
   Batch size:                 %-20s %-20s %-20s
   Validation size:            %-20s %-20s %-20s 
   Number of hidden channels:  %-20s %-20s %-20s
-  Number of output channels:  %-20s %-20s %-20s
   Number of blocks:           %-20s %-20s %-20s
   Number of bilinear:         %-20s %-20s %-20s
   Number of spherical:        %-20s %-20s %-20s
@@ -104,9 +101,6 @@ class KeyDimeNet:
             'n/a',
             'n/a',
             nac['hidden_channels'],
-            'n/a',
-            'n/a',
-            nac['out_channels'],
             'n/a',
             'n/a',
             nac['blocks'],

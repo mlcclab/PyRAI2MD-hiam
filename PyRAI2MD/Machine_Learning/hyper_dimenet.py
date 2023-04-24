@@ -34,12 +34,13 @@ def set_hyper_eg(hyp):
 
     return hyp_dict
 
-def set_hyper_nac(model_path, hyp, shuffle, gpu):
+def set_hyper_nac(model_path, hyp, info, shuffle, gpu):
     """ Generating hyperparameter dict for nonadiabatic coupling NN
 
         Parameters:          Type:
             model_path       str      a path to save the model
             hyp              dict     hyperparameter input
+            info             dict     training data information
             shuffle          bool     shuffle data loader during training
             gpu              int      use gpu for training when the device is available
 
@@ -56,13 +57,14 @@ def set_hyper_nac(model_path, hyp, shuffle, gpu):
 
     hyp_dict = {
         'model_type': model_type,
+        'nnac': hyp['nnac'],
         'optimizer': 'Adam',
         'batch_size': hyp['batch_size'],
         'val_size': hyp['val_size'],
         'criterion': 'MAE',
         'model_param': {
             'hidden_channels': hyp['hidden_channels'],
-            'out_channels': hyp['out_channels'],
+            'out_channels': int(info['nnac'] * info['natom'] * 3),
             'num_blocks': hyp['blocks'],
             'num_bilinear': hyp['bilinear'],
             'num_spherical': hyp['spherical'],

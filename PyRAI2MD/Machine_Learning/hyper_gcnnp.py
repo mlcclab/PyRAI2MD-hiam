@@ -14,6 +14,8 @@ def set_e2n2_hyper_eg(hyp, unit, info, splits, shuffle):
             hyp              dict     hyperparameter input
             unit             str      unit scheme
             info             dict     training data information
+            splits           int      train valid splits
+            shuffle          bool     shuffle data loader during training
 
         Return:              Type:
             hyp_ditc         dict     hyperparameter dict for NN
@@ -120,6 +122,8 @@ def set_e2n2_hyper_nac(hyp, unit, info, splits, shuffle):
             hyp              dict     hyperparameter input
             unit             str      unit scheme
             info             dict     training data information
+            splits           int      train valid splits
+            shuffle          bool     shuffle data loader during training
 
         Return:              Type:
             hyp_ditc         dict     hyperparameter dict for NN
@@ -225,6 +229,8 @@ def set_e2n2_hyper_soc(hyp, unit, info, splits, shuffle):
             hyp              dict     hyperparameter input
             unit             str      unit scheme
             info             dict     training data information
+            splits           int      train valid splits
+            shuffle          bool     shuffle data loader during training
 
         Return:              Type:
             hyp_ditc         dict     hyperparameter dict for NN
