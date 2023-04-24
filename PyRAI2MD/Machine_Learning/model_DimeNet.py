@@ -103,12 +103,6 @@ class DimenetModel:
         hyp_dict_soc = set_hyper_soc(hyp_soc, soc_unit, data.info, splits)
         """
         self.silent = variables['silent']
-        self.geos = data.geos
-        self.pred_geos = data.pred_geos
-        self.pred_energy = data.pred_energy
-        self.pred_grad = data.pred_grad
-        self.pred_nac = data.pred_nac
-        self.pred_soc = data.pred_soc
 
         ## convert unit of energy and force.
         ## data are assumed in au unit (Hartree, Hartree/Bohr), si convert them to eV, eV/A for training
@@ -134,10 +128,17 @@ class DimenetModel:
             self.f_n = 1  # convert to Eh/B
             self.k_n = h_bohr_to_ev_a
 
+        self.nac = data.nac * self.f_n
+        self.pred_geos = data.pred_geos
+        self.pred_energy = data.pred_energy
+        self.pred_grad = data.pred_grad
+        self.pred_nac = data.pred_nac
+        self.pred_soc = data.pred_soc
+
         ## pack training data
         self.data = {
             'xyz': np.concatenate((np.array(data.atoms).reshape((-1, data.natom, 1)), data.geos), axis=-1).tolist(),
-            'nac': data.nac.tolist()
+            'nac': self.nac.tolist()
         }
 
         """
