@@ -451,7 +451,7 @@ class E2N2:
         return energy, gradient, nac, soc, err_e, err_g, err_n, err_s
 
     def _predict(self, x):
-        ## run psnnsmd for model testing
+        ## run GCNNP for model testing
         batch = len(x)
         results = self.model.predict(x)
 

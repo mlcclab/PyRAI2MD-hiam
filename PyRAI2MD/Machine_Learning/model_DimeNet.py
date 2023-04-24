@@ -334,8 +334,11 @@ class DimenetModel:
         ## run dimenet for high level region in QM calculation
         traj = traj.apply_qmmm()
 
+        atoms = traj.qm_atoms.reshape((1, self.natom, 1))
         xyz = traj.qm_coord.reshape((1, self.natom, 3))
-        y_pred, y_std = self.model.predict(xyz)
+        x = np.concatenate((atoms, xyz), axis=-1).tolist()
+
+        y_pred, y_std = self.model.predict(x)
 
         ## initialize return values
         energy = []
@@ -375,8 +378,11 @@ class DimenetModel:
     def _high_mid_low(self, traj):
         ## run dimenet for high level region, middle level region, and low level region in QM calculation
 
+        atoms = traj.atoms.reshape((1, self.natom, 1))
         xyz = traj.coord.reshape((1, self.natom, 3))
-        y_pred, y_std = self.model.predict(xyz)
+        x = np.concatenate((atoms, xyz), axis=-1).tolist()
+
+        y_pred, y_std = self.model.predict(x)
 
         ## initialize return values
         energy = []
@@ -414,7 +420,7 @@ class DimenetModel:
         return energy, gradient, nac, soc, err_e, err_g, err_n, err_s
 
     def _predict(self, x):
-        ## run psnnsmd for model testing
+        ## run dimenet for model testing
 
         batch = len(x)
         x = np.concatenate((np.repeat(self.atoms[0], batch).reshape((-1, self.natom, 1)), x), axis=-1).tolist()
