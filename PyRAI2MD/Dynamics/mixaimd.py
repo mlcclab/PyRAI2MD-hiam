@@ -126,8 +126,9 @@ class MIXAIMD(AIMD):
             except IndexError:
                 soc_info += '  Not computed              %3d - %3d in cm-1 M1 = %1d M2 = %1d\n' % (
                     s1 + 1, s2 + 1, m1, m2)
-                
-        info += """
+
+        if len(traj_ref.soc_coupling) > 0:
+            info += """
   &reference spin-orbit coupling
 -------------------------------------------------------------------------------
 %s-------------------------------------------------------------------------------
