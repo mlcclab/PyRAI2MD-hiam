@@ -352,24 +352,24 @@ class DimenetModel:
 
         ## update return values
         if 'energy_gradient' in y_pred.keys():
-            e_pred = y_pred['energy_gradient'][0] / self.f_e
-            g_pred = y_pred['energy_gradient'][1] / self.f_g
-            e_std = y_std['energy_gradient'][0] / self.f_e
-            g_std = y_std['energy_gradient'][1] / self.f_g
+            e_pred = np.array(y_pred['energy_gradient'][0]) / self.f_e
+            g_pred = np.array(y_pred['energy_gradient'][1]) / self.f_g
+            e_std = np.array(y_std['energy_gradient'][0]) / self.f_e
+            g_std = np.array(y_std['energy_gradient'][1]) / self.f_g
             energy = e_pred[0]
             gradient = g_pred[0]
             err_e = np.amax(e_std)
             err_g = np.amax(g_std)
 
         if 'nac' in y_pred.keys():
-            n_pred = y_pred['nac'] / self.f_n
-            n_std = y_std['nac'] / self.f_n
+            n_pred = np.array(y_pred['nac']) / self.f_n
+            n_std = np.array(y_std['nac']) / self.f_n
             nac = n_pred[0]
             err_n = np.amax(n_std)
 
         if 'soc' in y_pred.keys():
-            s_pred = y_pred['soc']
-            s_std = y_std['soc']
+            s_pred = np.array(y_pred['soc'])
+            s_std = np.array(y_std['soc'])
             soc = s_pred[0]
             err_s = np.amax(s_std)
 
@@ -396,24 +396,24 @@ class DimenetModel:
 
         ## update return values
         if 'energy_gradient' in y_pred.keys():
-            e_pred = y_pred['energy_gradient'][0] / self.f_e
-            g_pred = y_pred['energy_gradient'][1] / self.f_g
-            e_std = y_std['energy_gradient'][0] / self.f_e
-            g_std = y_std['energy_gradient'][1] / self.f_g
+            e_pred = np.array(y_pred['energy_gradient'][0]) / self.f_e
+            g_pred = np.array(y_pred['energy_gradient'][1]) / self.f_g
+            e_std = np.array(y_std['energy_gradient'][0]) / self.f_e
+            g_std =  np.array(y_std['energy_gradient'][1]) / self.f_g
             energy = e_pred[0]
             gradient = g_pred[0]
             err_e = np.amax(e_std)
             err_g = np.amax(g_std)
 
         if 'nac' in y_pred.keys():
-            n_pred = y_pred['nac'] / self.f_n
-            n_std = y_std['nac'] / self.f_n
+            n_pred = np.array(y_pred['nac']) / self.f_n
+            n_std = np.array(y_std['nac']) / self.f_n
             nac = n_pred[0]
             err_n = np.amax(n_std)
 
         if 'soc' in y_pred.keys():
-            s_pred = y_pred['soc']
-            s_std = y_std['soc']
+            s_pred = np.array(y_pred['soc'])
+            s_std = np.array(y_std['soc'])
             soc = s_pred[0]
             err_s = np.amax(s_std)
 
