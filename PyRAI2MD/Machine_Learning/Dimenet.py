@@ -240,7 +240,6 @@ class DimenetNAC:
 
     def load_model(self):
         checkpoint = torch.load('%s/nac' % self.model_path, map_location=self.device)
-        self.nac_size = checkpoint['nac_size']
         self.model.load_state_dict(checkpoint['model_state_dict'])
         self.optimizer.load_state_dict(checkpoint['optimizer_state_dict'])
         self.model.to(self.device)
