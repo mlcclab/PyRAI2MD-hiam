@@ -11,6 +11,7 @@ import copy
 import numpy as np
 
 from PyRAI2MD.Dynamics.aimd import AIMD
+from PyRAI2MD.Utils.coordinates import print_coord
 
 class MIXAIMD(AIMD):
     """ Ab initial molecular dynamics class
@@ -54,13 +55,57 @@ class MIXAIMD(AIMD):
         return traj_mix
 
     def _mix_properties(self, traj_qm, traj_ref):
+        info = ''
         if self.ref_energy == 1:
             traj_qm.energy = np.copy(traj_ref.energy)
+            pop = ' '.join(['%28.16f' % x for x in np.diag(np.real(traj_ref.a))])
+            info += """
+  &reference energy
+-------------------------------------------------------
+%s
+-------------------------------------------------------
+""" % pop
+
         if self.ref_grad == 1:
             traj_qm.grad = np.copy(traj_ref.grad)
+            for n in range(traj_ref.nstate):
+                grad = traj_ref.grad[n]
+                info += """
+&reference gradient state             %3d in Eh/Bohr
+-------------------------------------------------------------------------------
+%s-------------------------------------------------------------------------------
+""" % (n + 1, print_coord(np.concatenate((traj_ref.atoms, grad), axis=1)))
+
         if self.ref_nac == 1:
             traj_qm.grad = np.copy(traj_ref.nac)
+            for n, pair in enumerate(traj_ref.nac_coupling):
+                s1, s2 = pair
+                m1 = traj_ref.statemult[s1]
+                m2 = traj_ref.statemult[s2]
+                coupling = traj_ref.nac[n]
+                info += """
+  &reference nonadiabatic coupling %3d - %3d in Hartree/Bohr M = %1d / %1d
+-------------------------------------------------------------------------------
+%s-------------------------------------------------------------------------------
+""" % (s1 + 1, s2 + 1, m1, m2, print_coord(np.concatenate((traj_ref.atoms, coupling), axis=1)))
+
         if self.ref_soc == 1:
             traj_qm.soc = np.copy(traj_ref.soc)
+            soc_info = ''
+            for n, pair in enumerate(traj_ref.soc_coupling):
+                s1, s2 = pair
+                m1 = traj_ref.statemult[s1]
+                m2 = traj_ref.statemult[s2]
+                coupling = traj_ref.soc[n]
+                soc_info += '  <H>=%10.4f            %3d - %3d in cm-1 M1 = %1d M2 = %1d\n' % (
+                    coupling, s1 + 1, s2 + 1, m1, m2)
+
+            info += """
+  &reference spin-orbit coupling
+-------------------------------------------------------------------------------
+%s-------------------------------------------------------------------------------
+""" % soc_info
+
+        traj_qm.mixinfo = info
 
         return traj_qm

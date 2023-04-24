@@ -621,6 +621,9 @@ class AIMD:
 %s-------------------------------------------------------------------------------
 """ % soc_info
 
+        if self.traj.mixinfo:
+            log_info += '%s\n' % self.traj.mixinfo
+
         return log_info
 
     @staticmethod

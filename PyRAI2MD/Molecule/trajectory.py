@@ -102,6 +102,7 @@ class Trajectory(Molecule):
           * status           int         molecular property calculation status
             verbose          int         verbose level of output information
             shinfo           str         surface hopping information
+            mixinfo          str         mixed aimd information
             tracker          list        a list of tracking geometrical parameters
 
         Functions:           Returns:
@@ -117,7 +118,7 @@ class Trajectory(Molecule):
                  'last_state', 'state', 'last_a', 'last_h', 'last_d', 'a', 'h', 'd', 'dosoc', 'last_nac', 'last_soc',
                  'coord1', 'coord2', 'kinetic1', 'kinetic2', 'energy1', 'energy2', 'grad1', 'grad2', 'activestate',
                  'thermo', 'thermodelay', 'vs', 'itr', 'itr_x', 'hoped', 'history', 'length', 'shinfo', 'nactype',
-                 'tracker']
+                 'tracker', 'mixinfo']
 
     def __init__(self, mol, keywords=None):
         super().__init__(mol, keywords=keywords)
@@ -184,6 +185,7 @@ class Trajectory(Molecule):
         self.history = []
         self.delt = 0.4134
         self.shinfo = ''
+        self.mixinfo = ''
         self.tracker = None
 
         ## adjust step size for FSSH
