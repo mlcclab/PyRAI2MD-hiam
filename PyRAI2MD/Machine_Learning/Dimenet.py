@@ -213,7 +213,7 @@ class DimenetNAC:
             pred = torch.flatten(out.cpu()).detach().numpy().tolist()
             pred_all_batches = pred_all_batches + pred
         pred_all = torch.tensor(pred_all_batches)
-        pred_all = pred_all.reshape((-1, int(self.nac_size / 3), 3)).tolist()
+        pred_all = pred_all.reshape((-1, int(self.nac_size / 3), 3))
 
         # Jingbai: the mean_dict['nac'] stores the mean value of two models, but we only have one at the moment
         mean_dict = {
