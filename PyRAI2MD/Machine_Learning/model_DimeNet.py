@@ -435,10 +435,10 @@ class DimenetModel:
 
         ## update errors
         if 'energy_gradient' in y_pred.keys():
-            e_pred = y_pred['energy_gradient'][0] / self.f_e
-            g_pred = y_pred['energy_gradient'][1] / self.f_g
-            e_std = y_std['energy_gradient'][0] / self.f_e
-            g_std = y_std['energy_gradient'][1] / self.f_g
+            e_pred = np.array(y_pred['energy_gradient'][0]) / self.f_e
+            g_pred = np.array(y_pred['energy_gradient'][1]) / self.f_g
+            e_std = np.array(y_std['energy_gradient'][0]) / self.f_e
+            g_std = np.array(y_std['energy_gradient'][1]) / self.f_g
             de = np.abs(pred_e - e_pred)
             dg = np.abs(pred_g - g_pred)
             de_max = np.amax(de.reshape((batch, -1)), axis=1)
@@ -454,7 +454,7 @@ class DimenetModel:
 
         if 'nac' in y_pred.keys():
             n_pred = np.array(y_pred['nac']) / self.f_n
-            n_std = y_std['nac'] / self.f_n
+            n_std = np.array(y_std['nac']) / self.f_n
             dn = np.abs(pred_n - n_pred)
             dn_max = np.amax(dn.reshape((batch, -1)), axis=1)
 
@@ -463,8 +463,8 @@ class DimenetModel:
             np.savetxt('%s-n.pred.txt' % self.name, np.concatenate((val_out, std_out), axis=1))
 
         if 'soc' in y_pred.keys():
-            s_pred = y_pred['soc']
-            s_std = y_std['soc']
+            s_pred = np.array(y_pred['soc'])
+            s_std = np.array(y_std['soc'])
             ds = np.abs(pred_s - s_pred)
             ds_max = np.amax(ds.reshape((batch, -1)), axis=1)
 
