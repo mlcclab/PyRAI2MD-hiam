@@ -57,7 +57,6 @@ def set_hyper_nac(model_path, hyp, info, shuffle, gpu):
 
     hyp_dict = {
         'model_type': model_type,
-        'nnac': hyp['nnac'],
         'optimizer': 'Adam',
         'batch_size': hyp['batch_size'],
         'val_size': hyp['val_size'],
