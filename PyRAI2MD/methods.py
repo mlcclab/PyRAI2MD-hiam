@@ -33,6 +33,12 @@ try:
 except ModuleNotFoundError:
     E2N2 = DummyModel
 
+try:
+    from PyRAI2MD.Machine_Learning.model_DimeNet import DimenetModel
+
+except ModuleNotFoundError:
+    DimenetModel = DummyModel
+
 class QM:
     """ Electronic structure method class
 
@@ -65,6 +71,7 @@ class QM:
             'mlp': MLP,
             'schnet': Schnet,
             'e2n2': E2N2,
+            'dimenet': DimenetModel,
         }
 
         # methods available for QM 1 region calculation
@@ -77,10 +84,16 @@ class QM:
             'mlp': MLP,
             'schnet': Schnet,
             'e2n2': E2N2,
+            'dimenet': DimenetModel,
         }
 
         # methods available for QM 2 region calculation
         qm2_list = {
+            'xtb': Xtb,
+        }
+
+        # methods available for MM calculation
+        mm_list = {
             'xtb': Xtb,
         }
 
@@ -96,7 +109,13 @@ class QM:
                 job_id_2 = job_id[1]
             qm1 = qm1_list[qm[0]]
             qm2 = qm2_list[qm[1]]
-            self.method = QMQM2(methods=[qm1, qm2], keywords=keywords, job_id_1=job_id_1, job_id_2=job_id_2)
+
+            if len(qm) >= 3:
+                mm = mm_list[qm[2]]
+            else:
+                mm = False
+
+            self.method = QMQM2(methods=[qm1, qm2, mm], keywords=keywords, job_id_1=job_id_1, job_id_2=job_id_2)
 
     def train(self):
         metrics = self.method.train()

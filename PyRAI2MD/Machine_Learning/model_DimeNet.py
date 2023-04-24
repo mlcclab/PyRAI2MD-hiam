@@ -9,18 +9,20 @@
 
 import os
 import time
+import torch.cuda
 import numpy as np
-from PyRAI2MD.Machine_Learning.hyper_templ import set_hyper_eg
-from PyRAI2MD.Machine_Learning.hyper_templ import set_hyper_nac
-from PyRAI2MD.Machine_Learning.hyper_templ import set_hyper_soc
+# from PyRAI2MD.Machine_Learning.hyper_dimenet import set_hyper_eg
+from PyRAI2MD.Machine_Learning.hyper_dimenet import set_hyper_nac
+# from PyRAI2MD.Machine_Learning.hyper_dimenet import set_hyper_soc
 
 from PyRAI2MD.Utils.timing import what_is_time
 from PyRAI2MD.Utils.timing import how_long
 
-## import nn package
-import NN_templ
+# Sijin
+from PyRAI2MD.Machine_Learning.Dimenet import DimenetNAC
 
-class NN_class:
+
+class DimenetModel:
     """ pyNNsMD interface
 
         Parameters:          Type:
@@ -57,23 +59,16 @@ class NN_class:
         # basic setting, don't change
         self.runtype = runtype
         title = keywords['control']['title']
-        variables = keywords['nn'].copy()
+        variables = keywords['dimenet'].copy()
         modeldir = variables['modeldir']
         data = variables['data']
-        nn_eg_type = variables['nn_eg_type']
-        nn_nac_type = variables['nn_nac_type']
-        nn_soc_type = variables['nn_soc_type']
-        splits = variables['nsplits']
-        hyp_eg = variables['eg'].copy()
-        hyp_nac = variables['nac'].copy()
-        hyp_eg2 = variables['eg2'].copy()
-        hyp_nac2 = variables['nac2'].copy()
-        hyp_soc = variables['soc'].copy()
-        hyp_soc2 = variables['soc2'].copy()
+        # nn_eg_type = variables['nn_eg_type']
+        # nn_nac_type = variables['nn_nac_type']
+        # nn_soc_type = variables['nn_soc_type']
         eg_unit = variables['eg_unit']
         nac_unit = variables['nac_unit']
-        soc_unit = variables['soc_unit']
         gpu = variables['gpu']
+        shuffle = variables['shuffle']
         self.jobtype = keywords['control']['jobtype']
         self.version = keywords['version']
         self.ncpu = keywords['control']['ml_ncpu']
@@ -84,27 +79,30 @@ class NN_class:
         self.nnac = data.nnac
         self.nsoc = data.nsoc
 
-        ## update default hyperparameters, you can modify the variables with the hyper_templ.py
-        hyp_dict_eg = set_hyper_eg(hyp_eg, eg_unit, data.info, splits)
-        hyp_dict_eg2 = set_hyper_eg(hyp_eg2, eg_unit, data.info, splits)
-        hyp_dict_nac = set_hyper_nac(hyp_nac, nac_unit, data.info, splits)
-        hyp_dict_nac2 = set_hyper_nac(hyp_nac2, nac_unit, data.info, splits)
-        hyp_dict_soc = set_hyper_soc(hyp_soc, soc_unit, data.info, splits)
-        hyp_dict_soc2 = set_hyper_soc(hyp_soc2, soc_unit, data.info, splits)
-
         ## assign folder name and parse data, don't change
         self.train_mode = 'training'
         if job_id is None or job_id == 1:
             self.name = f"NN-{title}"
         else:
             self.name = f"NN-{title}-{job_id}"
+
+        ## assume the initialization read a path to create the model
+        if modeldir is None or job_id not in [None, 1]:
+            modeldir = self.name
+
+        ## update default hyperparameters
+        hyp_nac = variables['dime_nac'].copy()
+        hyp_dict_nac = set_hyper_nac(modeldir, hyp_nac, data.info, shuffle, gpu)
+        """
+        ## below are template for updating parameters of the energy_grad, nac, and soc models
+        hyp_eg = variables['dime_eg'].copy()
+        hyp_nac = variables['dime_nac'].copy()
+        hyp_soc = variables['dime_soc'].copy()
+        hyp_dict_eg = set_hyper_eg(hyp_eg, eg_unit, data.info, splits)
+        hyp_dict_nac = set_hyper_nac(hyp_nac, nac_unit, data.info, splits)
+        hyp_dict_soc = set_hyper_soc(hyp_soc, soc_unit, data.info, splits)
+        """
         self.silent = variables['silent']
-        self.geos = data.geos
-        self.pred_geos = data.pred_geos
-        self.pred_energy = data.pred_energy
-        self.pred_grad = data.pred_grad
-        self.pred_nac = data.pred_nac
-        self.pred_soc = data.pred_soc
 
         ## convert unit of energy and force.
         ## data are assumed in au unit (Hartree, Hartree/Bohr), si convert them to eV, eV/A for training
@@ -130,19 +128,35 @@ class NN_class:
             self.f_n = 1  # convert to Eh/B
             self.k_n = h_bohr_to_ev_a
 
-        ## pack your training data for different condition
+        self.nac = data.nac * self.f_n
+        self.atoms = data.atoms
+        self.pred_geos = data.pred_geos
+        self.pred_energy = data.pred_energy
+        self.pred_grad = data.pred_grad
+        self.pred_nac = data.pred_nac
+        self.pred_soc = data.pred_soc
+
+        ## pack training data
+        self.data = {
+            'xyz': np.concatenate((np.array(data.atoms).reshape((-1, data.natom, 1)), data.geos), axis=-1).tolist(),
+            'nac': self.nac.tolist()
+        }
+
+        """
+        ## pack data for different models
         self.y = {}
-        if nn_eg_type > 0: # request energy force training
+        if nn_eg_type > 0:  # request energy force training
             # self.y =
             pass
-        if nn_nac_type > 0: # request energy force training
+        if nn_nac_type > 0:  # request energy force training
             # self.y =
             pass
-        if nn_soc_type > 0: # request energy force training
+        if nn_soc_type > 0:  # request energy force training
             # self.y =
             pass
 
-        ## pack you hyperparameters
+
+        ## pack hyperparameters for models
         self.hyper = {}
         if nn_eg_type == 1:  # same architecture with different weight
             self.hyper['energy_gradient'] = hyp_dict_eg
@@ -158,9 +172,9 @@ class NN_class:
             self.hyper['soc'] = hyp_dict_soc
         elif nn_soc_type > 1:
             self.hyper['soc'] = [hyp_dict_soc, hyp_dict_soc2]
+        """
 
         ## setup GPU list
-        """ an example using torch
         ngpu = torch.cuda.device_count()
         if ngpu > 0 and gpu > 0:
             self.device = 'gpu'
@@ -172,24 +186,8 @@ class NN_class:
         else:
             self.device_name = 'cpu'
 
-        if ngpu == 0:
-            device = None
-        elif 0 < ngpu < 2:
-            device = [0, 0, 0, 0, 0, 0][:len(self.hypers)]
-        elif 2 <= ngpu < 4:
-            device = [0, 1, 0, 1, 0, 1][:len(self.hypers)]
-        elif 4 <= ngpu < 6:
-            device = [0, 1, 2, 3, 2, 3][:len(self.hypers)]
-        else:
-            device = [0, 1, 2, 3, 4, 5][:len(self.hypers)]
-        """
-
         ## initialize model
-        ## assume the initialization read a path to create the model
-        if modeldir is None or job_id not in [None, 1]:
-            self.model = NN_templ(self.name)
-        else:
-            self.model = NN_templ(modeldir)
+        self.model = DimenetNAC(hyp_dict_nac)
 
     def _heading(self):
 
@@ -197,7 +195,7 @@ class NN_class:
 %s
  *---------------------------------------------------*
  |                                                   |
- |             your model name here                  |
+ |             DimeNet NAC model only                |
  |                                                   |
  *---------------------------------------------------*
 
@@ -206,21 +204,23 @@ class NN_class:
  Number of NAC:    %s
  Number of SOC:    %s
 
+ Device found: %s
+ Running device: %s
+ 
 """ % (
             self.version,
             self.natom,
             self.nstate,
             self.nnac,
-            self.nsoc
+            self.nsoc,
+            self.device,
+            self.device_name,
         )
 
         return headline
 
     def train(self):
         start = time.time()
-
-        ## create a model with hypers
-        self.model.create(self.hyper)
 
         topline = 'Neural Networks Start: %20s\n%s' % (what_is_time(), self._heading())
         runinfo = """\n  &nn fitting \n"""
@@ -234,7 +234,9 @@ class NN_class:
             log.write(runinfo)
 
         # fitting model
-        ferr = self.model.fit()
+        # Sijin: already set my fit functon to return a ferr dictionary, but I only have one model
+        # ferr['nac'][model_1_nac_err]
+        ferr = self.model.fit(self.data)
 
         # ferr should be a dict as following
         """
@@ -270,7 +272,7 @@ class NN_class:
 
         if 'nac' in ferr.keys():
             err_n1 = ferr['nac'][0]
-            err_n2 = ferr['nac'][1]
+            err_n2 = 0
 
         if 'soc' in ferr.keys():
             err_s1 = ferr['soc'][0]
@@ -319,7 +321,7 @@ class NN_class:
         return metrics
 
     def load(self):
-        self.model.load()
+        self.model.load_model()
 
         return self
 
@@ -328,12 +330,15 @@ class NN_class:
 
         return self
 
-    def _high (self, traj):
-        ## run this model for high level region in QM calculation
+    def _high(self, traj):
+        ## run dimenet for high level region in QM calculation
         traj = traj.apply_qmmm()
 
+        atoms = traj.qm_atoms.reshape((1, self.natom, 1))
         xyz = traj.qm_coord.reshape((1, self.natom, 3))
-        y_pred, y_std = self.model.call(xyz)
+        x = np.concatenate((atoms, xyz), axis=-1).tolist()
+
+        y_pred, y_std = self.model.predict(x)
 
         ## initialize return values
         energy = []
@@ -347,34 +352,37 @@ class NN_class:
 
         ## update return values
         if 'energy_gradient' in y_pred.keys():
-            e_pred = y_pred['energy_gradient'][0] / self.f_e
-            g_pred = y_pred['energy_gradient'][1] / self.f_g
-            e_std = y_std['energy_gradient'][0] / self.f_e
-            g_std = y_std['energy_gradient'][1] / self.f_g
+            e_pred = np.array(y_pred['energy_gradient'][0]) / self.f_e
+            g_pred = np.array(y_pred['energy_gradient'][1]) / self.f_g
+            e_std = np.array(y_std['energy_gradient'][0]) / self.f_e
+            g_std = np.array(y_std['energy_gradient'][1]) / self.f_g
             energy = e_pred[0]
             gradient = g_pred[0]
             err_e = np.amax(e_std)
             err_g = np.amax(g_std)
 
         if 'nac' in y_pred.keys():
-            n_pred = y_pred['nac'] / self.f_n
-            n_std = y_std['nac'] / self.f_n
+            n_pred = np.array(y_pred['nac']) / self.f_n
+            n_std = np.array(y_std['nac']) / self.f_n
             nac = n_pred[0]
             err_n = np.amax(n_std)
 
         if 'soc' in y_pred.keys():
-            s_pred = y_pred['soc']
-            s_std = y_std['soc']
+            s_pred = np.array(y_pred['soc'])
+            s_std = np.array(y_std['soc'])
             soc = s_pred[0]
             err_s = np.amax(s_std)
 
         return energy, gradient, nac, soc, err_e, err_g, err_n, err_s
 
     def _high_mid_low(self, traj):
-        ## run this model for high level region, middle level region, and low level region in QM calculation
+        ## run dimenet for high level region, middle level region, and low level region in QM calculation
 
+        atoms = traj.atoms.reshape((1, self.natom, 1))
         xyz = traj.coord.reshape((1, self.natom, 3))
-        y_pred, y_std = self.model.call(xyz)
+        x = np.concatenate((atoms, xyz), axis=-1).tolist()
+
+        y_pred, y_std = self.model.predict(x)
 
         ## initialize return values
         energy = []
@@ -388,33 +396,34 @@ class NN_class:
 
         ## update return values
         if 'energy_gradient' in y_pred.keys():
-            e_pred = y_pred['energy_gradient'][0] / self.f_e
-            g_pred = y_pred['energy_gradient'][1] / self.f_g
-            e_std = y_std['energy_gradient'][0] / self.f_e
-            g_std = y_std['energy_gradient'][1] / self.f_g
+            e_pred = np.array(y_pred['energy_gradient'][0]) / self.f_e
+            g_pred = np.array(y_pred['energy_gradient'][1]) / self.f_g
+            e_std = np.array(y_std['energy_gradient'][0]) / self.f_e
+            g_std = np.array(y_std['energy_gradient'][1]) / self.f_g
             energy = e_pred[0]
             gradient = g_pred[0]
             err_e = np.amax(e_std)
             err_g = np.amax(g_std)
 
         if 'nac' in y_pred.keys():
-            n_pred = y_pred['nac'] / self.f_n
-            n_std = y_std['nac'] / self.f_n
+            n_pred = np.array(y_pred['nac']) / self.f_n
+            n_std = np.array(y_std['nac']) / self.f_n
             nac = n_pred[0]
             err_n = np.amax(n_std)
 
         if 'soc' in y_pred.keys():
-            s_pred = y_pred['soc']
-            s_std = y_std['soc']
+            s_pred = np.array(y_pred['soc'])
+            s_std = np.array(y_std['soc'])
             soc = s_pred[0]
             err_s = np.amax(s_std)
 
         return energy, gradient, nac, soc, err_e, err_g, err_n, err_s
 
     def _predict(self, x):
-        ## run psnnsmd for model testing
+        ## run dimenet for model testing
 
         batch = len(x)
+        x = np.concatenate((np.repeat(self.atoms[0], batch).reshape((-1, self.natom, 1)), x), axis=-1).tolist()
 
         y_pred, y_std = self.model.predict(x)
 
@@ -432,10 +441,10 @@ class NN_class:
 
         ## update errors
         if 'energy_gradient' in y_pred.keys():
-            e_pred = y_pred['energy_gradient'][0] / self.f_e
-            g_pred = y_pred['energy_gradient'][1] / self.f_g
-            e_std = y_std['energy_gradient'][0] / self.f_e
-            g_std = y_std['energy_gradient'][1] / self.f_g
+            e_pred = np.array(y_pred['energy_gradient'][0]) / self.f_e
+            g_pred = np.array(y_pred['energy_gradient'][1]) / self.f_g
+            e_std = np.array(y_std['energy_gradient'][0]) / self.f_e
+            g_std = np.array(y_std['energy_gradient'][1]) / self.f_g
             de = np.abs(pred_e - e_pred)
             dg = np.abs(pred_g - g_pred)
             de_max = np.amax(de.reshape((batch, -1)), axis=1)
@@ -450,8 +459,8 @@ class NN_class:
             np.savetxt('%s-g.pred.txt' % self.name, np.concatenate((val_out, std_out), axis=1))
 
         if 'nac' in y_pred.keys():
-            n_pred = y_pred['nac'] / self.f_n
-            n_std = y_std['nac'] / self.f_n
+            n_pred = np.array(y_pred['nac']) / self.f_n
+            n_std = np.array(y_std['nac']) / self.f_n
             dn = np.abs(pred_n - n_pred)
             dn_max = np.amax(dn.reshape((batch, -1)), axis=1)
 
@@ -460,8 +469,8 @@ class NN_class:
             np.savetxt('%s-n.pred.txt' % self.name, np.concatenate((val_out, std_out), axis=1))
 
         if 'soc' in y_pred.keys():
-            s_pred = y_pred['soc']
-            s_std = y_std['soc']
+            s_pred = np.array(y_pred['soc'])
+            s_std = np.array(y_std['soc'])
             ds = np.abs(pred_s - s_pred)
             ds_max = np.amax(ds.reshape((batch, -1)), axis=1)
 

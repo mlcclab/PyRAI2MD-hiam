@@ -48,7 +48,7 @@ def print_logo(version):
                      GFN-xTB interface
                      Adaptive sampling
                      Grid search
-                     Two-layer ONIOM
+                     Multilayer ONIOM (QM:QM' and QM:QM':MM)
                      Periodic boundary condition (coming soon)
                      Wall potential
                      QC/ML hybrid NAMD

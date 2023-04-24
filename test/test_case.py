@@ -24,6 +24,8 @@ test_mixaimd = 0
 test_adaptive_sampling = 1
 test_md = 0
 
+# TODO: test_e2n2, test_dimenet
+
 import time
 import datetime
 import os

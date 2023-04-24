@@ -17,7 +17,6 @@ if 'TF_CPP_MIN_LOG_LEVEL' not in os.environ:
 
 from PyRAI2MD.Utils.extension import verify_ext
 from PyRAI2MD.variables import read_input
-from PyRAI2MD.variables import start_info
 from PyRAI2MD.methods import QM
 from PyRAI2MD.Molecule.trajectory import Trajectory
 from PyRAI2MD.Dynamics.aimd import AIMD
@@ -48,7 +47,7 @@ class PYRAI2MD:
 
     def __init__(self, ld_input):
         ## check input
-        version = '2.2 alpha'
+        version = '2.3 alpha'
         self.logo = print_logo(version)
 
         if ld_input is None:
@@ -59,8 +58,7 @@ class PYRAI2MD:
                 sys.exit('\n  FileNotFoundError\n  PyRAI2MD: looking for input file %s' % ld_input)
 
             input_dict = self._load_input(ld_input)
-            self.keywords = read_input(input_dict)
-            input_info = start_info(self.keywords)
+            self.keywords, input_info = read_input(input_dict)
             ## get control info
             self.keywords['version'] = self._version_info(version, input_info)
             self.title = self.keywords['control']['title']

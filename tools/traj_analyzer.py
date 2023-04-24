@@ -1177,12 +1177,14 @@ def read_raw_data_molcas(files):
                 crt_pop = line.split()[1:num_state + 1]
                 crt_pop = [float(i) for i in crt_pop]
             else:
-                event_checker = log[n + 4]
-                event_info = log[n + 6]
                 if np.abs(float(line.split()[-1])) < 2:
                     num_state = len(line.split()) - 1
+                    event_checker = log[n + 4]
+                    event_info = log[n + 6]
                 else:
                     num_state = int((len(line.split()) - 2) / 2)
+                    event_checker = log[n + 3]
+                    event_info = log[n + 5]
                 crt_pop = line.split()[1:]
                 crt_pop = [float(i) for i in crt_pop]
 

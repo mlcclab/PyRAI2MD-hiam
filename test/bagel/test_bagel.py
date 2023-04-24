@@ -265,7 +265,7 @@ def RunCASPT2(testdir):
     subprocess.run('pyrai2md test_inp >> stdout 2>&1', shell=True)
     os.chdir(maindir)
     results = Collect(testdir)
-    if len(results.splitlines()) < 13:
+    if len(results.splitlines()) < 14:
         code = 'FAILED(xms-caspt2 runtime error)'
     else:
         code = 'PASSED'

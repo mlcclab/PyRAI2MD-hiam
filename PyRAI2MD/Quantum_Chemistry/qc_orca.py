@@ -56,7 +56,7 @@ class Orca:
 
     """
 
-    def __init__(self, keywords=None, job_id=None, runtype='qm'):
+    def __init__(self, keywords=None, job_id=None, runtype='qm_high_mid_low'):
 
         self.runtype = runtype
         self.nstate = 0
@@ -397,8 +397,8 @@ cd $ORCA_WORKDIR
         else:
             return self._read_dft(nxyz)
 
-    def _qmmm(self, traj):
-        ## run ORCA for QMMM calculation
+    def _high(self, traj):
+        ## run ORCA for high level region in QM calculation
 
         ## create qmmm model
         traj = traj.apply_qmmm()
@@ -423,8 +423,8 @@ cd $ORCA_WORKDIR
 
         return energy, gradient, nac, soc
 
-    def _qm(self, traj):
-        ## run ORCA for QM calculation
+    def _high_mid_low(self, traj):
+        ## run ORCA for high level region, middle level region, and low level region in QM calculation
 
         xyz = np.concatenate((traj.atoms, traj.coord), axis=1)
         nxyz = len(xyz)
@@ -463,10 +463,10 @@ cd $ORCA_WORKDIR
         soc = []
         completion = 0
 
-        if self.runtype == 'qm':
-            energy, gradient, nac, soc = self._qm(traj)
-        elif self.runtype == 'qmmm':
-            energy, gradient, nac, soc = self._qmmm(traj)
+        if self.runtype == 'qm_high_mid_low':
+            energy, gradient, nac, soc = self._high_mid_low(traj)
+        elif self.runtype == 'qm_high':
+            energy, gradient, nac, soc = self._high(traj)
 
         if len(energy) >= self.nstate and len(gradient) >= self.nstate and len(nac) >= self.nnac:
             completion = 1

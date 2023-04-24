@@ -58,12 +58,12 @@ class MLP:
 
     """
 
-    def __init__(self, keywords=None, job_id=None, runtype='qm'):
+    def __init__(self, keywords=None, job_id=None, runtype='qm_high_mid_low'):
 
         set_gpu([])  # No GPU for prediction
         self.runtype = runtype
         title = keywords['control']['title']
-        variables = keywords['nn'].copy()
+        variables = keywords['mlp'].copy()
         modeldir = variables['modeldir']
         data = variables['data']
         nn_eg_type = variables['nn_eg_type']
@@ -455,8 +455,8 @@ class MLP:
 
         return self
 
-    def _qm(self, traj):
-        ## run psnnsmd for QM calculation
+    def _high_mid_low(self, traj):
+        ## run psnnsmd for high level region, middle level region, and low level region in QM calculation
 
         xyz = traj.coord.reshape((1, self.natom, 3))
 
@@ -494,8 +494,8 @@ class MLP:
 
         return energy, gradient, nac, soc, err_e, err_g, err_n, err_s
 
-    def _qmmm(self, traj):
-        ## run psnnsmd for QM calculation
+    def _high(self, traj):
+        ## run psnnsmd for high level region QM calculation
         traj = traj.apply_qmmm()
 
         xyz = traj.qm_coord.reshape((1, self.natom, 3))
@@ -604,10 +604,10 @@ class MLP:
         if self.jobtype == 'prediction' or self.jobtype == 'predict':
             self._predict(self.pred_geos)
         else:
-            if self.runtype == 'qmmm':
-                energy, gradient, nac, soc, err_energy, err_grad, err_nac, err_soc = self._qm(traj)
+            if self.runtype == 'qm_high':
+                energy, gradient, nac, soc, err_energy, err_grad, err_nac, err_soc = self._high(traj)
             else:
-                energy, gradient, nac, soc, err_energy, err_grad, err_nac, err_soc = self._qm(traj)
+                energy, gradient, nac, soc, err_energy, err_grad, err_nac, err_soc = self._high_mid_low(traj)
 
             traj.energy = np.copy(energy)
             traj.grad = np.copy(gradient)
@@ -655,7 +655,7 @@ class Schnet:
 
     """
 
-    def __init__(self, keywords=None, job_id=None, runtype='qm'):
+    def __init__(self, keywords=None, job_id=None, runtype='qm_high_mid_low'):
 
         set_gpu([])  # No GPU for prediction
         self.runtype = runtype
@@ -1040,8 +1040,8 @@ class Schnet:
 
         return self
 
-    def _qm(self, traj):
-        ## run psnnsmd for QM calculation
+    def _high_mid_low(self, traj):
+        ## run psnnsmd for high level region, middle level region, and low level region in QM calculation
 
         xyz = traj.coord.reshape((1, self.natom, 3))
         atomic_numbers = [self.atomic_numbers]
@@ -1080,8 +1080,8 @@ class Schnet:
 
         return energy, gradient, nac, soc, err_e, err_g, err_n, err_s
 
-    def _qmmm(self, traj):
-        ## run psnnsmd for QM calculation
+    def _high(self, traj):
+        ## run psnnsmd for high level region in QM calculation
         traj = traj.apply_qmmm()
 
         xyz = traj.qm_coord.reshape((1, self.natom, 3))
@@ -1192,10 +1192,10 @@ class Schnet:
         if self.jobtype == 'prediction' or self.jobtype == 'predict':
             self._predict(self.pred_geos)
         else:
-            if self.runtype == 'qmmm':
-                energy, gradient, nac, soc, err_energy, err_grad, err_nac, err_soc = self._qmmm(traj)
+            if self.runtype == 'qm_high':
+                energy, gradient, nac, soc, err_energy, err_grad, err_nac, err_soc = self._high(traj)
             else:
-                energy, gradient, nac, soc, err_energy, err_grad, err_nac, err_soc = self._qm(traj)
+                energy, gradient, nac, soc, err_energy, err_grad, err_nac, err_soc = self._high_mid_low(traj)
 
             traj.energy = np.copy(energy)
             traj.grad = np.copy(gradient)

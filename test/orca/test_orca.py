@@ -243,7 +243,7 @@ def RunORCA_dft(testdir):
     subprocess.run('pyrai2md dft_inp', shell=True)
     os.chdir(maindir)
     results = Collect(testdir, 'dft')
-    if len(results.splitlines()) < 13:
+    if len(results.splitlines()) < 14:
         code = 'FAILED(ORCA runtime error)'
     else:
         code = 'PASSED'
@@ -255,7 +255,7 @@ def RunORCA_tddft(testdir):
     subprocess.run('pyrai2md tddft_inp', shell=True)
     os.chdir(maindir)
     results = Collect(testdir, 'tddft')
-    if len(results.splitlines()) < 13:
+    if len(results.splitlines()) < 14:
         code = 'FAILED(ORCA runtime error)'
     else:
         code = 'PASSED'
@@ -267,7 +267,7 @@ def RunORCA_sf_tddft(testdir):
     subprocess.run('pyrai2md sf_tddft_inp', shell=True)
     os.chdir(maindir)
     results = Collect(testdir, 'sf_tddft')
-    if len(results.splitlines()) < 13:
+    if len(results.splitlines()) < 14:
         code = 'FAILED(ORCA runtime error)'
     else:
         code = 'PASSED'

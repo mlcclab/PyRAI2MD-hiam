@@ -114,8 +114,8 @@ class AIMD:
             check_f6 = os.path.exists('%s/%s.sh.energies' % (self.logpath, self.title))
             check_f7 = os.path.exists('%s/%s.sh.xyz' % (self.logpath, self.title))
             check_f8 = os.path.exists('%s/%s.sh.velo' % (self.logpath, self.title))
-            checksignal = int(check_f1) + int(check_f2) + int(check_f3) + int(check_f4) + int(check_f5)\
-                + int(check_f6) + int(check_f7) + int(check_f8)
+            checksignal = int(check_f1) + int(check_f2) + int(check_f3) + int(check_f4) + int(check_f5) + \
+                          int(check_f6) + int(check_f7) + int(check_f8)
 
             if checksignal == 8:
                 with open('%s/%s.pkl' % (self.logpath, self.title), 'rb') as mdinfo:
@@ -296,6 +296,7 @@ class AIMD:
   Inactive atoms:   %s
   Link atoms:       %s
   Highlevel atoms:  %s
+  Midlevel atoms:   %s
   Lowlevel atoms:   %s
 
 """ % (
@@ -308,6 +309,7 @@ class AIMD:
             self.traj.ninac,
             self.traj.nlink,
             self.traj.nhigh,
+            self.traj.nmid,
             self.traj.nlow
         )
 
@@ -352,7 +354,10 @@ class AIMD:
         ## This function check the geometry
         ## This function stop MD if the geometry satisfies the requirement
 
-        if self.geom_tracker.check(self.traj):
+        stop, info = self.geom_tracker.check(self.traj)
+        self.traj.tracker = info
+
+        if stop:
             self.stop = 5
 
         return self
@@ -411,6 +416,28 @@ class AIMD:
                 self.traj.last_state
             )
 
+        if self.traj.energy_qm2_1 != 0:
+            log_info += """
+  &multiscale energy
+-------------------------------------------------------
+  QM2(high) %16.8f 
+  QM2(mid)  %16.8f
+  MM(mid)   %16.8f 
+  MM(low)   %16.8f
+-------------------------------------------------------
+""" % (
+                self.traj.energy_qm2_1,
+                self.traj.energy_qm2_2,
+                self.traj.energy_mm1,
+                self.traj.energy_mm2,
+            )
+
+        if self.traj.ext_pot != 0:
+            log_info += ' constraining potential energy: %16.8f\n' % self.traj.ext_pot
+
+        if self.traj.tracker:
+            log_info += ''
+
         log_info += '\n Gnuplot: %s %s %28.16f\n  **\n  **\n  **\n%s\n' % (
             pop,
             pot,
@@ -428,6 +455,13 @@ class AIMD:
 -------------------------------------------------------
 
 """ % self.traj.shinfo
+
+        if self.traj.tracker:
+            log_info += """
+  &geometric parameter monitor
+-------------------------------------------------------
+%s-------------------------------------------------------
+""" % self.traj.tracker
 
         ## add error info
         if self.traj.err_energy is not None and \
@@ -586,6 +620,9 @@ class AIMD:
 -------------------------------------------------------------------------------
 %s-------------------------------------------------------------------------------
 """ % soc_info
+
+        if self.traj.mixinfo:
+            log_info += '%s\n' % self.traj.mixinfo
 
         return log_info
 

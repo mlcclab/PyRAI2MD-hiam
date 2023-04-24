@@ -265,12 +265,13 @@ title         qmqm2_orca
 qc_ncpu       1
 ms_ncpu       2
 jobtype       sp
-qm            orca xtb
+qm            orca xtb xtb
 
 &MOLECULE
 ci   3
 spin 0
 highlevel     1-6
+midlevel      7-12
 
 &ORCA
 orca          %s
@@ -296,7 +297,7 @@ title         qmqm2_bagel
 qc_ncpu       2
 ms_ncpu       2
 jobtype       sp
-qm            bagel xtb
+qm            bagel xtb xtb
 
 &Bagel
 bagel         %s
@@ -317,6 +318,7 @@ ci       3
 spin     0
 coupling 1 2, 2 3
 highlevel     1-6
+midlevel      7-12
 
 &MD
 root 1
@@ -336,7 +338,7 @@ activestate 1
 title         qmqm2_molcas
 qc_ncpu       1
 jobtype       sp
-qm            molcas xtb
+qm            molcas xtb xtb
 
 &Molcas
 molcas         %s
@@ -351,6 +353,7 @@ ci       3 2
 spin     0 1
 coupling 1 2, 2 3, 4 5, 2 4, 2 5 
 highlevel     1-6
+midlevel      7-12
 
 &MD
 root 4
@@ -431,7 +434,7 @@ def RunORCA_tddft(testdir):
     subprocess.run('pyrai2md qmqm2_orca > stdout 2>&1', shell=True)
     os.chdir(maindir)
     results = Collect(testdir, 'qmqm2_orca')
-    if len(results.splitlines()) < 13:
+    if len(results.splitlines()) < 14:
         code = 'FAILED(ORCA QM1 runtime error)'
     else:
         code = 'PASSED'
@@ -457,7 +460,7 @@ def RunBAGEL_CASPT2(testdir):
     subprocess.run('pyrai2md qmqm2_bagel >> stdout 2>&1', shell=True)
     os.chdir(maindir)
     results = Collect(testdir, 'qmqm2_bagel')
-    if len(results.splitlines()) < 13:
+    if len(results.splitlines()) < 14:
         code = 'FAILED(BAGEL QM1 runtime error)'
     else:
         code = 'PASSED'
@@ -484,7 +487,7 @@ def RunMOLCAS_CASPT2(testdir):
     subprocess.run('pyrai2md qmqm2_molcas >> stdout 2>&1', shell=True)
     os.chdir(maindir)
     results = Collect(testdir, 'qmqm2_molcas')
-    if len(results.splitlines()) < 13:
+    if len(results.splitlines()) < 14:
         code = 'FAILED(Molcas QM1 runtime error)'
     else:
         code = 'PASSED'

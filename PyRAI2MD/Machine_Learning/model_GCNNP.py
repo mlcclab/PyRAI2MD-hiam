@@ -57,7 +57,7 @@ class E2N2:
 
     """
 
-    def __init__(self, keywords=None, job_id=None, runtype='qm'):
+    def __init__(self, keywords=None, job_id=None, runtype='qm_high_mid_low'):
 
         self.runtype = runtype
         title = keywords['control']['title']
@@ -201,9 +201,9 @@ class E2N2:
             self.device = 'cpu'
 
         if ngpu > 0:
-            self.device_name = torch.cuda.current_device()
+            self.device_name = '%s gpu' % ngpu
         else:
-            self.device_name = 'cpu'
+            self.device_name = '%s cpu' % os.environ['OMP_NUM_THREADS']
 
         if ngpu == 0:
             device = None
@@ -245,8 +245,8 @@ class E2N2:
             self.nstate,
             self.nnac,
             self.nsoc,
-            self.device_name,
             self.device,
+            self.device_name,
         )
 
         return headline
@@ -349,8 +349,8 @@ class E2N2:
 
         return self
 
-    def _qmmm(self, traj):
-        ## run GCNNP for QM calculation
+    def _high(self, traj):
+        ## run GCNNP for high level region in QM calculation
         traj = traj.apply_qmmm()
 
         atoms = self.atoms[0]
@@ -401,8 +401,8 @@ class E2N2:
 
         return energy, gradient, nac, soc, err_e, err_g, err_n, err_s
 
-    def _qm(self, traj):
-        ## run GCNNP for QM calculation
+    def _high_mid_low(self, traj):
+        ## run GCNNP for high level region, middle level region, and low level region in QM calculation
         atoms = self.atoms[0]
         coord = traj.coord
         x = [np.concatenate((atoms.reshape((-1, 1)), coord), axis=-1).tolist()]
@@ -451,7 +451,7 @@ class E2N2:
         return energy, gradient, nac, soc, err_e, err_g, err_n, err_s
 
     def _predict(self, x):
-        ## run psnnsmd for model testing
+        ## run GCNNP for model testing
         batch = len(x)
         results = self.model.predict(x)
 
@@ -527,10 +527,10 @@ class E2N2:
             xyz = np.concatenate((self.pred_atoms.reshape((-1, self.natom, 1)), self.pred_geos), axis=-1).tolist()
             self._predict(xyz)
         else:
-            if self.runtype == 'qmmm':
-                energy, gradient, nac, soc, err_energy, err_grad, err_nac, err_soc = self._qm(traj)
+            if self.runtype == 'qm_high':
+                energy, gradient, nac, soc, err_energy, err_grad, err_nac, err_soc = self._high(traj)
             else:
-                energy, gradient, nac, soc, err_energy, err_grad, err_nac, err_soc = self._qm(traj)
+                energy, gradient, nac, soc, err_energy, err_grad, err_nac, err_soc = self._high_mid_low(traj)
 
             traj.energy = np.copy(energy)
             traj.grad = np.copy(gradient)

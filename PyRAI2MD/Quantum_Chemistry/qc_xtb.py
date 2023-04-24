@@ -44,7 +44,7 @@ class Xtb:
 
     """
 
-    def __init__(self, keywords=None, job_id=None, runtype='qm'):
+    def __init__(self, keywords=None, job_id=None, runtype='qm_high_mid_low'):
 
         self.runtype = runtype
         variables = keywords['xtb']
@@ -70,8 +70,17 @@ class Xtb:
         else:
             self.workdir = '%s/tmp_xtb' % self.workdir
 
-        if runtype == 'qmmm_low':
-            self.workdir = '%s_2' % self.workdir
+        if self.runtype == 'qm2_high':
+            self.workdir = '%s_qm2_h' % self.workdir
+
+        elif self.runtype == 'qm2_high_mid':
+            self.workdir = '%s_qm2_m' % self.workdir
+
+        elif runtype == 'mm_high_mid':
+            self.workdir = '%s_mm_m' % self.workdir
+
+        elif runtype == 'mm_high_mid_low':
+            self.workdir = '%s_mm_l' % self.workdir
 
         ## initialize runscript
         self.runscript = """
@@ -104,6 +113,10 @@ cd $XTB_WORKDIR
         else:
             self.gfnver = -0.5
             addon = ''
+
+        if self.runtype == 'mm_high_mid_low' or self.runtype == 'mm_high_mid':
+            self.gfnver = -1
+            addon = '--gfnff'
 
         self.runscript += '$XTBHOME/bin/xtb %s --grad -I $XTB_WORKDIR/$XTB_PROJECT.inp $XTB_WORKDIR/$XTB_PROJECT.xyz ' \
                           '> $XTB_WORKDIR/$XTB_PROJECT.out\n ' % addon
@@ -222,8 +235,8 @@ cd $XTB_WORKDIR
 
         return coord, energy, gradient, nac, soc
 
-    def _qmmm(self, traj):
-        ## run xTB for QMMM calculation
+    def _high(self, traj):
+        ## run xTB for high level region in QM calculation
 
         ## create qmmm model
         traj = traj.apply_qmmm()
@@ -248,8 +261,37 @@ cd $XTB_WORKDIR
 
         return energy, gradient, nac, soc
 
-    def _qm(self, traj, pc=True):
-        ## run xTB for QM calculation
+    def _high_mid(self, traj):
+        ## run xTB for high level region and middle level region in QM or MM calculation
+
+        ## create qmmm model
+        traj = traj.apply_qmmm()
+
+        xyz = np.concatenate((traj.qmqm2_atoms, traj.qmqm2_coord), axis=1)
+        nxyz = len(xyz)
+
+        ## setup xTB calculation
+        self._setup_xtb(xyz)
+
+        ## run xTB calculation
+        self._run_xtb()
+
+        ## read xTB output files
+        coord, energy, gradient, nac, soc = self._read_data(nxyz)
+
+        charges = self.charges
+        self.charges = np.zeros((traj.natom, 4))
+        self.charges[traj.qmqm2_index] = np.concatenate((charges.reshape((-1, 1)), traj.qmqm2_coord), axis=1)
+
+        ## project force and coupling
+        # jacob = traj.Hcap_jacob
+        # gradient = np.array([np.dot(x, jacob) for x in gradient])
+        # nac = np.array([np.dot(x, jacob) for x in nac])
+
+        return energy, gradient, nac, soc
+
+    def _high_mid_low(self, traj, pc=True):
+        ## run xTB for high level region, middle level region, and low level region in QM or MM calculation
 
         xyz = np.concatenate((traj.atoms, traj.coord), axis=1)
         nxyz = len(xyz)
@@ -268,6 +310,8 @@ cd $XTB_WORKDIR
         ## read xTB output files
         coord, energy, gradient, nac, soc = self._read_data(nxyz)
 
+        self.charges = np.concatenate((self.charges.reshape((-1, 1)), traj.coord), axis=1)
+
         return energy, gradient, nac, soc
 
     def appendix(self, _):
@@ -285,13 +329,17 @@ cd $XTB_WORKDIR
         soc = []
         completion = 0
 
-        if self.runtype == 'qm':
-            energy, gradient, nac, soc = self._qm(traj)
-        elif self.runtype == 'qmmm':
-            energy, gradient, nac, soc = self._qmmm(traj)
-        elif self.runtype == 'qmmm_low':
-            energy, gradient, nac, soc = self._qm(traj, pc=False)
-            traj.charges = np.concatenate((self.charges.reshape((-1, 1)), traj.coord), axis=1)
+        if self.runtype == 'qm_high' or self.runtype == 'qm2_high':  # qm or qm2 calculation for h region
+            energy, gradient, nac, soc = self._high(traj)
+        elif self.runtype == 'qm2_high_mid':  # qm or qm2 calculation for h + m region
+            energy, gradient, nac, soc = self._high_mid(traj)
+            traj.charges = self.charges
+        elif self.runtype == 'mm_high_mid':  # mm, calculation for h + m region
+            energy, gradient, nac, soc = self._high_mid(traj)
+        elif self.runtype == 'qm_high_mid_low':  # qm or qm2 calculation for h + m + l region
+            energy, gradient, nac, soc = self._high_mid_low(traj)
+        elif self.runtype == 'mm_high_mid_low':  # mm calculation for h + m + l region
+            energy, gradient, nac, soc = self._high_mid_low(traj, pc=False)
 
         if len(energy) == 1 and len(gradient) == 1:
             completion = 1

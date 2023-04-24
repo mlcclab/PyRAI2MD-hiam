@@ -92,6 +92,7 @@ class SinglePoint:
   Inactive atoms:   %s
   Link atoms:       %s
   Highlevel atoms:  %s
+  Midlevel atoms:   %s
   Lowlevel atoms:   %s
  
 """ % (
@@ -104,6 +105,7 @@ class SinglePoint:
             self.traj.ninac,
             self.traj.nlink,
             self.traj.nhigh,
+            self.traj.nmid,
             self.traj.nlow
         )
 
@@ -113,6 +115,25 @@ class SinglePoint:
         ## prepare logfile info
         log_info = '\n'.join(['  Energy state %2d: %28.16f' % (
             n + 1, x) for n, x in enumerate(self.traj.energy)]) + '\n'
+
+        if self.traj.energy_qm2_1 != 0:
+            log_info += """
+  &multiscale energy
+-------------------------------------------------------
+  QM2(high) %16.8f 
+  QM2(mid)  %16.8f
+  MM(mid)   %16.8f 
+  MM(low)   %16.8f
+-------------------------------------------------------
+""" % (
+                self.traj.energy_qm2_1,
+                self.traj.energy_qm2_2,
+                self.traj.energy_mm1,
+                self.traj.energy_mm2,
+            )
+
+        if self.traj.ext_pot != 0:
+            log_info += ' constraining potential energy: %16.8f\n' % self.traj.ext_pot
 
         ## add verbose info
         log_info += self._verbose_log_info(self.verbose)

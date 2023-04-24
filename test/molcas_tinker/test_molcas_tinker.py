@@ -255,7 +255,7 @@ def RunCASPT2(testdir):
     tmp = Collect('%s/sp' % testdir)
     results += tmp
 
-    if len(tmp.splitlines()) < 13:
+    if len(tmp.splitlines()) < 14:
         code = 'FAILED(energy runtime error)'
         return results, code
     else:
@@ -267,7 +267,7 @@ def RunCASPT2(testdir):
     tmp = Collect(testdir)
     results += tmp
 
-    if len(tmp.splitlines()) < 13:
+    if len(tmp.splitlines()) < 14:
         code = 'FAILED(coupling runtime error)'
         return results, code
     else:

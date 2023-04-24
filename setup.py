@@ -15,7 +15,7 @@ with open("README.md", "r") as fh:
 
 setup(
     name="PyRAI2MD",
-    version="2.2",
+    version="2.3",
     author="Jingbai Li",
     author_email="lijingbai@zspt.edu.cn",
     description="Python Rapid Artificial Intelligence Ab Initio Molecular Dynamics",

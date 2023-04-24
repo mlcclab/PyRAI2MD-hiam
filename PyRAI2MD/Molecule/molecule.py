@@ -73,11 +73,18 @@ class Molecule:
             charges          ndarray     total charges
             qm1_charge       ndarray     charges in qm 1 region
             qm2_charge       ndarray     charges in qm 2 region (external)
+            qmqm2_atoms      ndarray     atom name in high level region and middle level region
+            qmqm2_coord      ndarray     nuclear coordinates in high level region and middel level region
+            energy_qm2_1     float       qm2 energy for high level region
+            energy_qm2_2     float       qm2 energy for high level region and middle level region
+            energy_mm1       float       mm energy for high level region and middle level region
+            energy_mm2       float       mm energy for high level region, middle level region and low level region
             Hcap_atoms       ndarray     atom name of capping H
             Hcap_coord       ndarray     nuclear coordinates of capping H
             Hcap_jacob       ndarray     Jacobian between caped and uncaped coordinates
-            highlevel        ndarray     atoms in high level region
-            lowlevel         ndarray     atoms in low level region
+            highlevel        ndarray     atoms in high level region, region 1
+            midlevel         ndarray     atoms in middle level region, region 2
+            lowlevel         ndarray     atoms in low level region, region 3
             boundary         ndarray     index of atoms at high and low level boundary
             embedding        ndarray     embed surrounding charge for high level
             relax            ndarray     index of relaxed atoms 
@@ -85,6 +92,7 @@ class Molecule:
             constrain        ndarray     index of constrained atoms
             center           ndarray     the center of the constraining potential
             record_center    bool        record the center for the following step
+            ext_pot          float       external potential energy
             primitive        ndarray     primitive translation vectors in 1D 2D 3D
             lattice          ndarray     lattice constant
             status           int         molecular property calculation status
@@ -99,10 +107,11 @@ class Molecule:
                  'ci', 'nstate', 'spin', 'mult', 'statemult', 'coupling', 'nac_coupling', 'soc_coupling',
                  'nnac', 'nsoc', 'natom', 'atoms', 'coord', 'atomic_number', 'mass', 'velo', 'kinetic',
                  'energy', 'grad', 'nac', 'soc', 'err_energy', 'err_grad', 'err_nac', 'err_soc',
-                 'qm_atoms', 'qm_coord', 'Hcap_atoms', 'Hcap_coord', 'Hcap_jacob', 'boundary', 'nhigh', 'nlow',
-                 'highlevel', 'lowlevel', 'relax', 'freeze', 'constrain', 'primitive', 'lattice', 'status',
-                 'charges', 'qm1_charge', 'qm2_charge', 'qm_energy', 'qm_grad', 'qm_nac', 'qm_soc',
-                 'center', 'record_center']
+                 'qm_atoms', 'qm_coord', 'Hcap_atoms', 'Hcap_coord', 'Hcap_jacob', 'boundary', 'nhigh', 'nmid', 'nlow',
+                 'highlevel', 'midlevel', 'lowlevel', 'relax', 'freeze', 'constrain', 'primitive', 'lattice', 'status',
+                 'charges', 'qm1_charge', 'qm2_charge', 'qm_energy', 'qm_grad', 'qm_nac', 'qm_soc', 'qmqm2_index',
+                 'qmqm2_atoms', 'qmqm2_coord', 'energy_qm2_1', 'energy_qm2_2', 'energy_mm1', 'energy_mm2',
+                 'center', 'record_center', 'ext_pot']
 
     def __init__(self, mol, keywords=None):
         key_dict = keywords['molecule'].copy()
@@ -136,9 +145,18 @@ class Molecule:
         self.charges = np.zeros(0)
         self.qm1_charge = np.zeros(0)
         self.qm2_charge = np.zeros(0)
+        self.qmqm2_index = np.zeros(0)
+        self.qmqm2_atoms = np.zeros(0)
+        self.qmqm2_coord = np.zeros(0)
+        self.energy_qm2_1 = 0
+        self.energy_qm2_2 = 0
+        self.energy_mm1 = 0
+        self.energy_mm2 = 0
+        self.midlevel = np.zeros(0)
         self.lowlevel = np.zeros(0)
         self.center = np.zeros(3)
         self.record_center = False
+        self.ext_pot = 0
         self.txyz = []
 
         ## load variables from key_dict
@@ -148,6 +166,7 @@ class Molecule:
         self.spin = key_dict['spin']
         self.coupling = key_dict['coupling']
         self.highlevel = key_dict['highlevel']
+        self.midlevel = key_dict['midlevel']
         self.boundary = key_dict['boundary']
         self.embedding = key_dict['embedding']
         self.freeze = [int(x) - 1 for x in key_dict['freeze']]
@@ -206,10 +225,16 @@ class Molecule:
         self.mass = np.array([Atom(x).get_mass() * 1822.8852 for x in self.atoms.reshape(-1)]).reshape((-1, 1))
         self.relax = np.setdiff1d(np.arange(self.natom), self.freeze)
 
+        ## partition atom in regions
         if len(self.highlevel) == 0:
             self.highlevel = np.arange(self.natom)
         else:
-            self.lowlevel = np.setdiff1d(np.arange(self.natom), self.highlevel)
+            if len(self.midlevel) == 0:
+                self.midlevel = np.setdiff1d(np.arange(self.natom), self.highlevel)
+            else:
+                self.lowlevel = np.setdiff1d(np.arange(self.natom), np.concatenate((self.highlevel, self.midlevel)))
+
+        self.qmqm2_index = np.concatenate((self.highlevel, self.midlevel))
 
         ## auto generate qmmm boundary if the request has no qmmm key
         if len(self.boundary) == 0 and len(self.lowlevel) > 0:
@@ -219,6 +244,7 @@ class Molecule:
         self.ninac = len(self.inact)
         self.nlink = len(self.link)
         self.nhigh = len(self.highlevel)
+        self.nmid = len(self.midlevel)
         self.nlow = len(self.lowlevel)
         self.Hcap_atoms = np.array([['H'] for _ in self.boundary])
 
@@ -267,9 +293,13 @@ class Molecule:
             self.qm_atoms = self.atoms[self.highlevel]
             self.qm_coord = self.coord[self.highlevel]
 
+        # MM part does not support H cap yet
+        self.qmqm2_atoms = self.atoms[self.qmqm2_index]
+        self.qmqm2_coord = self.coord[self.qmqm2_index]
+
         if len(self.charges) > 0:
             self.qm1_charge = self.charges[self.highlevel]
-            self.qm2_charge = self.charges[self.lowlevel]
+            self.qm2_charge = self.charges[self.midlevel]
 
         if self.embedding == 0:
             self.qm1_charge = np.zeros(0)
