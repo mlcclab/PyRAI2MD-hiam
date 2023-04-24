@@ -7,6 +7,7 @@
 #
 ######################################################
 
+import os
 import torch
 import numpy as np
 import pandas as pd
@@ -230,14 +231,17 @@ class DimenetNAC:
         return mean_dict, std_dict
 
     def save_model(self, epoch):
+        if not os.path.exists(self.model_path):
+            os.makedirs(self.model_path)
+
         torch.save({
             'epoch': epoch,
             'model_state_dict': self.model.state_dict(),
             'optimizer_state_dict': self.optimizer.state_dict(),
-        }, self.model_path)
+        }, '%s/nac' % self.model_path)
 
     def load_model(self):
-        checkpoint = torch.load(self.model_path, map_location=self.device)
+        checkpoint = torch.load('%s/nac' % self.model_path, map_location=self.device)
         self.model.load_state_dict(checkpoint['model_state_dict'])
         self.optimizer.load_state_dict(checkpoint['optimizer_state_dict'])
         self.model.to(self.device)
