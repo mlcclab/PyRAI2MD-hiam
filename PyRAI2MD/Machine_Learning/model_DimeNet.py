@@ -399,7 +399,7 @@ class DimenetModel:
             e_pred = np.array(y_pred['energy_gradient'][0]) / self.f_e
             g_pred = np.array(y_pred['energy_gradient'][1]) / self.f_g
             e_std = np.array(y_std['energy_gradient'][0]) / self.f_e
-            g_std =  np.array(y_std['energy_gradient'][1]) / self.f_g
+            g_std = np.array(y_std['energy_gradient'][1]) / self.f_g
             energy = e_pred[0]
             gradient = g_pred[0]
             err_e = np.amax(e_std)

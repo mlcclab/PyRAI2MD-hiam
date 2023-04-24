@@ -34,7 +34,9 @@ class DimenetNAC:
         self.gpu = self.param['gpu']
         self.model = None
         self.data = None
-        self.nac_size = None
+        self.nnac = self.param['nnac']
+        self.natom = self.param['natom']
+        self.nac_size = self.param['nac_size']
         self.train_loader = None
         self.val_loader = None
         self.scheduler = None
@@ -107,7 +109,6 @@ class DimenetNAC:
             dataset.append(data)
 
         self.data = dataset
-        self.nac_size = self.data[0].y.size()[0] * self.data[0].y.size()[1]
 
     def set_loaders(self):
         # train/val split, and prepare loader
@@ -213,7 +214,7 @@ class DimenetNAC:
             pred = torch.flatten(out.cpu()).detach().numpy().tolist()
             pred_all_batches = pred_all_batches + pred
         pred_all = torch.tensor(pred_all_batches)
-        pred_all = pred_all.reshape((-1, int(self.nac_size / 3), 3)).tolist()
+        pred_all = pred_all.reshape((-1, self.nnac, self.natom, 3)).tolist()
 
         # Jingbai: the mean_dict['nac'] stores the mean value of two models, but we only have one at the moment
         mean_dict = {
@@ -233,7 +234,6 @@ class DimenetNAC:
 
         torch.save({
             'epoch': epoch,
-            'nac_size': self.nac_size,  # Jingbai this var is needed, otherwise loading a model won't know the nac_size
             'model_state_dict': self.model.state_dict(),
             'optimizer_state_dict': self.optimizer.state_dict(),
         }, '%s/nac' % self.model_path)

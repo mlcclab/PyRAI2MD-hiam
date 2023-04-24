@@ -57,13 +57,15 @@ def set_hyper_nac(model_path, hyp, info, shuffle, gpu):
 
     hyp_dict = {
         'model_type': model_type,
+        'natom': info['natom'],
+        'nnac': info['nnac'],
+        'nac_size': int(info['nnac'] * info['natom'] * 3),
         'optimizer': 'Adam',
         'batch_size': hyp['batch_size'],
         'val_size': hyp['val_size'],
         'criterion': 'MAE',
         'model_param': {
             'hidden_channels': hyp['hidden_channels'],
-            'out_channels': int(info['nnac'] * info['natom'] * 3),
             'num_blocks': hyp['blocks'],
             'num_bilinear': hyp['bilinear'],
             'num_spherical': hyp['spherical'],
