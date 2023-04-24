@@ -213,14 +213,11 @@ class DimenetNAC:
             pred = torch.flatten(out.cpu()).detach().numpy().tolist()
             pred_all_batches = pred_all_batches + pred
         pred_all = torch.tensor(pred_all_batches)
-        pred_all = pred_all.reshape(-1, self.nac_size)
-        pred_all_1 = []
-        for i in pred_all:
-            pred_all_1.append(i.reshape(-1, 3).tolist())
+        pred_all = pred_all.reshape((-1, int(self.nac_size / 3), 3)).tolist()
 
         # Jingbai: the mean_dict['nac'] stores the mean value of two models, but we only have one at the moment
         mean_dict = {
-            'nac': pred_all_1,  # pred_all_1 is a list containing all predicted NACs in [nmolecules,natoms,4]
+            'nac': pred_all,  # pred_all_1 is a list containing all predicted NACs in [nmolecules,natoms,4]
         }
 
         # Jingbai: the std_dict['nac'] stores the std value of two models, but we only have one, so std is 0.
@@ -236,12 +233,14 @@ class DimenetNAC:
 
         torch.save({
             'epoch': epoch,
+            'nac_size': self.nac_size,  # Jingbai this var is needed, otherwise loading a model won't know the nac_size
             'model_state_dict': self.model.state_dict(),
             'optimizer_state_dict': self.optimizer.state_dict(),
         }, '%s/nac' % self.model_path)
 
     def load_model(self):
         checkpoint = torch.load('%s/nac' % self.model_path, map_location=self.device)
+        self.nac_size = checkpoint['nac_size']
         self.model.load_state_dict(checkpoint['model_state_dict'])
         self.optimizer.load_state_dict(checkpoint['optimizer_state_dict'])
         self.model.to(self.device)
