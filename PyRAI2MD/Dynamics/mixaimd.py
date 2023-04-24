@@ -7,6 +7,7 @@
 #
 ######################################################
 
+import copy
 import numpy as np
 
 from PyRAI2MD.Dynamics.aimd import AIMD
@@ -47,7 +48,7 @@ class MIXAIMD(AIMD):
     def _potential_energies(self, traj):
         ## modify the potential energy calculation to mixed mode
         traj_qm = self.QM.evaluate(traj)
-        traj_ref = self.REF.evaluate(traj)
+        traj_ref = self.REF.evaluate(copy.deepcopy(traj))
         traj_mix = self._mix_properties(traj_qm, traj_ref)
 
         return traj_mix
