@@ -129,6 +129,7 @@ class DimenetModel:
             self.k_n = h_bohr_to_ev_a
 
         self.nac = data.nac * self.f_n
+        self.atoms = data.atoms
         self.pred_geos = data.pred_geos
         self.pred_energy = data.pred_energy
         self.pred_grad = data.pred_grad
@@ -416,6 +417,7 @@ class DimenetModel:
         ## run psnnsmd for model testing
 
         batch = len(x)
+        x = np.concatenate((np.repeat(self.atoms[0], batch).reshape((-1, self.natom, 1)), x), axis=-1).tolist()
 
         y_pred, y_std = self.model.predict(x)
 
