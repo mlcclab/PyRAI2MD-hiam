@@ -453,7 +453,7 @@ class DimenetModel:
             np.savetxt('%s-g.pred.txt' % self.name, np.concatenate((val_out, std_out), axis=1))
 
         if 'nac' in y_pred.keys():
-            n_pred = y_pred['nac'] / self.f_n
+            n_pred = np.array(y_pred['nac']) / self.f_n
             n_std = y_std['nac'] / self.f_n
             dn = np.abs(pred_n - n_pred)
             dn_max = np.amax(dn.reshape((batch, -1)), axis=1)
