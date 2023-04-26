@@ -194,6 +194,11 @@ def main(argv):
                 print(usage)
                 print('\n!!! Bagel template input %s.bagel not found !!!' % inputs)
                 exit()
+            if not os.path.exists('%s.archive' % inputs):
+                print('\n!!! Bagel orbital file %s.archive not found !!!' % inputs)
+                print(usage)
+                print('\n!!! Bagel orbital file %s.archive not found !!!' % inputs)
+                exit()
         elif prog == 'nxbagel':
             if not os.path.exists('control.dyn'):
                 print('\n!!! NewtonX: control.dyn not found !!!')
@@ -641,7 +646,7 @@ def gen_bagel(cpus, ensemble, inputs, slpt, sltm, slmm, slnd, slcr, sljb, slin, 
             inputname = '%s-%s' % (inputs, i + start)
             inputpath = '%s/%s' % (in_path, inputname)
             variables_wrapper.append([
-                inputname, inputpath, slcr, sljb, sltm, slpt, slmm, in_temp, in_xyz, in_velo, charge, tobgl,
+                inputs, inputname, inputpath, slcr, sljb, sltm, slpt, slmm, in_temp, in_xyz, in_velo, charge, tobgl,
                 lbbls, lblpk, lbslp, lbbst, tomkl, tompi, shell
             ])  # prepare calculations
 
@@ -732,8 +737,8 @@ def bagel(var):
     ## It generates TRAJECTORIES/TRAJ#/JOB_NAD, geom, veloc, controd.dyn for NxBagel calculations
     ## This function generates a backup slurm batch file for each calculation
 
-    inputname, inputpath, slcr, sljb, sltm, slpt, slmm, in_temp, in_xyz, in_velo, charge, tobgl, lbbls, lblpk, lbslp, \
-        lbbst, tomkl, tompi, shell = var
+    inputs, inputname, inputpath, slcr, sljb, sltm, slpt, slmm, in_temp, in_xyz, in_velo, charge, tobgl, lbbls, lblpk, \
+        lbslp, lbbst, tomkl, tompi, shell = var
 
     if not os.path.exists('%s' % inputpath):
         os.makedirs('%s' % inputpath)
@@ -787,6 +792,9 @@ $BAGEL $INPUT.json > $INPUT.log
 
     with open('%s/%s.json' % (inputpath, inputname), 'w') as out:
         json.dump(si_input, out, indent=2)
+
+    if os.path.exists('%s.archive' % inputs) and not os.path.exists('%s/%s.archive' % (inputpath, inputname)):
+        shutil.copy2('%s.archive' % inputs, '%s/%s.archive' % (inputpath, inputname))
 
     os.system("chmod 777 %s/%s.sh" % (inputpath, inputname))
 
