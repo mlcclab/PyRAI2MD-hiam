@@ -719,6 +719,7 @@ echo $SLURM_JOB_NAME
 
 for ((i=%d;i<=%d;i++))
 do
+  export INPUT=%s-$i
   export WORKDIR=%s/%s-$i
   cd $WORKDIR
   $BAGEL $INPUT.json > $INPUT.log
@@ -727,7 +728,7 @@ done
 wait
 """ % (
         slcr, sltm, inputs, j + 1, slpt, int(slmm * slcr * 1.1), shell, bagelpal, tobgl, lbbls, lblpk,
-        lbslp, lbbst, tomkl, tompi, start, end, in_path, inputs)
+        lbslp, lbbst, tomkl, tompi, start, end, inputs, in_path, inputs)
 
     return batch
 
@@ -777,11 +778,12 @@ export BOOST_LIB=%s/lib
 
 export LD_LIBRARY_PATH=$BAGEL/lib:$BLAS_LIB:$LAPACK_LIB:$SCALAPACK_LIB:$BOOST_LIB:$LD_LIBRARY_PATH
 
+export INPUT=%s
 export WORKDIR=%s
 cd $WORKDIR
 $BAGEL $INPUT.json > $INPUT.log
 """ % (bagelpal, sltm, inputname, slpt, int(slmm * 1.1), shell, bagelpal, tobgl, lbbls, lblpk, lbslp, lbbst,
-       tomkl, tompi, inputpath)
+       tomkl, tompi, inputname, inputpath)
 
     with open('%s/%s.sh' % (inputpath, inputname), 'w') as out:
         out.write(runscript)
@@ -789,6 +791,7 @@ $BAGEL $INPUT.json > $INPUT.log
     jxyz = write_json_xyz(in_xyz, charge)
     si_input = in_temp.copy()
     si_input['bagel'][0]['geometry'] = jxyz
+    si_input['bagel'][1]['file'] = inputname
 
     with open('%s/%s.json' % (inputpath, inputname), 'w') as out:
         json.dump(si_input, out, indent=2)
