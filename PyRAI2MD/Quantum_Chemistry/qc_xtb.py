@@ -327,7 +327,7 @@ cd $XTB_WORKDIR
             energy, gradient, nac, soc = self._high(traj)
         elif self.runtype == 'qm2_high_mid':  # qm or qm2 calculation for h + m region
             energy, gradient, nac, soc = self._high_mid(traj)
-            if not traj.read_charges:
+            if not traj.read_charge:
                 traj.charges = self.charges
         elif self.runtype == 'mm_high_mid':  # mm, calculation for h + m region
             energy, gradient, nac, soc = self._high_mid(traj)
