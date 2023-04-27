@@ -109,6 +109,7 @@ class QMQM2:
 
     def evaluate(self, traj):
         natom = traj.natom
+        nqmqm2 = traj.nhigh + traj.nmid
         nstate = traj.nstate
         index_high = traj.highlevel
         index_qmqm2 = traj.qmqm2_index
@@ -135,7 +136,7 @@ class QMQM2:
             traj.energy_mm2 = energy_mm_low[0]
         else:
             energy_mm_mid = np.repeat(0, nstate)
-            grad_mm_mid = np.zeros((nstate, natom, 3))
+            grad_mm_mid = np.zeros((nstate, nqmqm2, 3))
             traj.energy = np.zeros(nstate)
             traj.grad = np.zeros((nstate, natom, 3))
             traj.energy_mm1 = 0
