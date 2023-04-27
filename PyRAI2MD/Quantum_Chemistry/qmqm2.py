@@ -113,16 +113,12 @@ class QMQM2:
         index_high = traj.highlevel
         index_qmqm2 = traj.qmqm2_index
 
-        traj_1 = copy.deepcopy(traj)
-        traj_2 = copy.deepcopy(traj)
-        traj_3 = copy.deepcopy(traj)
-
         # do mm calculation, mm1 for qmqm2 region, mm2 for qmqm2mm region
         if self.do_mm:
-            traj_4 = copy.deepcopy(traj)
-            traj_5 = copy.deepcopy(traj)
-            traj_mm_mid = self.mm_mid.evaluate(traj_4)
-            traj_mm_low = self.mm_low.evaluate(traj_5)
+            traj_1 = copy.deepcopy(traj)
+            traj_2 = copy.deepcopy(traj)
+            traj_mm_mid = self.mm_mid.evaluate(traj_1)
+            traj_mm_low = self.mm_low.evaluate(traj_2)
             mm_mid_completion = traj_mm_mid.status
             mm_low_completion = traj_mm_low.status
             traj.status = np.amin([traj.status, mm_mid_completion, mm_low_completion])
@@ -145,8 +141,9 @@ class QMQM2:
             traj.energy_mm1 = 0
             traj.energy_mm2 = 0
 
+        traj_3 = copy.deepcopy(traj)
         # first compute charge for high level and middle level region
-        traj_qm2_mid = self.qm2_mid.evaluate(traj_1)
+        traj_qm2_mid = self.qm2_mid.evaluate(traj_3)
         traj.charges = traj_qm2_mid.charges
 
         # traj_results = [None, None]
@@ -157,8 +154,11 @@ class QMQM2:
         #     traj_results[ifunc] = results
         # pool.close()
 
-        traj_qm_high = self.qm_high.evaluate(traj_2)
-        traj_qm2_high = self.qm2_high.evaluate(traj_3)
+        # copy traj with the updated charge
+        traj_4 = copy.deepcopy(traj)
+        traj_5 = copy.deepcopy(traj)
+        traj_qm_high = self.qm_high.evaluate(traj_4)
+        traj_qm2_high = self.qm2_high.evaluate(traj_5)
 
         qm_high_completion = traj_qm_high.status
         qm2_high_completion = traj_qm2_high.status

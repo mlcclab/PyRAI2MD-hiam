@@ -561,7 +561,7 @@ class AIMD:
   &external charges
 -------------------------------------------------------------------------------
 %s-------------------------------------------------------------------------------
-""" % (print_charge(self.traj.qm2_charge))
+""" % (print_charge(self.traj.qm2_charge, 'Q'))
 
         for n in range(self.traj.nstate):
             try:
