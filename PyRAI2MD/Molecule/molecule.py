@@ -242,9 +242,9 @@ class Molecule:
         ## initialize charge and read charge from a file
         if self.embedding:
             self.charges = np.concatenate((np.zeros((self.natom, 1)), self.coord), axis=1)
-        if self.read_charge:
-            self.qm2_charge = read_charge(mol)
-            self.charges[self.midlevel] = np.copy(self.qm2_charge)
+            if self.read_charge:
+                self.qm2_charge = read_charge(mol)
+                self.charges[self.midlevel] = np.copy(self.qm2_charge)
 
         ## get additional molecule information
         self.ninac = len(self.inact)
