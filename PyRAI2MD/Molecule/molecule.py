@@ -87,7 +87,8 @@ class Molecule:
             lowlevel         ndarray     atoms in low level region, region 3
             boundary         ndarray     index of atoms at high and low level boundary
             embedding        ndarray     embed surrounding charge for high level
-            relax            ndarray     index of relaxed atoms 
+            read_charge      bool        read static charge from .charge file
+            relax            ndarray     index of relaxed atoms
             freeze           ndarray     index of frozen atoms
             constrain        ndarray     index of constrained atoms
             center           ndarray     the center of the constraining potential
@@ -104,9 +105,9 @@ class Molecule:
     """
 
     __slots__ = ['inact', 'active', 'link', 'ninac', 'nlink', 'qmmm_key', 'qmmm_xyz', 'txyz', 'embedding',
-                 'ci', 'nstate', 'spin', 'mult', 'statemult', 'coupling', 'nac_coupling', 'soc_coupling',
-                 'nnac', 'nsoc', 'natom', 'atoms', 'coord', 'atomic_number', 'mass', 'velo', 'kinetic',
-                 'energy', 'grad', 'nac', 'soc', 'err_energy', 'err_grad', 'err_nac', 'err_soc',
+                 'read_charge', 'ci', 'nstate', 'spin', 'mult', 'statemult', 'coupling',
+                 'nac_coupling', 'soc_coupling', 'nnac', 'nsoc', 'natom', 'atoms', 'coord', 'atomic_number', 'mass',
+                 'velo', 'kinetic', 'energy', 'grad', 'nac', 'soc', 'err_energy', 'err_grad', 'err_nac', 'err_soc',
                  'qm_atoms', 'qm_coord', 'Hcap_atoms', 'Hcap_coord', 'Hcap_jacob', 'boundary', 'nhigh', 'nmid', 'nlow',
                  'highlevel', 'midlevel', 'lowlevel', 'relax', 'freeze', 'constrain', 'primitive', 'lattice', 'status',
                  'charges', 'qm1_charge', 'qm2_charge', 'qm_energy', 'qm_grad', 'qm_nac', 'qm_soc', 'qmqm2_index',
@@ -169,6 +170,7 @@ class Molecule:
         self.midlevel = key_dict['midlevel']
         self.boundary = key_dict['boundary']
         self.embedding = key_dict['embedding']
+        self.read_charge = key_dict['read_charge']
         self.freeze = [int(x) - 1 for x in key_dict['freeze']]
         self.constrain = key_dict['constrain']
         self.primitive = key_dict['primitive']
@@ -216,9 +218,6 @@ class Molecule:
             self.highlevel = mol_info['highlevel']
             self.txyz = mol_info['txyz']
 
-        ## read charge from a file
-        self.qm2_charge = read_charge(mol)
-
         ## get molecule information
         self.natom = len(self.atoms)
         self.atomic_number = np.array([Atom(x).name for x in self.atoms.reshape(-1)])
@@ -239,6 +238,13 @@ class Molecule:
         ## auto generate qmmm boundary if the request has no qmmm key
         if len(self.boundary) == 0 and len(self.lowlevel) > 0:
             self.link, self.boundary, self.primitive = auto_boundary(self.coord, self.highlevel, self.primitive)
+
+        ## initialize charge and read charge from a file
+        if self.embedding:
+            self.charges = np.concatenate((np.zeros((self.natom, 1)), self.coord), axis=1)
+        if self.read_charge:
+            self.qm2_charge = read_charge(mol)
+            self.charges[self.midlevel] = np.copy(self.qm2_charge)
 
         ## get additional molecule information
         self.ninac = len(self.inact)
@@ -300,8 +306,7 @@ class Molecule:
         if len(self.charges) > 0:
             self.qm1_charge = self.charges[self.highlevel]
             self.qm2_charge = self.charges[self.midlevel]
-
-        if self.embedding == 0:
+        else:
             self.qm1_charge = np.zeros(0)
             self.qm2_charge = np.zeros(0)
 

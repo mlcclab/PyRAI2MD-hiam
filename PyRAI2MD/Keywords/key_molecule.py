@@ -22,7 +22,8 @@ class KeyMolecule:
             'coupling': [],
             'highlevel': [],
             'midlevel': [],
-            'embedding': 1,
+            'embedding': False,
+            'read_charge': False,
             'boundary': [],
             'freeze': [],
             'constrain': [],
@@ -52,7 +53,8 @@ class KeyMolecule:
             'qmmm_xyz': ReadVal('s'),
             'highlevel': ReadIndex('s', start=1),
             'midlevel': ReadIndex('s', start=1),
-            'embedding': ReadVal('i'),
+            'embedding': ReadVal('b'),
+            'read_charge': ReadVal('b'),
             'boundary': ReadIndex('g'),
             'freeze': ReadIndex('s', start=1),
             'constrain': ReadIndex('s', start=1),
@@ -93,6 +95,7 @@ class KeyMolecule:
   Middel level region:        %-10s ...
   Boundary:                   %-10s ...
   Embedding charges:          %-10s
+  Reading charge:             %-10s
   Frozen atoms:               %-10s
   Constrained atoms:          %-10s
   External potential shape:   %-10s
@@ -117,6 +120,7 @@ class KeyMolecule:
             keywords['midlevel'][0:10],
             keywords['boundary'][0:5],
             keywords['embedding'],
+            keywords['read_charge'],
             keywords['freeze'],
             keywords['constrain'],
             keywords['shape'],

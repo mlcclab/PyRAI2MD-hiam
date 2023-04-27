@@ -290,16 +290,12 @@ cd $XTB_WORKDIR
 
         return energy, gradient, nac, soc
 
-    def _high_mid_low(self, traj, pc=True):
+    def _high_mid_low(self, traj):
         ## run xTB for high level region, middle level region, and low level region in QM or MM calculation
 
         xyz = np.concatenate((traj.atoms, traj.coord), axis=1)
         nxyz = len(xyz)
-
-        if pc:
-            charge = traj.qm2_charge
-        else:
-            charge = None
+        charge = traj.qm2_charge
 
         ## setup xTB calculation
         self._setup_xtb(xyz, charge)
@@ -309,8 +305,6 @@ cd $XTB_WORKDIR
 
         ## read xTB output files
         coord, energy, gradient, nac, soc = self._read_data(nxyz)
-
-        self.charges = np.concatenate((self.charges.reshape((-1, 1)), traj.coord), axis=1)
 
         return energy, gradient, nac, soc
 
@@ -333,13 +327,14 @@ cd $XTB_WORKDIR
             energy, gradient, nac, soc = self._high(traj)
         elif self.runtype == 'qm2_high_mid':  # qm or qm2 calculation for h + m region
             energy, gradient, nac, soc = self._high_mid(traj)
-            traj.charges = self.charges
+            if not traj.read_charges:
+                traj.charges = self.charges
         elif self.runtype == 'mm_high_mid':  # mm, calculation for h + m region
             energy, gradient, nac, soc = self._high_mid(traj)
         elif self.runtype == 'qm_high_mid_low':  # qm or qm2 calculation for h + m + l region
             energy, gradient, nac, soc = self._high_mid_low(traj)
         elif self.runtype == 'mm_high_mid_low':  # mm calculation for h + m + l region
-            energy, gradient, nac, soc = self._high_mid_low(traj, pc=False)
+            energy, gradient, nac, soc = self._high_mid_low(traj)
 
         if len(energy) == 1 and len(gradient) == 1:
             completion = 1
