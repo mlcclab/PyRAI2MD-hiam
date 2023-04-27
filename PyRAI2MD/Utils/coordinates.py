@@ -120,7 +120,7 @@ def read_coord(mol):
 def read_charge(mol):
     ## This function read point charges from files
     if not os.path.exists('%s.charge' % mol):
-        sys.exit('\n  FileNotFoundError\n  PyRAI2MD: looking for charge file %s.charge' % key)
+        sys.exit('\n  FileNotFoundError\n  PyRAI2MD: looking for charge file %s.charge' % mol)
 
     with open('%s.charge' % mol) as charge_file:
         file = charge_file.read().splitlines()
