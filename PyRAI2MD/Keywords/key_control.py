@@ -159,43 +159,43 @@ class KeyControl:
     @staticmethod
     def info_adaptive(keywords):
         summary = """
-          &adaptive sampling method
-        -------------------------------------------------------
-          Ab initio:                  %-10s
-          Load trained model:         %-10s
-          Transfer learning:          %-10s
-          Remote training             %-10s
-          Maxiter:                    %-10s
-          Sampling number per traj:   %-10s
-          Use dynamical Std:          %-10s
-          Max discard range           %-10s
-          Refine crossing:            %-10s
-          Refine points/range: 	      %-10s %-10s %-10s
-          MaxStd  energy:             %-10s
-          MinStd  energy:             %-10s
-          InitStd energy:             %-10s
-          Dynfctr energy:             %-10s
-          Forward delay energy:       %-10s
-          Backward delay energy:      %-10s
-          MaxStd  gradient:           %-10s
-          MinStd  gradient:           %-10s
-          InitStd gradient:           %-10s
-          Dynfctr gradient:           %-10s
-          Forward delay	gradient:     %-10s
-          Backward delay gradient:    %-10s
-          MaxStd  nac:                %-10s
-          MinStd  nac:                %-10s
-          InitStd nac:                %-10s
-          Dynfctr nac:                %-10s
-          Forward delay	nac:          %-10s
-          Backward delay nac:         %-10s
-          MaxStd  soc:                %-10s
-          MinStd  soc:                %-10s
-          InitStd soc:                %-10s
-          Dynfctr soc:                %-10s
-          Forward delay	soc:   	      %-10s
-          Backward delay soc:  	      %-10s
-        -------------------------------------------------------
+  &adaptive sampling method
+-------------------------------------------------------
+  Ab initio:                  %-10s
+  Load trained model:         %-10s
+  Transfer learning:          %-10s
+  Remote training             %-10s
+  Maxiter:                    %-10s
+  Sampling number per traj:   %-10s
+  Use dynamical Std:          %-10s
+  Max discard range           %-10s
+  Refine crossing:            %-10s
+  Refine points/range: 	      %-10s %-10s %-10s
+  MaxStd  energy:             %-10s
+  MinStd  energy:             %-10s
+  InitStd energy:             %-10s
+  Dynfctr energy:             %-10s
+  Forward delay energy:       %-10s
+  Backward delay energy:      %-10s
+  MaxStd  gradient:           %-10s
+  MinStd  gradient:           %-10s
+  InitStd gradient:           %-10s
+  Dynfctr gradient:           %-10s
+  Forward delay	gradient:     %-10s
+  Backward delay gradient:    %-10s
+  MaxStd  nac:                %-10s
+  MinStd  nac:                %-10s
+  InitStd nac:                %-10s
+  Dynfctr nac:                %-10s
+  Forward delay	nac:          %-10s
+  Backward delay nac:         %-10s
+  MaxStd  soc:                %-10s
+  MinStd  soc:                %-10s
+  InitStd soc:                %-10s
+  Dynfctr soc:                %-10s
+  Forward delay	soc:   	      %-10s
+  Backward delay soc:  	      %-10s
+-------------------------------------------------------
 
         """ % (
             ' '.join(keywords['abinit']),
