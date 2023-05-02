@@ -854,6 +854,46 @@ def redindex(index):
     return index_range
 
 
+def set_prune(prune_type, prune_index, prune_thrhd):
+    prune_index = ' '.join(prune_index).split(',')
+    prune_index = [x.split() for x in prune_index]
+    pindex = []
+    pthrhd = []
+    if 'frag' in prune_type:
+        p1 = np.array(getindex(prune_index[0])) - 1
+        p2 = np.array(getindex(prune_index[1])) - 1
+        p3 = prune_thrhd[0]
+        pindex.append([p1, p2])
+        pthrhd.append(p3)
+    else:
+        diff = len(prune_index) - len(prune_thrhd)
+        if diff > 0:
+            add = [prune_thrhd[-1] for _ in range(diff)]
+            prune_thrhd = prune_thrhd + add
+        else:
+            prune_thrhd = prune_thrhd[:len(prune_index)]
+
+        for n, p in enumerate(prune_index):
+            p1, p2 = getindex(p)[0: 2]
+            p3 = prune_thrhd[n]
+            pindex.append([[p1 - 1], [p2 - 1]])
+            pthrhd.append(p3)
+
+    return pindex, pthrhd
+
+
+def check_param(coord, src, dst, thrhd):
+    coord = np.array([x.split()[1: 4] for x in coord]).astype(float)
+    a = np.mean(coord[src], axis=0)
+    b = np.mean(coord[dst], axis=0)
+    d = np.sum((a - b) ** 2) ** 0.5
+
+    if d > thrhd:
+        return True, d
+
+    return False, d
+
+
 def format1(n, xyz):
     ## This function convert coordinates list to string
     output = '%d\n' % n
@@ -1118,7 +1158,7 @@ def read_raw_data_molcas(files):
     ## subloops find crt_kin,crt_pot,crt_pop,crt_coord,crt_hop and
     ## append to trj_kin,trj_pot,trj_pop,trj_coord,trj_hop for each trajectory.
     ## natom, nstate, and dtime are supposed to be the same over all trajectories, so just pick up the last values.
-    ntraj, f, maxstep = files
+    ntraj, f, maxstep, pindex, pthrhd = files
     t = f.split('/')[-1]
 
     if os.path.exists('%s/%s.log' % (f, t)):
@@ -1144,8 +1184,8 @@ def read_raw_data_molcas(files):
     crt_state = 0  # current state
     ini_state = 0  # initial state
     pmd = 0  # flag to read pyrai2md log
-    n = 0
-    i = 0
+    n = 0  # count line number
+    i = 0  # count structure number
     version = 19
     for line in log:
         n += 1
@@ -1178,11 +1218,11 @@ def read_raw_data_molcas(files):
                 crt_pop = [float(i) for i in crt_pop]
             else:
                 if np.abs(float(line.split()[-1])) < 2:
-                    num_state = len(line.split()) - 1
+                    # num_state = len(line.split()) - 1
                     event_checker = log[n + 4]
                     event_info = log[n + 6]
                 else:
-                    num_state = int((len(line.split()) - 2) / 2)
+                    # num_state = int((len(line.split()) - 2) / 2)
                     event_checker = log[n + 3]
                     event_info = log[n + 5]
                 crt_pop = line.split()[1:]
@@ -1192,6 +1232,7 @@ def read_raw_data_molcas(files):
                 hop_state = int(event_info.split()[-2])
                 crt_label += ' to %d CI' % (hop_state - 1)
                 trj_hop.append(crt_hop)
+                crt_state = hop_state - 1
 
             trj_lab.append(crt_label)
             trj_pop.append(crt_pop)
@@ -1226,12 +1267,23 @@ def read_raw_data_molcas(files):
     natom = int(xyz[0])
     n = 0  # count line number
     m = 0  # count structure number
+    pstep = 0  # count step to prune trajectory
     for _ in xyz:
         n += 1
         if n % (natom + 2) == 0:  # at the last line of each coordinates
             m += 1
+            if len(pindex) > 0 and pstep == 0:
+                for k, p in enumerate(pindex):
+                    p1, p2 = p
+                    p3 = pthrhd[k]
+                    stop, d = check_param(xyz[n - natom:n], p1, p2, p3)
+                    if stop:
+                        pstep = m
+                        break
+
             crt_coord = [trj_lab[m - 1]] + xyz[n - natom:n]  # combine label with coordinates
             trj_coord.append(crt_coord)
+
             if m == maxstep and maxstep != 0:  # cutoff trajectories
                 break
 
@@ -1249,6 +1301,20 @@ def read_raw_data_molcas(files):
     trj_pot = trj_pot[0:nstep]
     trj_coord = trj_coord[0:nstep]
 
+    if pstep > 0:
+        trj_lab = trj_lab[0:pstep]
+        trj_pop = trj_pop[0:pstep]
+        trj_kin = trj_kin[0:pstep]
+        trj_pot = trj_pot[0:pstep]
+        trj_coord = trj_coord[0:pstep]
+        nstep = pstep
+        crt_state = int(trj_lab[-1].split()[7])
+        p_hop = trj_hop
+        trj_hop = []
+        for s in p_hop:
+            if s <= pstep:
+                trj_hop.append(s)
+
     return ntraj, natom, nstate, nstep, dtime, trj_kin, trj_pot, trj_pop, trj_lab, trj_coord, trj_hop, crt_state
 
 
@@ -1258,7 +1324,7 @@ def read_raw_data_newtonx(files):
     ## subloops find crt_kin,crt_pot,crt_pop,crt_coord,crt_hop and
     ## append to trj_kin,trj_pot,trj_pop,trj_coord,trj_hop for each trajectory.
     ## natom, nstate, and dtime are supposed to be the same over all trajectories, so just pick up the last values.
-    ntraj, f, maxstep = files
+    ntraj, f, maxstep, pindex, pthrhd = files
 
     with open('%s/RESULTS/nx.log' % f, 'r') as nxfile:
         nx = nxfile.read().splitlines()
@@ -1281,8 +1347,10 @@ def read_raw_data_newtonx(files):
     crt_state = 0  # current state
     ini_state = 0  # initial state
     pre_state = 0  # previous state
-    n = 0
-    i = 0
+    n = 0  # count line number
+    i = 0  # count structure number
+    pstep = 0  # count step to prune trajectory
+
     for line in nx:
         if 'Nat' in line:
             natom = int(line.split()[-1])
@@ -1317,6 +1385,15 @@ def read_raw_data_newtonx(files):
                 float(x.split()[4]) * 0.529177) for x in xyz]  # pick atom,x,y,z
             crt_coord = [crt_label] + xyz  # combine label with coordinates
 
+            if pindex and pstep == 0:
+                for k, p in enumerate(pindex):
+                    p1, p2 = p
+                    p3 = pthrhd[k]
+                    stop, d = check_param(xyz, p1, p2, p3)
+                    if stop:
+                        pstep = i
+                        break
+
             trj_lab.append(crt_label)
             trj_coord.append(crt_coord)
 
@@ -1327,8 +1404,8 @@ def read_raw_data_newtonx(files):
 
     ## Find state population for each structure
     trj_pop = []  # population list
-    n = 0
-    i = 0
+    n = 0  # count line number
+    i = 0  # count structure number
     for line in pop:
         n += 1
         if '|v.h|' in line:
@@ -1379,6 +1456,20 @@ def read_raw_data_newtonx(files):
 
     dtime = trj_tim[1]
 
+    if pstep > 0:
+        trj_lab = trj_lab[0:pstep]
+        trj_pop = trj_pop[0:pstep]
+        trj_kin = trj_kin[0:pstep]
+        trj_pot = trj_pot[0:pstep]
+        trj_coord = trj_coord[0:pstep]
+        nstep = pstep
+        crt_state = int(trj_lab[-1].split()[7])
+        p_hop = trj_hop
+        trj_hop = []
+        for s in p_hop:
+            if s <= pstep:
+                trj_hop.append(s)
+
     return ntraj, natom, nstate, nstep, dtime, trj_kin, trj_pot, trj_pop, trj_lab, trj_coord, trj_hop, crt_state
 
 
@@ -1388,7 +1479,7 @@ def read_raw_data_sharc(files):
     ## subloops find crt_kin,crt_pot,crt_pop,crt_coord,crt_hop and
     ## append to trj_kin,trj_pot,trj_pop,trj_coord,trj_hop for each trajectory.
     ## natom, nstate, and dtime are supposed to be the same over all trajectories, so just pick up the last values.
-    ntraj, f, maxstep = files
+    ntraj, f, maxstep, pindex, pthrhd = files
 
     with open('%s/output.dat' % f, 'r') as datfile:
         dat = datfile.read().splitlines()
@@ -1410,7 +1501,9 @@ def read_raw_data_sharc(files):
     pre_state = 0  # previous state
     zero_energy = 0  # sharc ref energy
     dtime = 0  # time step
-    i = 0
+    i = 0  # count structure number
+    pstep = 0  # count step to prune trajectory
+
     for n, line in enumerate(dat):
         if 'natom' in line:
             natom = int(line.split()[-1])
@@ -1467,6 +1560,16 @@ def read_raw_data_sharc(files):
                 float(x.split()[1]) * 0.529177,
                 float(x.split()[2]) * 0.529177
             ) for n, x in enumerate(xyz)]  # pick atom,x,y,z
+
+            if pindex and pstep == 0:
+                for k, p in enumerate(pindex):
+                    p1, p2 = p
+                    p3 = pthrhd[k]
+                    stop, d = check_param(xyz, p1, p2, p3)
+                    if stop:
+                        pstep = i
+                        break
+
             crt_coord = [crt_label] + xyz  # combine label with coordinates
             trj_coord.append(crt_coord)
 
@@ -1487,6 +1590,20 @@ def read_raw_data_sharc(files):
     trj_pot = trj_pot[0:nstep]
     trj_coord = trj_coord[0:nstep]
 
+    if pstep > 0:
+        trj_lab = trj_lab[0:pstep]
+        trj_pop = trj_pop[0:pstep]
+        trj_kin = trj_kin[0:pstep]
+        trj_pot = trj_pot[0:pstep]
+        trj_coord = trj_coord[0:pstep]
+        nstep = pstep
+        crt_state = int(trj_lab[-1].split()[7])
+        p_hop = trj_hop
+        trj_hop = []
+        for s in p_hop:
+            if s <= pstep:
+                trj_hop.append(s)
+
     return ntraj, natom, nstate, nstep, dtime, trj_kin, trj_pot, trj_pop, trj_lab, trj_coord, trj_hop, crt_state
 
 
@@ -1496,7 +1613,7 @@ def read_raw_data_fromage(files):
     ## subloops find crt_kin,crt_pot,crt_pop,crt_coord,crt_hop and
     ## append to trj_kin,trj_pot,trj_pop,trj_coord,trj_hop for each trajectory.
     ## natom, nstate, and dtime are supposed to be the same over all trajectories, so just pick up the last values.
-    ntraj, f, maxstep = files
+    ntraj, f, maxstep, pindex, pthrhd = files
 
     with open('%s/output.chk' % f, 'r') as datfile:
         dat = datfile.read().splitlines()
@@ -1558,6 +1675,7 @@ def read_raw_data_fromage(files):
     natom = int(xyz[0])
     n = 0  # count line number
     m = 0  # count structure number
+    pstep = 0  # count step to prune trajectory
 
     for _ in xyz:
         n += 1
@@ -1565,6 +1683,15 @@ def read_raw_data_fromage(files):
             m += 1
             crt_coord = [trj_lab[m - 1]] + xyz[n - natom: n]  # combine label with coordinates
             trj_coord.append(crt_coord)
+
+            if pindex and pstep == 0:
+                for k, p in enumerate(pindex):
+                    p1, p2 = p
+                    p3 = pthrhd[k]
+                    stop, d = check_param(xyz[n - natom: n], p1, p2, p3)
+                    if stop:
+                        pstep = m
+                        break
             if m == maxstep and maxstep != 0:  # cutoff trajectories
                 break
 
@@ -1582,7 +1709,22 @@ def read_raw_data_fromage(files):
     trj_pot = trj_pot[0:nstep]
     trj_coord = trj_coord[0:nstep]
 
+    if pstep > 0:
+        trj_lab = trj_lab[0:pstep]
+        trj_pop = trj_pop[0:pstep]
+        trj_kin = trj_kin[0:pstep]
+        trj_pot = trj_pot[0:pstep]
+        trj_coord = trj_coord[0:pstep]
+        nstep = pstep
+        crt_state = int(trj_lab[-1].split()[7])
+        p_hop = trj_hop
+        trj_hop = []
+        for s in p_hop:
+            if s <= pstep:
+                trj_hop.append(s)
+
     return ntraj, natom, nstate, nstep, dtime, trj_kin, trj_pot, trj_pop, trj_lab, trj_coord, trj_hop, crt_state
+
 
 def read_pyrai2md(files):
     ## This function read data from provided folders
@@ -1590,9 +1732,8 @@ def read_pyrai2md(files):
     ## subloops find crt_kin,crt_pot,crt_pop,crt_coord,crt_hop and
     ## append to trj_kin,trj_pot,trj_pop,trj_coord,trj_hop for each trajectory.
     ## natom, nstate, and dtime are supposed to be the same over all trajectories, so just pick up the last values.
-    ntraj, f = files
+    ntraj, f, pindex, pthrhd = files
     t = f.split('/')[-1]
-    natom = 0
     nstate = 0
 
     with open('%s/%s.sh.energies' % (f, t), 'r') as engfile:
@@ -1607,6 +1748,25 @@ def read_pyrai2md(files):
     with open('%s/%s.md.xyz' % (f, t), 'r') as xyzfile:
         xyz_m = xyzfile.read().splitlines()
 
+    natom = int(xyz_m[0])
+    n = 0
+    pstep = 0
+    stop = False
+    for _ in xyz_m:
+        n += 1
+        if n % (natom + 2) == 0:  # at the last line of each coordinates
+            pstep += 1
+            if pindex:  # prune trajectory
+                coord = xyz_m[n - natom:n]
+                for m, p in enumerate(pindex):
+                    p1, p2 = p
+                    p3 = pthrhd[m]
+                    stop, d = check_param(coord, p1, p2, p3)
+                    if stop:
+                        break
+            if stop:
+                break
+
     if len(eng_m) < 2:
         trj_init = []
         trj_init_t = []
@@ -1619,14 +1779,13 @@ def read_pyrai2md(files):
         trj_init_p = eng_m[1].split()[4:nstate + 4]
         trj_init_p = [[float(i) for i in trj_init_p]]
         trj_init_t = [0]
-        trj_final_p = eng_m[-1].split()[4:nstate + 4]
+        trj_final_p = eng_m[pstep - 1].split()[4:nstate + 4]  # prune trajectory
         trj_final_p = [[float(i) for i in trj_final_p]]
-        trj_final_t = [len(eng_m) - 1]
-        natom = int(xyz_m[0])
+        trj_final_t = [pstep]
         trj_init = [xyz_m[1: 2 + natom]]
         lb = trj_init[0][0].split()
         trj_init[0][0] = 'traj %s coord 1 state %s' % (ntraj + 1, int(lb[4]) - 1)
-        trj_final = [xyz_m[-(1 + natom):]]
+        trj_final = [xyz_m[int((pstep - 1) * (natom + 2)) + 1: int(pstep * (natom + 2))]]
         lb = trj_final[0][0].split()
         trj_final[0][0] = 'traj %s coord %s state %s' % (ntraj + 1, trj_final_t[0], int(lb[4]) - 1)
 
@@ -1637,11 +1796,13 @@ def read_pyrai2md(files):
     else:
         ## Find population and label for each structure
         trj_hop_p = []  # pot energy
-        n = 0
-        for line in eng_h:
-            n += 1
+        for n, line in enumerate(eng_h):
             if 'time' in line:
                 continue  # skip the title line
+
+            if n == pstep - 1:  # prune trajectory
+                break
+
             line = line.split()
             crt_pot = line[4:nstate + 4]
             crt_hop_p = [float(i) for i in crt_pot]
@@ -1659,10 +1820,15 @@ def read_pyrai2md(files):
             if n % (natom + 2) == 0:  # at the last line of each coordinates
                 m += 1
                 lb = xyz_h[n - natom - 1].split()
+
+                if int(lb[2]) > pstep:  # prune trajectory
+                    break
+
                 crt_label = 'traj %s coord %s state %s to %s CI' % (ntraj + 1, lb[2], int(lb[4]) - 1, int(lb[6]) - 1)
                 crt_hop = [crt_label] + xyz_h[n - natom:n]  # combine label with coordinates
                 trj_hop.append(crt_hop)
                 trj_hop_t.append(lb[2])
+
     return ntraj, natom, nstate, trj_init, trj_final, trj_hop, trj_init_t, trj_final_t, trj_hop_t, trj_init_p, \
         trj_final_p, trj_hop_p
 
@@ -1706,7 +1872,7 @@ def RUNdiag(key_dict):
     print('\nDiagnosis results\n%-20s%12s%12s%12s\n' % ('Name', '.log', '.md.energy', '.md.xyz'))
     for i in result:
         print('%-20s%12d%12d%12d' % (i[0], i[1], i[2], i[3]))
-        if i[1] == i[2] == i[3] > minstep:
+        if i[1] == i[2] == i[3] >= minstep:
             select.append(i[0])
 
     if len(select) > 0:
@@ -1815,6 +1981,8 @@ def RUNread(key_dict):
     save_traj = key_dict['save_traj']
     prog = key_dict['prog']
     maxstep = key_dict['maxstep']
+    pindex = key_dict['pindex']
+    pthrhd = key_dict['pthrhd']
     natom = 0
     nstate = 0
     ntraj = 0
@@ -1825,7 +1993,7 @@ def RUNread(key_dict):
     ## kin, pot, pop, coord, hop in the main dictionary.
     input_val = []
     for n, f in enumerate(read_files):
-        input_val.append([n, f, maxstep])
+        input_val.append([n, f, maxstep, pindex, pthrhd])
     kin = [[] for _ in range(len(input_val))]
     pot = [[] for _ in range(len(input_val))]
     pop = [[] for _ in range(len(input_val))]
@@ -2059,6 +2227,11 @@ def RUNpop(key_dict):
     # compute pop and hop energy gap
     log_info = ''
     repair = []
+    skipex = []
+    skipnan = []
+    skipexcd = []
+    kept = []
+    naverage = 0
     all_lab = []
     all_kin = []
     all_pot = []
@@ -2072,10 +2245,14 @@ def RUNpop(key_dict):
 
     if len(select) == 0:
         traj_index = [x + 1 for x in range(ntraj)]
+        print('Use all trajectories for population analysis: %s\n' % ntraj)
     else:
         traj_index = select
+        print('Use selected population analysis: %s\n' % (len(traj_index)))
 
     for i_traj in traj_index:
+        is_nan = 0
+        exceed = 0
         crt_lab = [x.split()[7] for x in label[i_traj - 1]]  # state number is the 8th data
         crt_kin = kin[i_traj - 1]
         crt_pot = pot[i_traj - 1]
@@ -2083,16 +2260,40 @@ def RUNpop(key_dict):
         # expand kinetic energy to each state
         crt_tot = (np.array([[x for _ in range(nstate)] for x in kin[i_traj - 1]]) + np.array(crt_pot)).tolist()
 
-        ## compute the missing step
-        dstep = nstep - len(kin[i_traj - 1])
-        if dstep != 0:  # complete the missing part by repeating the last step
-            repair.append(i_traj)
-            crt_lab = crt_lab + [crt_lab[-1] for _ in range(dstep)]
-            crt_kin = crt_kin + [crt_kin[-1] for _ in range(dstep)]
-            crt_pot = crt_pot + [crt_pot[-1] for _ in range(dstep)]
-            crt_tot = crt_tot + [crt_tot[-1] for _ in range(dstep)]
-            crt_pop = crt_pop + [crt_pop[-1] for _ in range(dstep)]
+        ## check if population is nan
+        for pp in crt_pop:
+            if 'nan' in pp:
+                is_nan = 1
+                break
 
+        if is_nan == 1:
+            skipnan.append(i_traj)
+            continue
+
+        ## check if population exceed 0-1
+        if np.amax(crt_pop) > 1.01 or np.amin(crt_pop) < -0.01:
+            exceed = 1
+
+        if exceed == 1:
+            skipexcd.append(i_traj)
+            continue
+
+        ## compute the missing step
+        fstate = int(crt_lab[-1])
+        dstep = nstep - len(kin[i_traj - 1])
+        if dstep != 0:  # complete the missing part by repeating the last step for trajectories loaded in ground state
+            if fstate == 0:
+                repair.append(i_traj)
+                crt_lab = crt_lab + [crt_lab[-1] for _ in range(dstep)]
+                crt_kin = crt_kin + [crt_kin[-1] for _ in range(dstep)]
+                crt_pot = crt_pot + [crt_pot[-1] for _ in range(dstep)]
+                crt_tot = crt_tot + [crt_tot[-1] for _ in range(dstep)]
+                crt_pop = crt_pop + [crt_pop[-1] for _ in range(dstep)]
+            else:
+                skipex.append(i_traj)
+                continue
+
+        kept.append(i_traj)
         avg_kin += np.array(crt_kin)
         avg_pot += np.array(crt_pot)
         avg_tot += np.array(crt_tot)
@@ -2104,6 +2305,8 @@ def RUNpop(key_dict):
         all_tot.append(crt_tot)
         all_pop.append(crt_pop)
 
+        naverage += 1
+
         # compute hop energy gap
         crt_hop = hop[i_traj - 1]
         if len(crt_hop) > 0:
@@ -2113,10 +2316,10 @@ def RUNpop(key_dict):
                 gap = np.abs(crt_pot[i_hop - 1][init_state] - crt_pot[i_hop - 1][final_state]) * 27.211
                 hop_energy += '%-5d %5d %5d %12.4f\n' % (i_traj, init_state, final_state, gap)
 
-    avg_kin /= len(traj_index)
-    avg_pot /= len(traj_index)
-    avg_tot /= len(traj_index)
-    avg_pop /= len(traj_index)
+    avg_kin /= naverage
+    avg_pot /= naverage
+    avg_tot /= naverage
+    avg_pop /= naverage
 
     cap_kin = '%24s' % 'Ekin'
     cap_pot = ''.join(['%24s' % ('Epot %s' % o) for o in range(nstate)])
@@ -2131,8 +2334,15 @@ def RUNpop(key_dict):
 
     average_info = ''
     average_info += 'Repair trajectories:   %5d of %5d\n\n%s\n' % (
-        len(repair), ntraj, format2(redindex(repair)))
-    average_info += 'Averaged trajectories: %5d\n' % ntraj
+        len(repair), len(traj_index), format2(redindex(repair)))
+    average_info += 'Skip trajectories early stopped in excited states:   %5d of %5d\n\n%s\n' % (
+        len(skipex), len(traj_index), format2(redindex(skipex)))
+    average_info += 'Skip trajectories with nan population:   %5d of %5d\n\n%s\n' % (
+        len(skipnan), len(traj_index), format2(redindex(skipnan)))
+    average_info += 'Skip trajectories with population exceeding 0-1:   %5d of %5d\n\n%s\n' % (
+        len(skipexcd), len(traj_index), format2(redindex(skipexcd)))
+    average_info += 'Averaged trajectories: %5d (%5d - %5d - %5d - %5d)\n\n%s\n' % (
+        naverage, len(traj_index), len(skipex), len(skipnan), len(skipexcd), format2(redindex(kept)))
     average_info += 'Save population data: average-%s.dat\n' % title
     average_info += 'Save hop energy data: hop-energy-%s.dat\n' % title
 
@@ -2584,13 +2794,15 @@ def RUNreadpmd(key_dict):
     title = key_dict['title']
     cpus = key_dict['cpus']
     read_files = key_dict['read_files']
+    pindex = key_dict['pindex']
+    pthrhd = key_dict['pthrhd']
 
     ntraj = 0
     atoms = []
     states = []
     input_val = []
     for n, f in enumerate(read_files):
-        input_val.append([n, f])
+        input_val.append([n, f, pindex, pthrhd])
 
     init = [[] for _ in range(len(input_val))]
     final = [[] for _ in range(len(input_val))]
@@ -2696,13 +2908,16 @@ def special_prep(order, traj_index, geom, step, pot, snapshot_type, label_key, p
             if traj_idx not in select:
                 continue
 
-        i_coord += 1
         geom_index = -1
         for n, hop_coord in enumerate(geom[traj_idx - 1]):
             label = hop_coord[0]
             if label_key in label:
                 geom_index = n
 
+        if geom_index == -1:
+            continue
+
+        i_coord += 1
         label = geom[traj_idx - 1][geom_index][0]
         xyz = geom[traj_idx - 1][geom_index][1:]
         energy = pot[traj_idx - 1][geom_index]
@@ -2971,6 +3186,10 @@ def main(argv):
     param = []  # Geometrical parameters to compute. Options and a file of them are acceptable
     thrhd = []  # Threshold for classification according to the selected geometrical parameters
     save_data = 0  # Save detailed kinetic energy, potential energy, total energy, state population
+    prune_type = None  # prune trajectory according to atomic/fragment distances
+    prune_index = []  # atom indices to compute geometrical parameters
+    prune_thrhd = []  # threshold of geometrical changes to prune trajectory
+
     prog = 'molcas'  # Output file format
 
     if len(argv) <= 1:
@@ -3019,6 +3238,12 @@ def main(argv):
             param = line.split()[1:]
         elif 'threshold' == key:
             thrhd = [float(x) for x in line.split()[1:]]
+        elif 'prune_type' == key:
+            prune_type = line.split()[1].lower()
+        elif 'prune_index' == key:
+            prune_index = line.split()[1:]
+        elif 'prune_thrhd' == key:
+            prune_thrhd = [float(x) for x in line.split()[1:]]
         elif 'save_data' == key:
             save_data = int(line.split()[1])
         elif 'prog' == key:
@@ -3094,6 +3319,12 @@ def main(argv):
     if len(align_core) > 0:
         align_core = getindex(align_core)
 
+    if prune_type:
+        pindex, pthrhd = set_prune(prune_type, prune_index, prune_thrhd)
+    else:
+        pindex = []
+        pthrhd = []
+
     log_info = """
       Trajectory Analyzer Log
 
@@ -3108,9 +3339,12 @@ Select trajectories:        %-10s
 Classify snapshots:         %-10s
 Classify state:             %-10s
 Maximum step of trajectory: %-10s
+Prune trajectory:           %-10s
+Prune parameters:           %-10s
 -------------------------------------
 
-    """ % (title, opt_mode, prog, opt_index, opt_param, thrhd, opt_select, classify, classify_state, maxstep)
+    """ % (title, opt_mode, prog, opt_index, opt_param, thrhd, opt_select, classify, classify_state, maxstep,
+           prune_type, len(pindex))
 
     with open('%s.traj.log' % title, 'w') as trajlog:
         trajlog.write(log_info)
@@ -3133,6 +3367,8 @@ Maximum step of trajectory: %-10s
         'param': param,
         'thrhd': thrhd,
         'save_data': save_data,
+        'pindex': pindex,
+        'pthrhd': pthrhd,
         'prog': prog,
     }
 
