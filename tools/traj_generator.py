@@ -324,6 +324,7 @@ def main(argv):
 
     if notraj != 0:
         print('\n\n Done\n')
+        exit()
 
     if prog == 'molcas':
         gen_molcas(cpus, ensemble, inputs, slpt, sltm, slmm, slnd, slcr, sljb, slin, tomlcs, iformat, shell)
