@@ -510,11 +510,11 @@ def read_orca(ld_input):
     for n, line in enumerate(hess):
         if '$vibrational_frequencies' in line:
             natom = int(int(hess[n + 1]) / 3)
-            f = hess[n + 2: n + 2 + natom]
+            f = hess[n + 2: n + 2 + natom * 3]
             freqs = np.array([x.split() for x in f]).astype(float)[:, 1].reshape((-1, 1))
         if '$ir_spectrum' in line:
             natom = int(int(hess[n + 1]) / 3)
-            i = hess[n + 2:n + 2 + natom]
+            i = hess[n + 2:n + 2 + natom * 3]
             inten = np.array([x.split() for x in i]).astype(float)[:, 1].reshape((-1, 1))
         if '$atoms' in line:
             natom = int(hess[n + 1])
@@ -882,7 +882,7 @@ def wignerfunc(mu, temp):
     while True:
         n += 1
         pop += float(np.exp(-1 * ex * n) * (1 - np.exp(-1 * ex)))
-        lvl_pop.append(pop)  # Note here pop is a numpy array, thus pop[0] is the float number
+        lvl_pop.append(pop)
         # Here is how I obtained this equation:
         # calculate partition function, fP=np.exp(ex*-0.5) /( 1 - np.exp(ex*-1) )
         # calculate population, pop=np.exp(-1*ex*(n+0.5))/fP
