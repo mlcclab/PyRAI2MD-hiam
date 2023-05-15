@@ -42,7 +42,7 @@ def main():
     with open(inputs) as infile:
         input_dict = infile.read().split('&')
 
-    keywords = read_input(input_dict)
+    keywords, _ = read_input(input_dict)
 
     file = keywords['file']['file']
 
