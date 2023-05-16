@@ -16,6 +16,7 @@ import numpy as np
 
 from PyRAI2MD.Utils.coordinates import string2float
 
+
 class Bagel:
     """ BAGEL single point calculation interface
 
@@ -158,14 +159,18 @@ cd $BAGEL_WORKDIR
         self._write_coord(x, q)
 
         ## save .archive file
-        if not os.path.exists('%s.archive' % self.project):
-            sys.exit('\n  FileNotFoundError\n  BAGEL: looking for orbital %s.archive' % self.project)
-
         if self.archive == 'default':
             self.archive = self.project
 
-        if not os.path.exists('%s/%s.archive' % (self.workdir, self.archive)):
-            shutil.copy2('%s.archive' % self.project, '%s/%s.archive' % (self.workdir, self.archive))
+        if not os.path.exists('%s.archive' % self.project):
+            sys.exit('\n  FileNotFoundError\n  BAGEL: looking for orbital %s.archive' % self.project)
+
+        if os.path.exists('%s/%s_converged.archive' % (self.workdir, self.project)):
+            shutil.copy2('%s/%s_converged.archive' % (self.workdir, self.project),
+                         '%s/%s_guess.archive' % (self.workdir, self.archive))
+
+        if not os.path.exists('%s/%s_guess.archive' % (self.workdir, self.project)):
+            shutil.copy2('%s.archive' % self.archive, '%s/%s_guess.archive' % (self.workdir, self.project))
 
         ## clean calculation folder
         os.system("rm %s/ENERGY*.out > /dev/null 2>&1" % self.workdir)
@@ -203,6 +208,8 @@ cd $BAGEL_WORKDIR
 
         si_input = ld_input.copy()
         si_input['bagel'][0]['geometry'] = jxyz
+        si_input['bagel'][1]['file'] = '%s_guess' % self.project
+        si_input['bagel'][-1]['file'] = '%s_converged' % self.project
 
         ## default is to use template force setting, replace with the current state if requested
         if self.activestate == 1:
