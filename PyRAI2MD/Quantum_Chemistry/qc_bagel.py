@@ -199,7 +199,9 @@ cd $BAGEL_WORKDIR
         if isinstance(q, np.ndarray):
             for charge in q:
                 jxyz.append(
-                    {"atom": "Q", "xyz": [float(charge[1]), float(charge[2]), float(charge[3])], "charge": charge[0]}
+                    {"atom": "Q",
+                     "xyz": [float(charge[1]) * a2b, float(charge[2]) * a2b, float(charge[3]) * a2b],
+                     "charge": charge[0]}
                 )
 
         ## Read input template from current directory
