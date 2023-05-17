@@ -219,7 +219,7 @@ rm -r $MOLCAS_WORKDIR/$MOLCAS_PROJECT
                 os.path.exists('%s/%s.JobIph.new' % (self.calcdir, self.project)) is False:
             shutil.copy2('%s.JobIph' % self.project, '%s/%s.JobIph' % (self.calcdir, self.project))
         elif os.path.exists('%s.JobIph' % self.project) is True and \
-                os.path.exists('%s/%s.JobIph' % (self.calcdir, self.project)) is True:
+                os.path.exists('%s/%s.JobIph.new' % (self.calcdir, self.project)) is True:
             shutil.copy2('%s/%s.JobIph.new' % (self.calcdir, self.project),
                          '%s/%s.JobIph' % (self.calcdir, self.project))
         else:
