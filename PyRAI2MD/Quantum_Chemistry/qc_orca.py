@@ -313,7 +313,9 @@ cd $ORCA_WORKDIR
                 gradient.append(g)
 
         energy = np.array(ex_energy)[: self.nstate] + s0
-        gradient = [gradient[-1]] + gradient[: -1]  # orca tddft compute ground-state gradient in the end
+        if len(gradient) > 1:
+            gradient = [gradient[-1]] + gradient[: -1]  # orca tddft compute ground-state gradient in the end
+
         gradient = np.array(gradient)
         if self.activestate == 1:
             gradall = np.zeros((self.nstate, natom, 3))
