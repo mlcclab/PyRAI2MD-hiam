@@ -1779,16 +1779,18 @@ def read_pyrai2md(files):
         nstate = len(eng_m[1].split()) - 4
         trj_init_p = eng_m[1].split()[4:nstate + 4]
         trj_init_p = [[float(i) for i in trj_init_p]]
-        trj_init_t = [0]
         trj_final_p = eng_m[pstep - 1].split()[4:nstate + 4]  # prune trajectory
         trj_final_p = [[float(i) for i in trj_final_p]]
-        trj_final_t = [pstep]
+
         trj_init = [xyz_m[1: 2 + natom]]
         lb = trj_init[0][0].split()
         trj_init[0][0] = 'traj %s coord 1 state %s' % (ntraj + 1, int(lb[4]) - 1)
+        trj_init_t = [0]
+
         trj_final = [xyz_m[int((pstep - 1) * (natom + 2)) + 1: int(pstep * (natom + 2))]]
         lb = trj_final[0][0].split()
-        trj_final[0][0] = 'traj %s coord %s state %s' % (ntraj + 1, trj_final_t[0], int(lb[4]) - 1)
+        trj_final[0][0] = 'traj %s coord %s state %s' % (ntraj + 1, int(lb[2]), int(lb[4]) - 1)
+        trj_final_t = [int(lb[2])]
         hstep = int(trj_final_t[0])
 
     if len(eng_h) < 2:
@@ -2101,7 +2103,8 @@ def RUNread(key_dict):
             last_snapshot += format1(natom, coord[i_traj - 1][-1])
             last_geom[i_traj] = format3(natom, coord[i_traj - 1][-1])
             last_pot[i_traj] = pot[i_traj - 1][-1]
-            last_time[i_traj] = len(pot[i_traj - 1])
+            last_time[i_traj] = label[i_traj - 1][-1].split()[3]  # step is the 4th data
+            # len(pot[i_traj - 1])
 
             hop_index = hop[i_traj - 1]
             if len(hop_index) == 0:
