@@ -1823,7 +1823,7 @@ def read_pyrai2md(files):
                 m += 1
                 lb = xyz_h[n - natom - 1].split()
 
-                if int(lb[2]) > pstep:  # prune trajectory
+                if int(lb[2]) > hstep:  # prune trajectory
                     break
 
                 crt_label = 'traj %s coord %s state %s to %s CI' % (ntraj + 1, lb[2], int(lb[4]) - 1, int(lb[6]) - 1)
