@@ -729,6 +729,23 @@ def load_xz(ld_input):
     return ensemble
 
 
+def load_xz2(ld_input):
+    ## This function read .init.tar.xz2 file and return all data as a list
+    with tarfile.open('%s.init.tar.xz2' % ld_input, 'r:xz') as initcond:
+        name = initcond.getnames()[0]
+        file = initcond.extractfile(name)
+        data = file.read().decode().splitlines()
+
+    ensemble = []
+    for n, i in enumerate(data):
+        if 'Init' in i:
+            natom = int(i.split()[2])
+            initcond = [i.split() for i in data[n + 1: n + 1 + natom]]
+            initcond = np.array(initcond)
+            ensemble.append(initcond)
+
+    return ensemble
+
 def gaussian():
     ## This function generates standard normal distribution variates from a random number in uniform distribution
     ## This function is used for Boltzmann sampling
@@ -1023,7 +1040,7 @@ def sampling(ld_input, nesmb, iseed, temp, dist, ld_format):
         random.seed(iseed)
 
     callsample = ['molden', 'bagel', 'g16', 'orca']  # these format need to run sampling
-    skipsample = ['newtonx', 'xyz', 'xz']  # these format read sampled initial conditions
+    skipsample = ['newtonx', 'xyz', 'xz', 'xz2']  # these format read sampled initial conditions
 
     ## read in function dictionary
     read_data = {
@@ -1034,6 +1051,7 @@ def sampling(ld_input, nesmb, iseed, temp, dist, ld_format):
         'newtonx': load_newtonx,
         'xyz': load_xyz,
         'xz': load_xz,
+        'xz2': load_xz2,
     }
 
     if ld_format in callsample:
