@@ -1774,6 +1774,7 @@ def read_pyrai2md(files):
         trj_final = []
         trj_final_t = []
         trj_final_p = []
+        hstep = pstep
     else:
         nstate = len(eng_m[1].split()) - 4
         trj_init_p = eng_m[1].split()[4:nstate + 4]
@@ -1788,6 +1789,7 @@ def read_pyrai2md(files):
         trj_final = [xyz_m[int((pstep - 1) * (natom + 2)) + 1: int(pstep * (natom + 2))]]
         lb = trj_final[0][0].split()
         trj_final[0][0] = 'traj %s coord %s state %s' % (ntraj + 1, trj_final_t[0], int(lb[4]) - 1)
+        hstep = int(trj_final_t[0])
 
     if len(eng_h) < 2:
         trj_hop = []
@@ -1800,7 +1802,7 @@ def read_pyrai2md(files):
             if 'time' in line:
                 continue  # skip the title line
 
-            if n == pstep - 1:  # prune trajectory
+            if n == hstep - 1:  # prune trajectory
                 break
 
             line = line.split()
