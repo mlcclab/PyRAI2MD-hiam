@@ -775,11 +775,11 @@ def write_pmd_nn_hyp(m, n, search=False):
     """)
 
     steps = input("""
-    how many epochs in each learning rate reduction? (e.g., 100 100 100)
+    what are the learning rates in the learning rate reductions? (e.g., 1e-3 1e-5 1e-5)
     """)
 
     lr_step = input("""
-    what are the learning rates in the learning rate reductions? (e.g., 1e-3 1e-5 1e-5)
+    how many epochs in each learning rate reduction? (e.g., 100 100 100)
     """)
 
     hyp += 'epo %s\nepostep 10\nlearning_rate 1e-3\nlearning_rate_step %s\nepoch_step_reduction %s\n\n' % (
@@ -883,11 +883,17 @@ def write_pmd_e2n2_hyp(m, search=False):
     how many edges do you want to include for each atomic center? (0 for all edges)
     """)
 
-    nbatch = input("""
-    how many batches do you want to use for training? (e.g., 20)
+    batch_size = input("""
+    what is the batch size for training? (e.g., 5)
     """)
 
-    hyp += 'maxradius %s\nn_edges %s\nnbatch %s\n' % (maxradius, n_edges, nbatch)
+    val_batch_size = input("""
+    what is the batch size for validation? (e.g., 5)
+    """)
+
+    hyp += 'maxradius %s\nn_edges %s\nbatch_size %s\nval_batch_size %s\n' % (
+        maxradius, n_edges, batch_size, val_batch_size
+    )
 
     if m == 'eg':
         loss_weights = input("""
@@ -900,11 +906,11 @@ def write_pmd_e2n2_hyp(m, search=False):
     """)
 
     steps = input("""
-    how many epochs in each learning rate reduction? (e.g., 100 100 100)
+    what are the learning rates in the learning rate reductions? (e.g., 1e-3 1e-e 1e-5)
     """)
 
     lr_step = input("""
-    what are the learning rates in the learning rate reductions? (e.g., 1e-3 1e-e 1e-5)
+    how many epochs in each learning rate reduction? (e.g., 100 100 100)
     """)
 
     hyp += 'epo %s\nepostep 10\nlearning_rate 1e-3\nlearning_rate_step %s\nepoch_step_reduction %s\n\n' % (
