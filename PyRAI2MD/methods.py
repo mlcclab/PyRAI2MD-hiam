@@ -79,6 +79,7 @@ class QM:
             'molcas': Molcas,
             'bagel': Bagel,
             'orca': Orca,
+            'xtb': Xtb,
             'nn': DNN,
             'demo': Demo,
             'mlp': MLP,
