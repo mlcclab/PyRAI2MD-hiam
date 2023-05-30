@@ -38,7 +38,7 @@ def read_init_xyz(initxyz):
 
 def write_init_xyz(atoms, coord, idx):
     natom = len(atoms)
-    output = 'Init %5d %5s' % (idx, natom)
+    output = 'Init %5d %5s\n' % (idx, natom)
     for n in range(natom):
         a = atoms[n]
         x, y, z, vx, vy, vz, m, q = coord[n]
