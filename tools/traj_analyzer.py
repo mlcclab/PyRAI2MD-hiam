@@ -2346,7 +2346,7 @@ Time step (a.u.):           %-10s
         naverage, len(traj_index), len(skipex), len(skipnan), len(skipexcd), format2(redindex(kept)))
     average_info += 'Save population data: average-%s.dat\n' % title
     average_info += 'Save hop energy data: hop-energy-%s.dat\n' % title
-    average_info += '\nUpdated state index information\n'
+    state_info = '\nUpdated state index information\n'
 
     skip_index = skipex + skipnan + skipexcd
     for i_state, traj_state_index in enumerate(last):
@@ -2355,8 +2355,7 @@ Time step (a.u.):           %-10s
             if idx not in skip_index and idx in traj_index:
                 new_index.append(idx)
         index_range = redindex(new_index)
-        print('\nState %5d:  %5d Range: %s' % (i_state, len(new_index), index_range))
-        average_info += '\nState %5d:  %5d Range: %s' % (i_state, len(new_index), index_range)
+        state_info += '\nState %5d:  %5d Range: %s' % (i_state, len(new_index), index_range)
 
     print(average_info)
     log_info += average_info
@@ -2387,6 +2386,7 @@ Time step (a.u.):           %-10s
             with open('energy-profile-%s.json' % title, 'w') as outtot:
                 json.dump([all_lab, all_kin, all_pot, all_tot], outtot)
 
+    log_info += state_info
     with open('%s.traj.log' % title, 'a') as trajlog:
         trajlog.write(log_info)
 
