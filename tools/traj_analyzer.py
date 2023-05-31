@@ -2198,18 +2198,19 @@ def RUNpop(key_dict):
         dtime = raw_data['dtime']
         last = raw_data['last']
         state_info = ''
-        for n, g in enumerate(last):
-            print('\nState %5d:  %5d' % (n, len(g)))
-            state_info += '\nState %5d:  %5d' % (n, len(g))
+        for i_state, traj_state_index in enumerate(last):
+            index_range = redindex(traj_state_index)
+            print('\nState %5d:  %5d Range: %s' % (i_state, len(traj_state_index), index_range))
+            state_info += '\nState %5d:  %5d Range: %s' % (i_state, len(traj_state_index), index_range)
 
         log_info = """
-    => Trajectory summary
-    -------------------------------------
-    Number of atoms:            %-10s
-    Number of states:           %-10s
-    Number of trajectories:     %-10s
-    Time step (a.u.):           %-10s
-    %s
+=> Trajectory summary
+-------------------------------------
+Number of atoms:            %-10s
+Number of states:           %-10s
+Number of trajectories:     %-10s
+Time step (a.u.):           %-10s
+%s
             """ % (natom, nstate, ntraj, dtime, state_info)
 
         with open('%s.traj.log' % title, 'a') as trajlog:
@@ -2218,11 +2219,12 @@ def RUNpop(key_dict):
     else:
         print('\nRead data from calculation folders')
         raw_data, geom_dict = RUNread(key_dict)
+        last = raw_data['last']
+        nstate = raw_data['nstate']
+        ntraj = raw_data['ntraj']
+        dtime = raw_data['dtime']
 
-    nstate = raw_data['nstate']
-    ntraj = raw_data['ntraj']
     nstep = raw_data['nstep']
-    dtime = raw_data['dtime']
     kin: list = raw_data['kin']
     pot: list = raw_data['pot']
     pop: list = raw_data['pop']
@@ -2250,13 +2252,12 @@ def RUNpop(key_dict):
 
     if len(select) == 0:
         traj_index = [x + 1 for x in range(ntraj)]
-        print('Use all trajectories for population analysis: %s\n' % ntraj)
+        print('\nUse all trajectories for population analysis: %s\n' % ntraj)
     else:
         traj_index = select
-        print('Use selected population analysis: %s\n' % (len(traj_index)))
+        print('\nUse selected population analysis: %s\n' % (len(traj_index)))
 
     for i_traj in traj_index:
-        is_nan = 0
         exceed = 0
         crt_lab = [x.split()[7] for x in label[i_traj - 1]]  # state number is the 8th data
         crt_kin = kin[i_traj - 1]
@@ -2266,12 +2267,7 @@ def RUNpop(key_dict):
         crt_tot = (np.array([[x for _ in range(nstate)] for x in kin[i_traj - 1]]) + np.array(crt_pot)).tolist()
 
         ## check if population is nan
-        for pp in crt_pop:
-            if 'nan' in pp:
-                is_nan = 1
-                break
-
-        if is_nan == 1:
+        if True in np.isnan(crt_pop):
             skipnan.append(i_traj)
             continue
 
@@ -2337,7 +2333,7 @@ def RUNpop(key_dict):
         cap_pop = ''.join(['%24.16f' % x for x in avg_pop[a]])
         average += '%-20d%24.16f%s%s%s\n' % (a, avg_kin[a], cap_pot, cap_tot, cap_pop)
 
-    average_info = ''
+    average_info = '\n'
     average_info += 'Repair trajectories:   %5d of %5d\n\n%s\n' % (
         len(repair), len(traj_index), format2(redindex(repair)))
     average_info += 'Skip trajectories early stopped in excited states:   %5d of %5d\n\n%s\n' % (
@@ -2350,6 +2346,17 @@ def RUNpop(key_dict):
         naverage, len(traj_index), len(skipex), len(skipnan), len(skipexcd), format2(redindex(kept)))
     average_info += 'Save population data: average-%s.dat\n' % title
     average_info += 'Save hop energy data: hop-energy-%s.dat\n' % title
+    average_info += '\nUpdated state index information\n'
+
+    skip_index = skipex + skipnan + skipexcd
+    for i_state, traj_state_index in enumerate(last):
+        new_index = []
+        for idx in traj_state_index:
+            if idx not in skip_index and idx in traj_index:
+                new_index.append(idx)
+        index_range = redindex(new_index)
+        print('\nState %5d:  %5d Range: %s' % (i_state, len(new_index), index_range))
+        average_info += '\nState %5d:  %5d Range: %s' % (i_state, len(new_index), index_range)
 
     print(average_info)
     log_info += average_info
@@ -2379,6 +2386,9 @@ def RUNpop(key_dict):
 
             with open('energy-profile-%s.json' % title, 'w') as outtot:
                 json.dump([all_lab, all_kin, all_pot, all_tot], outtot)
+
+    with open('%s.traj.log' % title, 'a') as trajlog:
+        trajlog.write(log_info)
 
 def classify_prep(order, geom, step, pot, snapshot_type, classify_state, param_list, thrhd, ref_coord, select):
     input_val = []
