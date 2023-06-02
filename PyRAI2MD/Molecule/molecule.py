@@ -171,7 +171,7 @@ class Molecule:
         self.boundary = key_dict['boundary']
         self.embedding = key_dict['embedding']
         self.read_charge = key_dict['read_charge']
-        self.freeze = [int(x) - 1 for x in key_dict['freeze']]
+        self.freeze = key_dict['freeze']
         self.constrain = key_dict['constrain']
         self.primitive = key_dict['primitive']
         self.lattice = key_dict['lattice']
