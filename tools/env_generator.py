@@ -55,6 +55,7 @@ def main(argv):
       nb            3  # number of translation in b direction
       nc            3  # number of translation in c direction
       radius        14  # cutoff radius to build aggregate
+      align         file.xyz  # align the orientation toward target xyz
       method        wigner  # initial condition sampling method
       ninitcond     1  # number of sampled initial condition
       seed          1  # random seed for sampling
@@ -62,7 +63,10 @@ def main(argv):
       temp          298.15  # sampling temperature
       read          list.txt  # a list of path to read the finally equilibrated conditions
       skip          10  # number of MD step to be skipped before reading conditions
-      freq          1  # frequency of reading conditions in each trajectory from the last snapshot  
+      freq          1  # frequency of reading conditions in each trajectory from the last snapshot
+      reorder       0  # reorder environment molecules from the closest one to the farthest one.
+      c_atoms       0  # define the number of atoms in the center molecule
+      v_atoms       0  # define the number of atoms in the environment molecule
       combine       yes  # combine the initial velocity with the corresponding atoms in the final condition
       read_init     filename  # name of a .init or .init.xyz file
       init_to_xyz   1  # convert a init file to xyz
@@ -114,6 +118,9 @@ def main(argv):
     combine = 'yes'
 
     read_init = None
+    reorder = 0
+    c_atom = 0
+    v_atom = 0
     init_to_xyz = 0
     scale = 1
     edit_atom = []
@@ -201,6 +208,12 @@ def main(argv):
             combine = line.split()[1].lower()
         elif 'read_init' == key:
             read_init = line.split()[1]
+        elif 'reorder' == key:
+            reorder = int(line.split()[1].lower())
+        elif 'c_atom' == key:
+            c_atom = int(line.split()[1].lower())
+        elif 'v_atom' == key:
+            v_atom = int(line.split()[1].lower())
         elif 'init_to_xyz' == key:
             init_to_xyz = int(line.split()[1])
         elif 'scale' == key:
@@ -253,6 +266,9 @@ def main(argv):
         'freq': freq,
         'combine': combine,
         'read_init': read_init,
+        'reorder': reorder,
+        'c_atom': c_atom,
+        'v_atom': v_atom,
         'init_to_xyz': init_to_xyz,
         'scale': scale,
         'edit_atom': edit_atom,
@@ -782,7 +798,7 @@ def read_final_cond(key_dict):
 
     read          list.txt  # a list of path to read the finally equilibrated conditions
     skip          10  # number of MD step to be skipped before reading conditions
-    freq          1  # frequency of reading conditions in each trajectory from the last snapshot  
+    freq          1  # frequency of reading conditions in each trajectory from the last snapshot
     combine       yes  # combine the initial velocity with the corresponding atoms in the final condition
     
     ''')
@@ -866,7 +882,7 @@ def read_wrapper(var):
     select = select[marker]
     rmsd = []
     index = n * freq
-    for snapshot in traj[select]:
+    for m, snapshot in enumerate(traj[select]):
         index += 1
         if len(cond) > 0:
             natom = len(cond)
@@ -919,18 +935,24 @@ def read_traj(file):
 def edit_cond(key_dict):
     print('''
     Tips for editing initial conditions from a init file   
-       the following keyword are optional
+        the following keyword are optional
 
-       read_init     filename  # name of a .init or .init.xyz file 
-       init_to_xyz   1  # convert a init file to xyz
-       scale         1  # scale the kinetic energy isotropically
-       edit_atom     1-20  # apply edition for the selected atoms, default is all atoms
-       append_init   filename  # name of the second .init or .init.xyz file
-       remove_init   1 3 5  # initial condition indices to remove from the original .init or init.xyz file
+        read_init     filename  # name of a .init or .init.xyz file
+        reorder       0  # reorder environment molecule from the closest one to the farthest one
+        c_atoms       0  # define the number of atoms at the center molecule
+        v_atoms       0  # define the number of atoms in the environment molecule 
+        init_to_xyz   1  # convert a init file to xyz
+        scale         1  # scale the kinetic energy isotropically
+        edit_atom     1-20  # apply edition for the selected atoms, default is all atoms
+        append_init   filename  # name of the second .init or .init.xyz file
+        remove_init   1 3 5  # initial condition indices to remove from the original .init or init.xyz file
       
        ''')
 
     read_init = key_dict['read_init']
+    reorder = key_dict['reorder']
+    c_atom = key_dict['c_atom']
+    v_atom = key_dict['v_atom']
     init_to_xyz = key_dict['init_to_xyz']
     scale = key_dict['scale']
     edit_atom = key_dict['edit_atom']
@@ -951,6 +973,15 @@ def edit_cond(key_dict):
 
     print(' reading %s initial conditions' % len(initcond))
     print(' editing %s atoms per condition' % len(edit_atom))
+
+    if reorder == 1:
+        print(' reorder environment molecules %s' % reorder)
+        print(' number of atoms in the center molecule %s' % c_atom)
+        print(' number of atoms in the environment molecule %s' % v_atom)
+        print(' save molecule distances > reordered_dist.txt')
+        print(' save reordered molecules conditions > reordered.init')
+        print(' save reordered molecules xyz > reordered.xyz')
+        reorder_mol(atom, c_atom, v_atom, initcond, edit_atom)
 
     if init_to_xyz == 1:
         conv_initcond(atom, initcond, edit_atom)
@@ -992,6 +1023,44 @@ def init_reader(read_init):
             initcond.append(cond)
 
     return atom, initcond
+
+def reorder_mol(atom, c_atom, v_atom, initcond, edit_atom):
+    out_xyz = ''
+    out_init = ''
+    dist = ''
+    for idx, cond in enumerate(initcond):
+        c_mol = cond[edit_atom][:c_atom]
+        v_mol = cond[edit_atom][c_atom:]
+        lv = len(v_mol)
+        nv = int(lv / v_atom)
+        v_mol = v_mol.reshape((nv, v_atom, -1))
+
+        c_m = np.mean(c_mol[:, 0: 3], axis=0)
+        v_m = np.mean(v_mol[:, 0: 3], axis=1)
+        d = np.sum((v_m - c_m) ** 2, axis=1) ** 0.5
+        order = np.argsort(d)
+        dist += ''.join(['%8.2f' % x for x in d[order]]) + '\n'
+        new_v = v_mol[order].reshape((lv, -1))
+        new_mol = np.concatenate((c_mol, new_v), axis=0)
+
+        natom = len(cond)
+        out_xyz += '%s\nInit %s\n' % (natom, idx + 1)
+        out_init += 'Init %s %s X(A) Y(A) Z(A) Vx(au) Vy(au) Vz(au) g/mol e\n' % (idx + 1, natom)
+        for n, xyz in enumerate(new_mol):
+            x, y, z, vx, vy, vz = xyz[0:6]
+            out_xyz += '%-5s %24.15f %24.16f %24.16f\n' % (atom[n], x, y, z)
+            out_init += '%-5s %24.16f %24.16f %24.16f %24.16f %24.16f %24.16f 0 0\n' % (atom[n], x, y, z, vx, vy, vz)
+
+    with open('reordered.xyz', 'w') as out:
+        out.write(out_xyz)
+
+    with open('reordered.init', 'w') as out:
+        out.write(out_init)
+
+    with open('reordered_dist.txt', 'w') as out:
+        out.write(dist)
+
+    return None
 
 def conv_initcond(atom, initcond, edit_atom):
     output = ''
