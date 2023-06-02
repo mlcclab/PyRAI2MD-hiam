@@ -1039,7 +1039,7 @@ def reorder_mol(atom, c_atom, v_atom, initcond, edit_atom):
         v_m = np.mean(v_mol[:, 0: 3], axis=1)
         d = np.sum((v_m - c_m) ** 2, axis=1) ** 0.5
         order = np.argsort(d)
-        dist += ''.join(['%8.2f' % x for x in d[order]]) + '\n'
+        dist += 'Init %5s' % (idx + 1) + ''.join(['%8.2f' % x for x in d[order]]) + '\n'
         new_v = v_mol[order].reshape((lv, -1))
         new_mol = np.concatenate((c_mol, new_v), axis=0)
 
