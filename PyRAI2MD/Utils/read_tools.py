@@ -98,7 +98,7 @@ class ReadIndex:
                 a, b = int(a) - self.start, int(b) - self.start
                 index_list += range(a, b + 1)
             else:
-                index_list.append(int(i))
+                index_list.append(int(i) - self.start)
 
         index_list = sorted(list(set(index_list)))  # remove duplicates and sort from low to high
         return index_list
