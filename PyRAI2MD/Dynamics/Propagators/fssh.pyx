@@ -13,7 +13,7 @@ cimport numpy as np
 from PyRAI2MD.Dynamics.Propagators.tsh_helper import avoid_singularity
 from PyRAI2MD.Dynamics.Propagators.tsh_helper import adjust_velo
 
-cdef kTDC(int s1, int s2, np.ndarray E, np.ndarray Ep, np.ndarray Epp, float dt):
+cdef kTDC(int s1, int s2, np.ndarray E, np.ndarray Ep, np.ndarray Epp, float dt, float gap):
     """ Computing the curvature-driven time-dependent coupling
     The method is based on Truhlar et al J. Chem. Theory Comput. 2022 DOI:10.1021/acs.jctc.1c01080
 
@@ -34,6 +34,10 @@ cdef kTDC(int s1, int s2, np.ndarray E, np.ndarray Ep, np.ndarray Epp, float dt)
 
     dVt = avoid_singularity(E[s1], E[s2], s1, s2)  # s1 < s2, thus dVt <0
     dVt_dt = avoid_singularity(Ep[s1], Ep[s2], s1, s2)  # s1 < s2, thus dVt_dt <0
+
+    if dVt > gap or dVt_dt > gap:  # add threshold to apply the Baeck-An approximation
+        return 0
+
     dVt_2dt = avoid_singularity(Epp[s1], Epp[s2], s1, s2)  # s1 < s2, thus dVt_2dt <0
     d2Vdt2 = -(dVt - 2 * dVt_dt + dVt_2dt) / dt ** 2  # flip d2Vdt2 to positive
     if d2Vdt2 / dVt > 0:
@@ -160,6 +164,7 @@ cpdef FSSH(dict traj):
     cdef np.ndarray Ep           = traj['energy1']
     cdef np.ndarray Epp          = traj['energy2']
     cdef float      Ekin         = traj['kinetic']
+    cdef float      gap          = traj['gap']
     cdef list       nac_coupling = traj['nac_coupling']
     cdef list       soc_coupling = traj['soc_coupling']
     cdef list       statemult    = traj['statemult']
@@ -189,7 +194,7 @@ cpdef FSSH(dict traj):
             if nactype == 'nac':
                 nacme = np.sum(V * N[n]) / avoid_singularity(E[s1], E[s2], s1, s2)
             elif nactype == 'ktdc':
-                nacme = kTDC(s1, s2, E, Ep, Epp, delt * substep)
+                nacme = kTDC(s1, s2, E, Ep, Epp, delt * substep, gap)
             Dt[s1, s2] = nacme
             Dt[s2, s1] = -Dt[s1, s2]
 
