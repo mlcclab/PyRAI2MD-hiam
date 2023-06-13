@@ -116,7 +116,7 @@ class Molecule:
 
     def __init__(self, mol, keywords=None):
         key_dict = keywords['molecule'].copy()
-
+        title = keywords['control']['title']
         ## initialize variables for molecule
         self.atoms = np.zeros(0)
         self.coord = np.zeros(0)
@@ -243,7 +243,7 @@ class Molecule:
         if self.embedding:
             self.charges = np.concatenate((np.zeros((self.natom, 1)), self.coord), axis=1)
             if self.read_charge:
-                self.qm2_charge = read_charge(mol)
+                self.qm2_charge = read_charge(title)
                 self.charges[self.midlevel] = np.copy(self.qm2_charge)
 
         ## get additional molecule information
