@@ -30,6 +30,9 @@ class KeyNN:
             'eg_unit': 'si',
             'nac_unit': 'si',
             'soc_unit': 'si',
+            'select_eg_out': [],
+            'select_nac_out': [],
+            'select_soc_out': [],
             'ml_seed': 1,  # Caution! Not allow user to set.
             'permute_map': 'No',
             'gpu': 0,
@@ -57,6 +60,9 @@ class KeyNN:
             'eg_unit': ReadVal('s'),
             'nac_unit': ReadVal('s'),
             'soc_unit': ReadVal('s'),
+            'select_eg_out': ReadIndex('g', start=1),
+            'select_nac_out': ReadIndex('g', start=1),
+            'select_soc_out': ReadIndex('g', start=1),
             'permute_map': ReadVal('s'),
             'gpu': ReadVal('i'),
             'silent': ReadVal('i'),
@@ -89,6 +95,10 @@ class KeyNN:
   Shuffle data:               %-10s
   EG unit:                    %-10s
   NAC unit:                   %-10s
+  SOC unit:                         cm-1
+  Select EG output:           %-10s
+  Select NAC output:          %-10s
+  Select SOC output:          %-10s  
   Data permutation            %-10s
 -------------------------------------------------------
 
@@ -106,6 +116,9 @@ class KeyNN:
             keywords['shuffle'],
             keywords['eg_unit'],
             keywords['nac_unit'],
+            keywords['select_eg_out'],
+            keywords['select_nac_out'],
+            keywords['select_soc_out'],
             keywords['permute_map']
         )
 

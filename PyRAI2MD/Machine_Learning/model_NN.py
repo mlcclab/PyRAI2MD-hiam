@@ -87,6 +87,22 @@ class DNN:
         self.nnac = data.nnac
         self.nsoc = data.nsoc
 
+        # set output value range
+        if 0 < len(variables['select_eg_out']) < self.nstate:
+            self.select_eg_out = variables['select_eg_out']
+        else:
+            self.select_eg_out = np.arange(self.nstate)
+
+        if 0 < len(variables['select_nac_out']) < self.nnac:
+            self.select_eg_out = variables['select__out']
+        else:
+            self.select_nac_out = np.arange(self.nnac)
+
+        if 0 < len(variables['select_eg_out']) < self.nsoc:
+            self.select_soc_out = variables['select_eg_out']
+        else:
+            self.select_soc_out = np.arange(self.nsoc)
+
         ## set hyperparameters
         hyp_dict_eg = set_hyper_eg(hyp_eg, eg_unit, data.info, splits)
         hyp_dict_eg2 = set_hyper_eg(hyp_eg2, eg_unit, data.info, splits)
@@ -478,10 +494,10 @@ class DNN:
                 energy, gradient, nac, soc, err_energy, err_grad, err_nac, err_soc = self._high(traj)
             else:
                 energy, gradient, nac, soc, err_energy, err_grad, err_nac, err_soc = self._high_mid_low(traj)
-            traj.energy = np.copy(energy)
-            traj.grad = np.copy(gradient)
-            traj.nac = np.copy(nac)
-            traj.soc = np.copy(soc)
+            traj.energy = np.copy(energy)[self.select_eg_out]
+            traj.grad = np.copy(gradient)[self.select_eg_out]
+            traj.nac = np.copy(nac)[self.select_nac_out]
+            traj.soc = np.copy(soc)[self.select_soc_out]
             traj.err_energy = err_energy
             traj.err_grad = err_grad
             traj.err_nac = err_nac
