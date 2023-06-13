@@ -95,7 +95,7 @@ class KeyNN:
   Shuffle data:               %-10s
   EG unit:                    %-10s
   NAC unit:                   %-10s
-  SOC unit:                         cm-1
+  SOC unit:                   cm-1
   Select EG output:           %-10s
   Select NAC output:          %-10s
   Select SOC output:          %-10s  
