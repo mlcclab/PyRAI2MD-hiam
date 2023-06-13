@@ -105,7 +105,7 @@ class Molecule:
     """
 
     __slots__ = ['inact', 'active', 'link', 'ninac', 'nlink', 'qmmm_key', 'qmmm_xyz', 'txyz', 'embedding',
-                 'read_charge', 'ci', 'nstate', 'spin', 'mult', 'statemult', 'coupling',
+                 'read_charge', 'dummy', 'ci', 'nstate', 'spin', 'mult', 'statemult', 'coupling',
                  'nac_coupling', 'soc_coupling', 'nnac', 'nsoc', 'natom', 'atoms', 'coord', 'atomic_number', 'mass',
                  'velo', 'kinetic', 'energy', 'grad', 'nac', 'soc', 'err_energy', 'err_grad', 'err_nac', 'err_soc',
                  'qm_atoms', 'qm_coord', 'Hcap_atoms', 'Hcap_coord', 'Hcap_jacob', 'boundary', 'nhigh', 'nmid', 'nlow',
@@ -171,6 +171,7 @@ class Molecule:
         self.boundary = key_dict['boundary']
         self.embedding = key_dict['embedding']
         self.read_charge = key_dict['read_charge']
+        self.dummy = key_dict['dummy']
         self.freeze = key_dict['freeze']
         self.constrain = key_dict['constrain']
         self.primitive = key_dict['primitive']
@@ -241,7 +242,9 @@ class Molecule:
 
         ## initialize charge and read charge from a file
         if self.embedding:
-            self.charges = np.concatenate((np.zeros((self.natom, 1)), self.coord), axis=1)
+            ncharges = len(self.highlevel) + len(self.midlevel) + len(self.lowlevel)
+            self.charges = np.zeros((ncharges, 4))
+            self.charges[self.natom, 1: 4] = self.coord
             if self.read_charge:
                 self.qm2_charge = read_charge(title)
                 self.charges[self.midlevel] = np.copy(self.qm2_charge)
