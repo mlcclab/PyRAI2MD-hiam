@@ -34,7 +34,7 @@ def write_molcas_seward(do_rela):
 
 def write_molcas_rasscf(cas):
     mult = cas['mult']
-    fel = cas['fel']
+    forb = cas['forb']
     nel = cas['nel']
     norb = cas['norb']
     astate = cas['astate']
@@ -46,7 +46,7 @@ def write_molcas_rasscf(cas):
         fileorb = 'LumOrb'
         spin = 3
     rasscf = '&RASSCF\n%s\nSpin=%s\nNactel=%s 0 0\nInactive=%s\nRas2=%s\nITERATIONS=200,100\nCIRoot=%s %s 1' % (
-        fileorb, spin, nel, fel, norb, astate, astate
+        fileorb, spin, nel, forb, norb, astate, astate
     )
 
     return rasscf
@@ -153,7 +153,7 @@ def setup_molcas_input(keyword):
 
 def read_molcas(mult):
     print('\n    Setting up sections for %s\n' % mult)
-    fel = input("""
+    forb = input("""
     -----------------------------------------------------------------
     how many frozen orbitals does the %s have?
     """ % mult)
@@ -181,7 +181,7 @@ def read_molcas(mult):
 
     key_dict = {
         'mult': mult,
-        'fel': int(fel),
+        'forb': int(forb),
         'nel': int(nel),
         'norb': int(norb),
         'astate': int(astate),
@@ -1347,12 +1347,308 @@ def pmd_input(title):
     print('\n    saving PyRAI2MD input -> input\n')
     print('\n    COMPLETE\n')
 
-def bagel_input(_):
-    exit("""\n    Not available yet\n""")
+def bagel_input(title):
+    print('\n    Generating BAGEL input template\n')
 
-def orca_input(_):
-    exit("""\n    Not available yet\n""")
+    basis = input("""
+    -----------------------------------------------------------------
+    what is the basis set?
+        e.g. cc-pvdz or svp
+    """)
 
+    df_basis = input("""
+    -----------------------------------------------------------------
+    what is the df basis set?
+        e.g. cc-pvdz-jkfit or svp-jkfit
+    """)
+
+    forb = input("""
+    -----------------------------------------------------------------
+    how many frozen orbitals?
+    """)
+
+    charge = input("""
+    how many charges?
+    """)
+
+    norb = input("""
+    how many activate orbitals?
+    """)
+
+    astate = input("""
+    how many states for CASSCF state-averaging?
+    """)
+
+    nstate = input("""
+    how many states for NAMD simulation(<=CASSCF states) or gradient data calculation?
+    """)
+
+    caspt2 = input("""
+    do you want to do XMS-CASPT2? (yes/no)
+    """)
+    
+    nac = input("""
+    do you want to compute nonadiabatic couplings? (yes/no)
+        for dynamics using fssh with nac, choose yes
+        for dynamics using gsh or fssh with ktdc, choose no
+        for adaptive sampling, choose yes to train NN for NAC prediction. Otherwise, choose no.
+    """)
+
+    nac = bool_dict[nac.lower()]
+    if nac == 1:
+        full_nac = input("""
+    do you want to compute all nonadiabatic couplings? (yes/no)
+        for full nonadiabatic coupling matrix, choose yes
+        for nonadiabatic couplings between neighboring states, choose no
+    """)
+        nac += bool_dict[full_nac.lower()]
+
+    caspt2 = bool_dict[caspt2.lower()]
+
+    keyword = {
+        'title': title,
+        'basis': basis,
+        'df_basis': df_basis,
+        'forb': forb,
+        'charge': charge,
+        'norb': norb,
+        'astate': astate,
+        'nstate': int(nstate),
+        'nac': nac,
+        'caspt2': caspt2
+    }
+
+    template = setup_bagel_input(keyword)
+
+    with open('%s.bagel' % title, 'w') as out:
+        out.write(template)
+
+    print('\n    saving input template -> %s.bagel\n' % title)
+    print('\n    COMPLETE\n')
+
+def setup_bagel_input(keyword):
+    title = keyword['title']
+    basis = keyword['basis']
+    df_basis = keyword['df_basis']
+
+    grad = setup_bagel_grad(keyword)
+    method = setup_bagel_method(keyword)
+
+    template = """{ "bagel" : [
+{
+  "title" : "molecule",
+  "basis" : "%s",
+  "df_basis" : "%s",
+"geometry" : [
+]
+},
+{
+"title" : "load_ref",
+"file" : "%s",
+"continue_geom" : false
+},
+{
+  "title"   : "forces",
+  "grads" : [
+%s
+],
+  "export" : true,
+  "method" : [ {
+%s
+} ]
+},
+{
+ "title" : "print",
+ "file" : "%s.orbital.molden",
+ "orbitals" : true
+},
+{
+"title" : "save_ref",
+"file" : "%s"
+}
+]}  
+""" % (basis, df_basis, title, grad, method, title, title)
+    
+    return template
+
+def setup_bagel_grad(keyword):
+    nstate = keyword['nstate']
+    nac = keyword['nac']
+    grad = []
+    for n in range(nstate):
+        line = '{ "title" : "force", "target" : %s }' % n
+        grad.append(line)
+
+    if nac == 2:
+        nac_list = all_pairs(nstate)
+    elif nac == 1:
+        nac_list = neighbors(nstate)
+    else:
+        nac_list = []
+
+    for pair in nac_list:
+        a, b = pair
+        line = '{ "title" : "nacme", "target" : %s, "target2" : %s, "nacmtype" : "noweight" }' % (a, b)
+        grad.append(line)
+
+    grad = ',\n'.join(grad)
+
+    return grad
+
+def setup_bagel_method(keyword):
+    forb = keyword['forb']
+    charge = keyword['charge']
+    norb = keyword['norb']
+    astate = keyword['astate']
+    caspt2 = keyword['caspt2']
+
+    if caspt2 == 0:
+        method = """  "title" : "casscf",
+  "natocc"  : true,
+  "nstate"  : %s,
+  "nact"    : %s,
+  "nclosed" : %s,
+  "charge"  : %s,
+  "maxiter" : 200""" % (astate, norb, forb, charge)
+    else:
+        method = """ "title": "caspt2",
+ "smith":{
+   "method" : "caspt2",
+   "ms"     : true,
+   "xms"    : true,
+   "sssr"   : true,
+   "shift"  : 0.5,
+   "thresh" : 1.0e-8,
+   "maxiter": 800
+ },
+ "natocc"  : true,
+ "nstate"  : %s,
+ "nact"    : %s,
+ "nclosed" : %s,
+ "charge"  : %s,
+ "maxiter" : 200""" % (astate, norb, forb, charge)
+
+    return method
+
+def orca_input(title):
+    print('\n    Generating ORCA input template\n')
+
+    default = input("""
+    -----------------------------------------------------------------
+    Do you want to generate the default orca template ? (yes/no)
+        (!wB97XD-d3 cc-pvdz def2/J rijcosx tightscf engrad)
+    """)
+    default = bool_dict[default.lower()]
+
+    if default == 1:
+        basis = ''
+        functional = ''
+        roots = ''
+        irootlist = ''
+        engrad = ''
+        mult = ''
+        pal = ''
+    else:
+        basis = input("""
+    -----------------------------------------------------------------
+    what is the basis set?
+        e.g. cc-pvdz or cc-pvdz def2/J rijcosx
+    """)
+
+        functional = input("""
+    what is the density functional
+        e.g. wB97X-d3, cam-b3lyp
+    """)
+
+        roots = input("""
+    How many roots do you want to compute in TDDFT calculation? (for nroots)
+    """)
+
+        iroot = input("""
+    How many states do you want to compute in TDDFT gradient calculation? (for irootlist)
+    """)
+
+        irootlist = ','.join([str(x) for x in list(range(int(iroot)))])
+
+        engrad = input("""
+    Do you call ORCA for NAMD simulation? (yes/no)
+        for NAMD with ORCA, choose yes
+        for training data calculation, choose no
+    """)
+
+        engrad = bool_dict[engrad.lower()]
+        if engrad == 1:
+            engrad = 'engrad'
+        else:
+            engrad = ''
+
+        mult = input("""
+    What is the charge and multiplicity? (two values)
+    e.g. 0 1
+    """)
+
+        pal = input("""
+    How many CPUs do you want to use? (for nprocs)
+    """)
+
+    print('\n    -----------------------------------------------------------------\n')
+
+    keyword = {
+        'default': default,
+        'basis': basis,
+        'dft': functional,
+        'roots': roots,
+        'irootlist': irootlist,
+        'engrad': engrad,
+        'mult': mult,
+        'pal': pal,
+    }
+
+    template = setup_orca_input(keyword)
+
+    with open('%s.orca' % title, 'w') as out:
+        out.write(template)
+
+    print('\n    saving input template -> %s.orca\n' % title)
+    print('\n    COMPLETE\n')
+
+def setup_orca_input(keyword):
+    default = keyword['default']
+    basis = keyword['basis']
+    dft = keyword['dft']
+    roots = keyword['roots']
+    irootlist = keyword['irootlist']
+    engrad = keyword['engrad']
+    mult = keyword['mult']
+    pal = keyword['pal']
+
+    template = """!%s  %s tightscf printbasis %s
+%%pal nprocs %s end
+%%tddft nroots %s
+       triplets false
+       tda true
+       maxdim 5
+       irootlist %s
+       maxiter 500
+end
+%%scf print[p_mos] 1 end
+* xyz %s
+""" % (dft, basis, engrad, pal, roots, irootlist, mult)
+
+    if default == 1:
+        template = """!wb97x-d3 cc-pvdz def2/J rijcosx tightscf printbasis engrad
+%pal nprocs 6 end
+%tddft nroots 5
+       triplets false
+       tda true
+       maxdim 5
+       irootlist 0,1,2
+       maxiter 500
+end
+%scf print[p_mos] 1 end
+* xyz 0 1
+"""
+    return template
 
 def main():
     print('\n\n    PyRAI2MD QC calculation input template generator\n')
@@ -1388,8 +1684,8 @@ def main():
     what is quantum chemical program? (enter the number or name below)
         0.pyrai2md
         1.molcas
-        2.bagel (n/a)
-        3.orca (n/a)
+        2.bagel
+        3.orca
     """)
 
     print('\n    selected: %s\n' % prog_dict[prog])
