@@ -163,6 +163,8 @@ class KeyMD:
   Adjust velocity:            %-10s
   Reflect velocity:           %-10s
   Maxhop:                     %-10s
+  IC hopping gap threshold    %-10s
+  ISC hopping gap threshold   %-10s
   Thermodynamic:              %-10s
   Thermodynamic delay:        %-10s
   Print level:                %-10s
@@ -191,6 +193,8 @@ class KeyMD:
             keywords['adjust'],
             keywords['reflect'],
             keywords['maxh'],
+            keywords['gap'],
+            keywords['gapsoc'],
             keywords['thermo'],
             keywords['thermodelay'],
             keywords['verbose'],
