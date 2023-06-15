@@ -15,7 +15,7 @@ def main():
     PyRAI2MD training data shuffle tool
 
     Usage:
-        python3 data_shuffle_tool.py [input_file]
+        python3 data_handling_tool.py [input_file]
 
     """
 

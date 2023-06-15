@@ -7,9 +7,10 @@
    !!!                 Important Notes       	       	  !!!
    !!! 	       	       	       	       	       	       	  !!!
    !!! Normal Mode Format:                                !!!
-   !!! Molcas   - unmass-weighted unnormalized            !!!
+   !!! Molcas   -   mass-weighted unnormalized            !!!
    !!! Gaussian - unmass-weighted   normalized            !!!
-   !!! BAGEL    -   mass-weighted   normalized            !!!
+   !!! ORCA     - unmass-weighted   normalized            !!!
+   !!! BAGEL    - unmass-weighted   normalized            !!!
    !!! This script generates  unmass-wighted velocities   !!!
    !!! Coordinates are in Angstrom                        !!!
    !!! Velocities are in Bohr/au                          !!!
@@ -102,7 +103,7 @@
                         You can choose any integer from 0 to + infinite to make sampling reproducible.
 
             temp        Sampling temperature in K.
-                        Default is 273.15 K.
+                        Default is 298.15 K.
                         This temperature only control the sampling but NOT the trajectory calculation.
                         Make sure the temperature matches with the actual calculation.
 

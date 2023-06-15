@@ -42,10 +42,9 @@ def main(argv):
       refxyz        reac.xyz
       interp        reac.xyz meci.xyz prod.xyz
       ni            10
-      mixing        0
       skip_wigner   0
-      skip_first    1
-      skip_last     1
+      skip_first    0
+      skip_last     0
     """
 
     if len(argv) <= 1:

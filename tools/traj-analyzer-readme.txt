@@ -20,7 +20,7 @@
 -------------------------------------------------------------------------
     You can simply run this script on command line as below:
 
-        python3 traj_analysis.py input_file
+        python traj_analysis.py input_file
 
 2. Options, keywords, and values
 -------------------------------------------------------------------------

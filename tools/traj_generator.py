@@ -71,7 +71,7 @@ def main(argv):
     cpus = 1
     notraj = 0
     iseed = 1
-    temp = 273.15
+    temp = 298.15
     dist = 'wigner'
     prog = 'molcas'
     slpt = 'normal'
@@ -296,7 +296,7 @@ def main(argv):
         print(' Only perform initial condition sampling')
 
     callsample = ['molden', 'bagel', 'g16', 'orca']
-    skipsample = ['newtonx', 'xyz']
+    skipsample = ['newtonx', 'xyz', 'xz2']
     nesmb = int(sljb * slnd)
 
     if iformat in callsample:
