@@ -35,7 +35,7 @@ cdef kTDC(int s1, int s2, np.ndarray E, np.ndarray Ep, np.ndarray Epp, float dt,
     dVt = avoid_singularity(E[s1], E[s2], s1, s2)  # s1 < s2, thus dVt <0
     dVt_dt = avoid_singularity(Ep[s1], Ep[s2], s1, s2)  # s1 < s2, thus dVt_dt <0
     gap = gap / 27.211396132
-    if dVt > gap or dVt_dt > gap:  # add threshold to apply the Baeck-An approximation
+    if np.abs(dVt) > gap or np.abs(dVt_dt) > gap:  # add threshold to apply the Baeck-An approximation
         return 0
 
     dVt_2dt = avoid_singularity(Epp[s1], Epp[s2], s1, s2)  # s1 < s2, thus dVt_2dt <0
