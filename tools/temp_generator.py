@@ -1535,8 +1535,9 @@ def orca_input(title):
 
     default = input("""
     -----------------------------------------------------------------
-    Do you want to generate the default orca template ? (yes/no)
-        (!wB97XD-d3 cc-pvdz def2/J rijcosx tightscf engrad)
+    Do you want to generate the default orca template? (yes/no)
+        For ground-state calculation, choose no
+        For excited-state calculation, it uses wB97XD-d3 cc-pvdz def2/J rijcosx
     """)
     default = bool_dict[default.lower()]
 
@@ -1562,10 +1563,14 @@ def orca_input(title):
 
         roots = input("""
     How many roots do you want to compute in TDDFT calculation? (for nroots)
+        for excited-state calculation, enter a number greater than 1
+        for ground-state calculation, enter 1
     """)
 
         iroot = input("""
     How many states do you want to compute in TDDFT gradient calculation? (for irootlist)
+        for excited-state calculation, enter a number smaller than above one
+        for ground-state calculation, enter any number
     """)
 
         irootlist = ','.join([str(x) for x in list(range(int(iroot)))])
@@ -1622,7 +1627,8 @@ def setup_orca_input(keyword):
     mult = keyword['mult']
     pal = keyword['pal']
 
-    template = """!%s  %s tightscf printbasis %s
+    if roots > 1:
+        template = """!%s  %s tightscf printbasis %s
 %%pal nprocs %s end
 %%tddft nroots %s
        triplets false
@@ -1634,6 +1640,12 @@ end
 %%scf print[p_mos] 1 end
 * xyz %s
 """ % (dft, basis, engrad, pal, roots, irootlist, mult)
+    else:
+        template = """!%s  %s tightscf printbasis %s
+%%pal nprocs %s end
+%%scf print[p_mos] 1 end
+* xyz %s
+""" % (dft, basis, engrad, pal, mult)
 
     if default == 1:
         template = """!wb97x-d3 cc-pvdz def2/J rijcosx tightscf printbasis engrad
