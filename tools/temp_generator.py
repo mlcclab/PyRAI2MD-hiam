@@ -1014,7 +1014,7 @@ def write_pmd_bagel(_):
     """)
         pmd_bagel += 'bagel_workdir %s\n' % calcdir
     else:
-        print('\nbagel calculation will run in the current folder\n')
+        print('\n    bagel calculation will run in the current folder\n')
 
     oneapi = input("""
     do you have intel OneAPI for mkl and mpi?
@@ -1093,7 +1093,7 @@ def write_pmd_orca(_):
     """)
         pmd_orca += 'orca_workdir %s\n' % calcdir
     else:
-        print('\norca calculation will run in the current folder\n')
+        print('\n    orca calculation will run in the current folder\n')
 
     mpi = input("""
     enter the path to the openmpi library
@@ -1140,7 +1140,7 @@ def write_pmd_xtb(_):
     """)
         pmd_xtb += 'xtb_workdir %s\n' % calcdir
     else:
-        print('\nxtb calculation will run in the current folder\n')
+        print('\n    xtb calculation will run in the current folder\n')
 
     xtb_nproc = input("""
     how many threads do you want to run xtb?
@@ -1577,8 +1577,8 @@ def orca_input(title):
 
         engrad = input("""
     Do you call ORCA for NAMD simulation? (yes/no)
-        for NAMD with ORCA, choose yes
-        for training data calculation, choose no
+        for NAMD with ORCA, choose no
+        for training data calculation, choose yes
     """)
 
         engrad = bool_dict[engrad.lower()]
@@ -1602,7 +1602,7 @@ def orca_input(title):
         'default': default,
         'basis': basis,
         'dft': functional,
-        'roots': roots,
+        'roots': int(roots),
         'irootlist': irootlist,
         'engrad': engrad,
         'mult': mult,
