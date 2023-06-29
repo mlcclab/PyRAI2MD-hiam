@@ -1537,7 +1537,7 @@ def orca_input(title):
     -----------------------------------------------------------------
     Do you want to generate the default orca template? (yes/no)
         For ground-state calculation, choose no
-        For excited-state calculation, it uses wB97XD-d3 cc-pvdz def2/J rijcosx
+        For excited-state calculation, it uses wB97X-d3 cc-pvdz def2/J rijcosx
     """)
     default = bool_dict[default.lower()]
 
