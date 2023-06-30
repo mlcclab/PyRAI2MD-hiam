@@ -39,7 +39,7 @@ cdef kTDC(int s1, int s2, np.ndarray E, np.ndarray Ep, np.ndarray Epp, float dt,
         return 0
 
     dVt_2dt = avoid_singularity(Epp[s1], Epp[s2], s1, s2)  # s1 < s2, thus dVt_2dt <0
-    d2Vdt2 = -(dVt - 2 * dVt_dt + dVt_2dt) / dt ** 2  # flip d2Vdt2 to positive
+    d2Vdt2 = (dVt - 2 * dVt_dt + dVt_2dt) / dt ** 2  # s1 < s2, thus d2Vdt2 <0
     if d2Vdt2 / dVt > 0:
         nacme = -(d2Vdt2 / dVt) ** 0.5 / 2  # flip nacme to negative due to s1 < s2
     else:
@@ -122,14 +122,14 @@ cpdef GetNAC(int state, int new_state, list nac_coupling, np.ndarray nac, int na
     return nacv
 
 cpdef FSSH(dict traj):
-    """ Computing the fewest swichest surface hopping
+    """ Computing the fewest switches surface hopping
     The algorithm is based on Tully's method.John C. Tully, J. Chem. Phys. 93, 1061 (1990)
 
         Parameters:          Type:
             traj             class       trajectory class
 
         Return:              Type:
-            At               ndarray     the present state denesity matrix
+            At               ndarray     the present state density matrix
             Ht               ndarray     the present energy matrix (model Hamiltonian)
             Dt               ndarray     the present nonadiabatic matrix
             Vt               ndarray     the adjusted velocity after surface hopping
