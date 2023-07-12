@@ -167,7 +167,7 @@
 ## Installation
 Download the repository
 
-    git clone https://github.com/lopez-lab/PyRAI2MD.git
+    git clone https://github.com/mlcclab/PyRAI2MD-hiam.git
 
 Install the codes, this will create a command **pyrai2md** to run calculations
 
