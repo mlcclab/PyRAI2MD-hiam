@@ -1,4 +1,4 @@
-1. interactive script to generate molcas or bagel input template
-2. remote_md script to run aimd as standalone process
-3. remote_manager script to group remote jobs for slurm submission
-4. refactor variables script into class
+1. remote_md script to run aimd as standalone process
+2. add MS-SF-TDDFT(GAMESS interface)
+3. add periodic xTB/FF
+4. add universal FF
