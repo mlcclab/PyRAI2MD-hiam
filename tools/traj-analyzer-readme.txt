@@ -94,11 +94,11 @@
                     Available options are:
                     B X X           bond
                     A X X X         angel in [0, π]
-                    D X X X X       dihedral angle in [-π, π]
-                    D2 X X X X      dihedral angle in [0, π]
+                    D X X X X       dihedral angle in [0, π]
+                    D2 X X X X      dihedral angle in [–π, π]
                     D3 X X X X      dihedral angle in [0, 2π]
-                    DD X X X X X X  dihedral angle in [-π, π]
-                    DD2 X X X X X X dihedral angle in [0, π]
+                    DD X X X X X X  dihedral angle in [0, π]
+                    DD2 X X X X X X dihedral angle in [–π, π]
                     DD3 X X X X X X dihedral angle in [0, 2π]
                     O X X X X       out-of-plane angle in [0, π]
                     P X X X X X X   plane-plane angle in [0, π]
