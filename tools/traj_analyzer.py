@@ -1732,6 +1732,7 @@ def read_pyrai2md(files):
     ## subloops find crt_kin,crt_pot,crt_pop,crt_coord,crt_hop and
     ## append to trj_kin,trj_pot,trj_pop,trj_coord,trj_hop for each trajectory.
     ## natom, nstate, and dtime are supposed to be the same over all trajectories, so just pick up the last values.
+
     ntraj, f, pindex, pthrhd = files
     t = f.split('/')[-1]
     nstate = 0
@@ -1906,13 +1907,15 @@ def RUNcheck(key_dict):
     prog = key_dict['prog']
     maxstep = key_dict['maxstep']
     maxdrift = key_dict['maxdrift']
+    pindex = key_dict['pindex']
+    pthrhd = key_dict['pthrhd']
 
     ## A parallelized loop goes over all trajectories to find
     ## trj_kin,trj_pot,trj_pop,trj_coord,trj_hop in each trajectory and appends to
     ## kin, pot, pop, coord, hop in the main dictionary.
     input_val = []
     for n, f in enumerate(read_files):
-        input_val.append([n, f, maxstep])
+        input_val.append([n, f, maxstep, pindex, pthrhd])
 
     if (len(input_val)) < cpus:
         cpus = len(input_val)
