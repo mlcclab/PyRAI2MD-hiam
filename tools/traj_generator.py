@@ -1191,6 +1191,10 @@ def pyrai2md(var):
     if os.path.exists('%s.charge' % inputs) and not os.path.exists('%s/%s.charge' % (inputpath, inputs)):
         shutil.copy2('%s.charge' % inputs, '%s/%s.charge' % (inputpath, inputname))
 
+    # copy basis set file
+    if os.path.exists('%s.basis' % inputs) and not os.path.exists('%s/%s.basis' % (inputpath, inputs)):
+        shutil.copy2('%s.basis' % inputs, '%s/%s.basis' % (inputpath, inputname))
+
     runscript = """#!/bin/sh
 ## script for PyRAI2MD
 #SBATCH --nodes=1
