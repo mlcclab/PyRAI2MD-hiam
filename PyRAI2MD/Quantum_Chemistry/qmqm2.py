@@ -190,10 +190,12 @@ class QMQM2:
 
         # combine grad
         grad_qm_high = traj_qm_high.grad
-        grad_qm2_high = np.repeat(traj_qm2_high.grad, nstate, axis=0)
-        grad_qm2_mid = np.repeat(traj_qm2_mid.grad, nstate, axis=0)
-        traj.grad[:, index_qmqm2, :] += - grad_mm_mid + grad_qm2_mid  # replace the m+h region mm grad with qm2 grad
-        traj.grad[:, index_high, :] += - grad_qm2_high + grad_qm_high  # replace the h region qm2 grad with qm grad
+        ngrad = len(grad_qm_high)
+        if ngrad > 0:
+            grad_qm2_high = np.repeat(traj_qm2_high.grad, nstate, axis=0)
+            grad_qm2_mid = np.repeat(traj_qm2_mid.grad, nstate, axis=0)
+            traj.grad[:, index_qmqm2, :] += - grad_mm_mid + grad_qm2_mid  # replace the m+h region mm grad with qm2 grad
+            traj.grad[:, index_high, :] += - grad_qm2_high + grad_qm_high  # replace the h region qm2 grad with qm grad
 
         # combine nac
         nac_qm_high = traj_qm_high.nac
