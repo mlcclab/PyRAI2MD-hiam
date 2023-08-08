@@ -176,35 +176,39 @@ rm -r $MOLCAS_WORKDIR/$MOLCAS_PROJECT
             charge = print_charge(q[:, [1, 2, 3, 0]])
             xfield = '\nXField\n%s Angstrom\n%s' % (len(q), charge)
 
+        ld_input = ld_input.split('&')
+        for n, line in enumerate(ld_input):
+            if len(q) > 0 and 'GATEWAY' in line:
+                ld_input[n] = line + xfield
+                break
+
+        si_input = []
         if self.activestate == 1:
-            ld_input = ld_input.split('&')
-            si_input = []
             grad_pos = 1
             grad_root = 1
             for n, substate in enumerate(self.ci):
                 if np.sum(self.ci[:n]) < self.state <= np.sum(self.ci[:n + 1]):
                     grad_pos = n + 1
                     grad_root = self.state - np.sum(self.ci[:n])
+
             section = 0
-            for n, line in enumerate(ld_input):
+            for line in ld_input:
                 if 'ALASKA' in line.upper() and 'ROOT' in line.upper():
                     continue
-                else:
-                    if len(q) > 0 and 'GATEWAY' in line:
-                        line = line + xfield
-                    si_input.append(line)
 
                 if 'RASSCF' in line.upper():
                     section += 1
                     if grad_pos == section:
                         si_input.append('ALASKA\nROOT=%d\n' % grad_root)
-
-            si_input = '&'.join(si_input)
-
-            with open('%s/%s.inp' % (self.calcdir, self.project), 'w') as newinput:
-                newinput.write(si_input)
+                else:
+                    si_input.append(line)
         else:
-            shutil.copy2('%s.molcas' % self.project, '%s/%s.inp' % (self.calcdir, self.project))
+            si_input = ld_input
+
+        si_input = '&'.join(si_input)
+
+        with open('%s/%s.inp' % (self.calcdir, self.project), 'w') as newinput:
+            newinput.write(si_input)
 
         ## prepare .xyz .StrOrb files
         self._write_coord(x)
