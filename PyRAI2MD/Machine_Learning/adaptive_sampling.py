@@ -128,7 +128,7 @@ class AdaptiveSampling:
         ## copy reusable information
         self.version = keywords['version']
         self.keywords = keywords.copy()
-        self.mdstep = keywords['md']['steps']
+        self.mdstep = keywords['md']['step']
 
         if self.keywords['md']['record_step'] == 0:
             self.keywords['md']['record_step'] = 10
@@ -502,7 +502,7 @@ class AdaptiveSampling:
         itr, state, atoms, geom, charge, energy, grad, nac, soc, err_e, err_g, err_n, err_s, pop = traj_data
         allatoms = atoms[-1].tolist()
 
-        if self.mdstep > itr:
+        if self.mdstep > itr[-1]:
             complete = 0
         else:
             complete = 1
@@ -545,6 +545,7 @@ class AdaptiveSampling:
 
         ## filter out the unphysical geometries based on atom distances
         if num_uncer_tot == 0:
+            select_indx = []
             select_geom = []
             select_charge = []
             num_select_geom = 0
@@ -561,13 +562,12 @@ class AdaptiveSampling:
             selec_g = err_g[index_g]
             selec_n = err_n[index_n]
             selec_s = err_s[index_s]
-
         else:
             select_geom = np.array(geom)[index_tot]
             select_geom, discard_geom, select_indx, discard_indx = self._distance_filter(allatoms, select_geom)
             select_geom = select_geom[0: self.maxsample]
             select_charge = np.array(charge)[index_tot]
-            select_charge = select_charge[select_indx][0: self.maxsample]
+            select_charge = select_charge[select_indx][0: self.maxsample].tolist() # charge need to be in a list
             num_select_geom = len(select_geom)
             num_discard_geom = len(discard_geom)
             ndiscard_e = 0
@@ -625,6 +625,15 @@ class AdaptiveSampling:
 
         ## refine crossing region, optionally
         if self.refine == 1:
+            do_refine = True
+        elif self.refine == 2 and complete == 0:
+            do_refine = True
+        elif self.refine == 3 and complete == 0 and len(select_indx) == 0:
+            do_refine = True
+        else:
+            do_refine = False
+
+        if do_refine:
             energy = np.array([np.array(x) for x in energy])
             state = len(energy[0])
             pair = int(state * (state - 1) / 2)
@@ -642,16 +651,22 @@ class AdaptiveSampling:
             selec_gap = (sorted_gap <= self.refine_gap).nonzero()  # find gap smaller than threshold
             index_r = argsort_gap[selec_gap]
 
+            index_r = [x for x in index_r if x not in select_indx]  # remove duplicated geom from selected
+
             refine_geom = np.array(geom)[index_r]
             refine_geom, refine_discard, refine_indx, refine_discard_indx = self._distance_filter(allatoms, refine_geom)
             refine_geom = refine_geom[0: self.refine_num]
+            refine_charge = np.array(charge)[index_r]
+            refine_charge = refine_charge[refine_indx][0: self.refine_num].tolist()  # charge need to be in a list
             num_refine_geom = len(refine_geom)
         else:
             refine_geom = []
+            refine_charge = []
             num_refine_geom = 0
 
         ## combine select and refine geom
         select_geom = select_geom + refine_geom
+        select_charge = select_charge + refine_charge
         sampling_data[0] = [x.tolist() for x in select_geom]  # to md_select_geom
         sampling_data[1] = [x.tolist() for x in select_charge]  # to md_select_charge
         sampling_data[2] = [num_index_tot]  # to md_nsampled
