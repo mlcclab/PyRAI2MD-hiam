@@ -116,6 +116,7 @@ class AdaptiveSampling:
             nselect          list        number of selected geometries per trajectory
             ndiscard         list        number of discarded geometries per trajectory
             nrefine          list        number of refined geometries per trajectory
+            completed        list        completion status per trajectory
 
         Functions:           Returns:
             search           None        run adaptive sampling
@@ -127,6 +128,7 @@ class AdaptiveSampling:
         ## copy reusable information
         self.version = keywords['version']
         self.keywords = keywords.copy()
+        self.mdstep = keywords['md']['steps']
 
         if self.keywords['md']['record_step'] == 0:
             self.keywords['md']['record_step'] = 10
@@ -209,6 +211,7 @@ class AdaptiveSampling:
         self.ndiscard = []
         self.nrefine = []
         self.select_cond = []
+        self.completed = []
 
         ## initialize dynamical	errors and delay steps
         if self.dynsample == 0:
@@ -376,6 +379,7 @@ class AdaptiveSampling:
         md_selec_g = [[] for _ in range(ntraj)]
         md_selec_n = [[] for _ in range(ntraj)]
         md_selec_s = [[] for _ in range(ntraj)]
+        md_complete = [[] for _ in range(ntraj)]
 
         ## screen trajectories with multiprocessing
         ncpu = np.amin([ntraj, self.ml_ncpu, 5])
@@ -388,7 +392,7 @@ class AdaptiveSampling:
         for val in pool.imap_unordered(self._screen_error_wrapper, variables_wrapper):
             # for var in variables_wrapper:
             # val = self._screen_error_wrapper(var)
-            traj_id, traj_data, sampling_data = val
+            traj_id, traj_data, sampling_data, status = val
             md_last[traj_id] = traj_data[0][-1]  # the trajectory length
             md_final[traj_id] = traj_data[1][-1]  # the final state
             md_atoms[traj_id] = traj_data[2][-1].tolist()  # the atom list
@@ -421,6 +425,7 @@ class AdaptiveSampling:
             md_selec_g[traj_id] = sampling_data[16]  # all select gradient error
             md_selec_n[traj_id] = sampling_data[17]  # all select nac error
             md_selec_s[traj_id] = sampling_data[18]  # all select soc error
+            md_complete[traj_id] = status
             n += 1
             print('Done %s of %s' % (n, ntraj))
 
@@ -465,6 +470,7 @@ class AdaptiveSampling:
         self.nselect = md_nselect
         self.ndiscard = md_ndiscard
         self.nrefine = md_nrefine
+        self.completed = md_complete
 
         ## append selected geom and conditions
         self.select_geom = []
@@ -494,6 +500,11 @@ class AdaptiveSampling:
         ## upack traj
         itr, state, atoms, geom, charge, energy, grad, nac, soc, err_e, err_g, err_n, err_s, pop = traj_data
         allatoms = atoms[-1].tolist()
+
+        if self.mdstep > itr:
+            complete = 0
+        else:
+            complete = 1
 
         ## find current dynamical errors and delay steps
         dyn_e = self.dyn_e[traj_id]
@@ -655,7 +666,7 @@ class AdaptiveSampling:
         sampling_data[17] = selec_n  # to md_selec_n
         sampling_data[18] = selec_s  # to md_selec_s
 
-        return traj_id, traj_data, sampling_data
+        return traj_id, traj_data, sampling_data, complete
 
     @staticmethod
     def _distance_filter(atom, geom):
@@ -827,14 +838,17 @@ class AdaptiveSampling:
 
     def _checkpoint(self):
         logpath = os.getcwd()
+        passed = 0
         completed = 0
         ground = 0
         traj_info = '  &adaptive sampling progress\n'
         for i in range(self.ntraj):
             marker = ''
 
+            completed += self.completed[i]
+
             if self.nuncertain[i] == 0:
-                completed += 1
+                passed += 1
                 marker = '*'
 
             if self.final[i] == 1:
@@ -918,6 +932,7 @@ Thrshd(E: %8.4f %s %8.4f G: %8.4f %s %8.4f N: %8.4f %s %8.4f S: %8.4f %s %8.4f) 
   Number of trajectories:     %-10s
   Average length:             %-10s
   Ground state:               %-10s
+  Passed:                     %-10s
   Completed:                  %-10s
   Sampled trajectories:       %-10s
   Sampled geometries          %-10s
@@ -937,6 +952,7 @@ Thrshd(E: %8.4f %s %8.4f G: %8.4f %s %8.4f N: %8.4f %s %8.4f S: %8.4f %s %8.4f) 
             self.ntraj,
             np.mean(self.last),
             ground,
+            passed,
             completed,
             np.sum(self.nuncertain),
             np.sum(self.nsampled),
@@ -1013,7 +1029,6 @@ Thrshd(E: %8.4f %s %8.4f G: %8.4f %s %8.4f N: %8.4f %s %8.4f S: %8.4f %s %8.4f) 
             with open('%s/%s.adaptive.json' % (logpath, self.title), 'w') as outfile:
                 json.dump(savethis, outfile)
 
-        self.completed = completed
         return completed
 
     def _heading(self):

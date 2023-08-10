@@ -16,14 +16,15 @@ except ModuleNotFoundError:
     FSSH = None
     print('\n PyRAI2MD: fssh lib has not found, please run pyrai2md update first\n')
 
-def surfhop(traj):
+def surfhop(traj, skip):
     """ Computing surface hopping 
 
         Parameters:          Type:
             traj             class	 trajectory class
+            skip             int     skip surface hopping during electronic propagation
 
         Attribute:           Type:
-            sfhp             str         surface hopping method
+            sfhp             str     surface hopping method
 
         Return:              Type:
             traj             class	 molecule class
@@ -54,13 +55,25 @@ def surfhop(traj):
 
         return traj
 
-    traj.a = np.copy(at)
-    traj.h = np.copy(ht)
-    traj.d = np.copy(dt)
-    traj.velo = np.copy(v)
-    traj.hoped = hoped
-    traj.last_state = old_state
-    traj.state = state
-    traj.shinfo = info
+    if skip:
+        at = np.zeros([traj.nstate, traj.nstate])
+        at[traj.state - 1, traj.state - 1] = 1
+        traj.a = np.copy(at)
+        # traj.h skip
+        # traj.d skip
+        # traj.velo skip
+        traj.hoped = 0
+        # traj.last_state skip
+        # traj.state skip
+        traj.shinfo = '  surface hopping is skipped'
+    else:
+        traj.a = np.copy(at)
+        traj.h = np.copy(ht)
+        traj.d = np.copy(dt)
+        traj.velo = np.copy(v)
+        traj.hoped = hoped
+        traj.last_state = old_state
+        traj.state = state
+        traj.shinfo = info
 
     return traj

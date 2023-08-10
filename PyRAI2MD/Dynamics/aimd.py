@@ -51,6 +51,7 @@ class AIMD:
             restart          int         restart calculation
             addstep          int         number of steps that will be added in restarted calculation
             stop             int         trajectory termination signal
+            stop_hop         int         surface hopping termination signal
             skipstep         int         number of steps being skipped to write output
             skiptraj         int         number of steps being skipped to save trajectory
 
@@ -69,6 +70,7 @@ class AIMD:
         self.maxerr_grad = keywords['control']['maxgrad']
         self.maxerr_nac = keywords['control']['maxnac']
         self.maxerr_soc = keywords['control']['maxsoc']
+        self.track_stop = keywords['molecule']['track_stop']
         self.randvelo = keywords['md']['randvelo']
         self.silent = keywords['md']['silent']
         self.verbose = keywords['md']['verbose']
@@ -79,6 +81,7 @@ class AIMD:
         self.restart = keywords['md']['restart']
         self.addstep = keywords['md']['addstep']
         self.stop = 0
+        self.stop_hop = 0
         self.skipstep = 0
         self.skiptraj = 0
 
@@ -265,7 +268,7 @@ class AIMD:
         self.traj.update_el()
 
         # update current population, energy matrix, and non-adiabatic coupling matrix
-        self.traj = surfhop(self.traj)
+        self.traj = surfhop(self.traj, skip=self.stop_hop)
 
         return self.traj
 
@@ -357,8 +360,17 @@ class AIMD:
         stop, info = self.geom_tracker.check(self.traj)
         self.traj.tracker = info
 
-        if stop:
-            self.stop = 5
+        if self.track_stop == 1:
+            if stop:
+                self.stop = 5
+            else:
+                self.stop = 0
+
+        if self.track_stop == 2:
+            if stop:
+                self.stop_hop = 1
+            else:
+                self.stop_hop = 0
 
         return self
 
@@ -700,16 +712,18 @@ class AIMD:
             if self.timing == 1:
                 print('thermostat', time.time())
 
+            ## check errors
+            self._chkgeom()
+            self._chkerror()
+            self._chkpopulation()
+
             ## detect surface hopping
             self._surfacehop()  # update A,H,D,V,state
 
             if self.timing == 1:
                 print('surfacehop', time.time())
 
-            ## check errors and checkpointing
-            self._chkgeom()
-            self._chkerror()
-            self._chkpopulation()
+            ## checkpointing
             self._chkpoint()
 
             if self.timing == 1:

@@ -29,7 +29,3 @@ def verify_ext():
     os.chdir(curr_path)
 
     return None
-
-
-
-

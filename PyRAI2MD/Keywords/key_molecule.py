@@ -35,6 +35,7 @@ class KeyMolecule:
             'track_type': None,
             'track_index': [],
             'track_thrhd': [],
+            'track_stop': 0,
             'primitive': [],
             'lattice': [],
         }
@@ -66,6 +67,7 @@ class KeyMolecule:
             'track_type': ReadVal('s'),
             'track_index': ReadIndex('g', start=1),
             'track_thrhd': ReadVal('fl'),
+            'track_stop': ReadVal('i'),
             'primitive': ReadIndex('g'),
             'lattice': ReadIndex('s'),
         }
@@ -102,10 +104,11 @@ class KeyMolecule:
   External potential factor:  %-10s
   External potential radius:  %-10s
   External potential center:  %-10s
-  Compress potential shape    %-10s
-  Track geometry type         %-10s
-  Track indices               %-10s
-  Track threshold             %-10s                  
+  Compress potential shape:   %-10s
+  Track geometry type:        %-10s
+  Track indices:              %-10s
+  Track threshold:            %-10s
+  Track stop task:            %-10s
   Primitive vectors:          %-10s
   Lattice constant:           %-10s
 -------------------------------------------------------
@@ -131,6 +134,7 @@ class KeyMolecule:
             keywords['track_type'],
             keywords['track_index'],
             keywords['track_thrhd'],
+            keywords['track_stop'],
             keywords['primitive'],
             keywords['lattice']
         )
