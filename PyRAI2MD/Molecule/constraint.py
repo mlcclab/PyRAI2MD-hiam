@@ -205,6 +205,7 @@ class GeomTracker:
 
         elif self.track_type == 'dist':
             info = ''
+            status = []
             for n, indx in enumerate(self.track_index):
 
                 if len(indx) < 2:
@@ -221,8 +222,9 @@ class GeomTracker:
                     n + 1, indx[0] + 1, indx[1] + 1, d, self.track_thrhd[n], stop
                 )
 
-                if stop:
-                    break
+                status.append(stop)
+            stop = (True in status)
+
         else:
             stop = False
             info = None

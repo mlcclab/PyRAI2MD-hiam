@@ -27,6 +27,7 @@ class KeyControl:
             'refine_num': 4,
             'refine_start': 0,
             'refine_end': 200,
+            'refine_gap': 0.3,
             'maxiter': 1,
             'maxsample': 1,
             'dynsample': 0,
@@ -82,6 +83,7 @@ class KeyControl:
             'refine_num': ReadVal('i'),
             'refine_start': ReadVal('i'),
             'refine_end': ReadVal('i'),
+            'refine_gap': ReadVal('f'),
             'maxiter': ReadVal('i'),
             'maxsample': ReadVal('i'),
             'dynsample': ReadVal('i'),
@@ -171,6 +173,7 @@ class KeyControl:
   Max discard range           %-10s
   Refine crossing:            %-10s
   Refine points/range: 	      %-10s %-10s %-10s
+  Refine gap:                 %-10s
   MaxStd  energy:             %-10s
   MinStd  energy:             %-10s
   InitStd energy:             %-10s
@@ -210,6 +213,7 @@ class KeyControl:
             keywords['refine_num'],
             keywords['refine_start'],
             keywords['refine_end'],
+            keywords['refine_gap'],
             keywords['maxenergy'],
             keywords['minenergy'],
             keywords['inienergy'],

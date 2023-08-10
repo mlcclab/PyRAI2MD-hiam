@@ -266,7 +266,6 @@ class AIMD:
     def _surfacehop(self):
         ## update previous population, energy matrix, and non-adiabatic coupling matrix
         self.traj.update_el()
-
         # update current population, energy matrix, and non-adiabatic coupling matrix
         self.traj = surfhop(self.traj, skip=self.stop_hop)
 
@@ -339,6 +338,9 @@ class AIMD:
         ## This function check the state population
         ## This function stop MD if the state population is nan
         ## This function stop MD if the state population exceed 0.01 or below - 0.01
+
+        if self.traj.itr == 1:
+            return self
 
         for p in np.diag(np.real(self.traj.a)):
             if np.isnan(p):

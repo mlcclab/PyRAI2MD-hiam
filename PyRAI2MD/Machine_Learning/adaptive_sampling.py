@@ -153,6 +153,7 @@ class AdaptiveSampling:
         self.refine_num = keywords['control']['refine_num']
         self.refine_start = keywords['control']['refine_start']
         self.refine_end = keywords['control']['refine_end']
+        self.refine_gap = keywords['control']['refine_gap']
         self.load = keywords['control']['load']
         self.transfer = keywords['control']['transfer']
         self.pop_step = keywords['control']['pop_step']
@@ -632,9 +633,14 @@ class AdaptiveSampling:
             for i in range(state):  # compute gap per a pair of states
                 for j in range(i + 1, state):
                     pos += 1
-                    gap_e[:, pos] = np.abs(energy[:, i] - energy[:, j])
+                    gap_e[:, pos] = np.abs(energy[:, i] - energy[:, j]) * 27.211
+
             gap_e = np.amin(gap_e, axis=1)  # pick the smallest gap per point
-            index_r = np.argsort(gap_e[self.refine_start: self.refine_end])
+            gap_e = gap_e[self.refine_start: self.refine_end]
+            sorted_gap = np.sort(gap_e)  # sort the gap
+            argsort_gap = np.argsort(gap_e)  # indices of sorted gap
+            selec_gap = (sorted_gap <= self.refine_gap).nonzero()  # find gap smaller than threshold
+            index_r = argsort_gap[selec_gap]
 
             refine_geom = np.array(geom)[index_r]
             refine_geom, refine_discard, refine_indx, refine_discard_indx = self._distance_filter(allatoms, refine_geom)

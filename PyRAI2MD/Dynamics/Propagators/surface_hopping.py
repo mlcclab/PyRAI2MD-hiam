@@ -55,13 +55,13 @@ def surfhop(traj, skip):
 
         return traj
 
-    if skip:
-        at = np.zeros([traj.nstate, traj.nstate])
+    if skip == 1:
+        at = np.zeros([traj.nstate, traj.nstate]).astype(traj.a.dtype)
         at[traj.state - 1, traj.state - 1] = 1
         traj.a = np.copy(at)
-        # traj.h skip
-        # traj.d skip
-        # traj.velo skip
+        traj.h = np.copy(ht)
+        traj.d = np.copy(dt)
+        # traj.velo = np.copy(v)
         traj.hoped = 0
         # traj.last_state skip
         # traj.state skip
