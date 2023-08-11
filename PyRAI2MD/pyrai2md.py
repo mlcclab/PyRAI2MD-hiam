@@ -47,7 +47,7 @@ class PYRAI2MD:
 
     def __init__(self, ld_input):
         ## check input
-        version = '2.3 alpha'
+        version = '2.4.0'
         self.logo = print_logo(version)
 
         if ld_input is None:
