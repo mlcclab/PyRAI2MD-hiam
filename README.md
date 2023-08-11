@@ -25,7 +25,7 @@
     2019 – 2022      Department of Chemistry and Chemical Biology
                      Northeastern University, Boston, USA
 
-                          version:   2.3 alpha
+                          version:   2.4.0
                           
 
   With contribution from (in alphabetic order):
@@ -73,95 +73,72 @@
 <pre>
  File/Folder Name                                  Description                                      
 ---------------------------------------------------------------------------------------------------
+ pyrai2md.py                                       PyRAI2MD interface                              
  PyRAI2MD                                          source codes folder
-  |--pyrai2md.py                                   PyRAI2MD main function                           
-  |--method.py                                     PyRAI2MD method manager                          
-  |--variables.py                                  PyRAI2MD input reader                            
-  |
-  |--Keywords                                      default input values folder
-  |   |--key_control.py                            keywords for calculation control                 
-  |   |--key_molecule.py                           keywords for molecule specification              
-  |   |--key_md.py                                 keywords for molecular dynamic settings          
-  |   |--key_nn.py                                 keywords for neural network settings             
-  |   |--key_grid_search.py                        keywords for grid search settings                
-  |   |--key_molcas.py                             keywords for molcas calculation                  
-  |   |--key_bagel.py                              keywords for bagel calculation                   
-  |   |--key_orca                                  keywords for orca calculation                    
-  |   |--key_xtb.py                                keywords for xtb calculation                      
-  |   |--key_mlp.py                                keywords for mlp settings                        
-  |   |--key_schnet.py                             keywords for schnet settings                     
-  |   |--key_e2n2.py                               keywords for e2n2 settings                       
-  |   |--key_dimenet.py                            keywords for dimenet (NAC model) setting         
-  |   |--key_read_file.py                          keywords for reading training data                
-  |    `-key_templ.py                              keywords class template                           
-  |
+  |--variables.py                                  PyRAI2MD input reader                           
+  |--method.py                                     PyRAI2MD method manager                         
   |--Molecule                                      atom, molecule, trajectory code folder
-  |   |--atom.py                                   atomic properties class                          
-  |   |--molecule.py                               molecular properties class                       
-  |   |--trajectory.py                             trajectory properties class                      
-  |   |--constraint.py                             external potential functions                     
-  |   |--pbc_helper.py                             periodic boundary condition functions             
-  |    `-qmmm_helper.py                            qmmm functions                                    
+  |   |--atom.py                                   atomic properties class                         
+  |   |--molecule.py                               molecular properties class                      
+  |   |--trajectory.py                             trajectory properties class                     
+  |   |--constraint.py                             external potential functions                  
+  |   |--pbc_helper.py                             periodic boundary condition functions           
+  |    `-qmmm_helper.py                            qmmm functions                                  
   |
-  |--Quantum_Chemistry                             quantum chemicial program interface folder
-  |   |--qc_molcas.py                              OpenMolcas interface                             
-  |   |--qc_bagel.py                               BAGEL interface                                  
-  |   |--qc_molcas_tinker                          OpenMolcas/Tinker interface                      
-  |   |--qc_orca                                   ORCA interface                                   
-  |   |--qc_xtb                                    GFN-xTB interface                                
-  |    `-qmqm2                                     Multiscale calculation interface                 
+  |--Quantum_Chemistry                             quantum chemical program interface folder
+  |   |--qc_molcas.py                              OpenMolcas interface                   
+  |   |--qc_bagel.py                               BAGEL interface                       
+  |   |--qc_molcas_tinker                          OpenMolcas/Tinker interface          
+  |   |--qc_orca                                   ORCA interface                       
+  |   |--qc_xtb                                    GFN-xTB interface                     
+  |    `-qmqm2                                     Multiscale calculation interface            
   |
   |--Machine_Learning                              machine learning library interface folder
-  |   |--model_demo.py                             demo version neural network                      
-  |   |--model_NN.py                               native neural network interface                  
-  |   |--model_pyNNsMD.py                          pyNNsMD interface                               
-  |   |--model_GCNNP.py                            GCNNP interface                                  
-  |   |--model_DimeNet.py                          DimeNet NAC model interface                 
-  |   |--model_templ.py                            NN interface template                       
-  |   |--model_helper.py                           additional tools for neural network              
-  |   |--hyper_nn.py                               native neural network hyperparameter             
-  |   |--hyper_pynnsmd.py                          pyNNsMD hyperparameter                           
-  |   |--hyper_gcnnp.py                            GCNNP hyperparameter                             
-  |   |--hyper_dimenet.py                          DimeNet NAC model hyperparameter                 
-  |   |--hyper_templ.py                            hyperparameter template                           
-  |   |--training_data.py                          training data manager                            
-  |   |--permutation.py                            data permutation functions                       
-  |   |--adaptive_sampling.py                      adaptive sampling class                         
-  |   |--grid_search.py                            grid search manager                              
-  |   |--search_nn.py                              grid search function for native nn               
-  |   |--search_GCNNP.py                           grid search function for e2n2                    
-  |   |--remote_train.py                           remote training function                         
-  |   |--Dimenet.py                                Dimenet NAC model                                
+  |   |--model_demo.py                             demo version neural network                   
+  |   |--model_NN.py                               native neural network interface               
+  |   |--model_pyNNsMD.py                          pyNNsMD interface                       
+  |   |--model_GCNNP.py                            GCNNP interface                            
+  |   |--model_helper.py                           additional tools for neural network      
+  |   |--hyper_nn.py                               native neural network hyperparameter     
+  |   |--hyper_pynnsmd.py                          pyNNsMD hyperparameter                       
+  |   |--hyper_gcnnp.py                            GCNNP hyperparameter                       
+  |   |--training_data.py                          training data manager                      
+  |   |--permutation.py                            data permutation functions               
+  |   |--adaptive_sampling.py                      adaptive sampling class                      
+  |   |--grid_search.py                            grid search manager                     
+  |   |--search_nn.py                              grid search function for native nn                 
+  |   |--search_GCNNP.py                           grid search function for e2n2                        
+  |   |--remote_train.py                           remote training function                        
   |   |--NNsMD                                     demo version neural network library  
-  |    `-pyNNsMD                                   native neural network library                  
+  |    `-pyNNsMD                                   native neural network library              
   |
   |--Dynamics                                      ab initio molecular dynamics code folder
-  |   |--aimd.py                                   molecular dynamics class                         
-  |   |--mixaimd.py                                ML-QC hybrid molecular dynamics class            
-  |   |--single_point.py                           single point calculation                         
-  |   |--hop_probability.py                        surface hopping probability calculation          
-  |   |--reset_velocity.py                         velocity adjustment functions                    
-  |   |--verlet.py                                 velocity verlet method                           
+  |   |--aimd.py                                   molecular dynamics class                        
+  |   |--mixaimd.py                                ML-QC hybrid molecular dynamics class           
+  |   |--single_point.py                           single point calculation                        
+  |   |--hop_probability.py                        surface hopping probability calculation         
+  |   |--reset_velocity.py                         velocity adjustment functions                   
+  |   |--verlet.py                                 velocity verlet method                          
   |   |--Ensembles                                 thermodynamics control code folder
-  |   |   |--ensemble.py                           thermodynamics ensemble manager                   
-  |   |   |--microcanonical.py                     microcanonical ensemble                           
-  |   |    `-thermostat.py                         canonical ensemble                                
+  |   |   |--ensemble.py                           thermodynamics ensemble manager                 
+  |   |   |--microcanonical.py                     microcanonical ensemble                         
+  |   |    `-thermostat.py                         canonical ensemble                              
   |   |
   |    `-Propagators                               electronic propagation code folder
-  |       |--surface_hopping.py                    surface hopping manager                           
-  |       |--setup_fssh.py                         setup file to compile the C-lib of fssh.pyx       
-  |       |--fssh.pyx                              fewest switches surface hopping method           
-  |       |--gsh.py                                generalized surface hopping method               
-  |        `-tsh_helper.py                         trajectory surface hopping tools                 
+  |       |--surface_hopping.py                    surface hopping manager                         
+  |       |--setup_fssh.py                         setup file to compile the C-lib of fssh.pyx
+  |       |--fssh.pyx                              fewest switches surface hopping method          
+  |       |--gsh.py                                generalized surface hopping method              
+  |        `-tsh_helper.py                         trajectory surface hopping tools                
   |
    `-Utils                                         utility folder
-      |--extension.py                              additional tools for setup                        
+      |--extension.py                              additional tools for setup                     
       |--coordinates.py                            coordinates writing functions                    
       |--read_tools.py                             index reader                                     
       |--bonds.py                                  bond length library                               
       |--sampling.py                               initial condition sampling functions            
       |--timing.py                                 timing functions                                  
-       `-logo.py                                   logo and credits                                  
+       `-logo.py                                   logo and credits                                   
 </pre>
 
 ## Installation
@@ -200,7 +177,7 @@ Run test, this might take a while
     pyrai2md input
     
 # User manual
-We are currently working on the user manual.
+We are currently working on the tutorials for users manual.
 
 # Cite us
 - Jingbai Li, Patrick Reiser, Benjamin R. Boswell, André Eberhard, Noah Z. Burns, Pascal Friederich, and Steven A. Lopez, "Automatic discovery of photoisomerization mechanisms with nanosecond machine learning photodynamics simulations", Chem. Sci. 2021, 12, 5302-5314. DOI:10.1039/D0SC05610C
