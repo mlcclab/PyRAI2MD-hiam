@@ -196,12 +196,12 @@ rm -r $MOLCAS_WORKDIR/$MOLCAS_PROJECT
                 if 'ALASKA' in line.upper() and 'ROOT' in line.upper():
                     continue
 
+                si_input.append(line)
+
                 if 'RASSCF' in line.upper():
                     section += 1
                     if grad_pos == section:
                         si_input.append('ALASKA\nROOT=%d\n' % grad_root)
-                else:
-                    si_input.append(line)
         else:
             si_input = ld_input
 
