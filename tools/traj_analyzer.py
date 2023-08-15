@@ -2079,10 +2079,10 @@ def RUNread(key_dict):
 
     if len(output_atom) <= 0:
         output_natom = natom
-        output_atom = [x for x in range(natom)]
+        output_atom = [0] + [x + 1 for x in range(natom)]
     else:
         output_natom = len(output_atom)
-        output_atom = [x - 1 for x in output_atom]
+        output_atom = [0] + [x for x in output_atom]
 
     geom_i = {}
     time_i = {}
