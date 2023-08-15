@@ -1076,8 +1076,11 @@ def count_data_lines_molcas(files):
     if os.path.exists('%s/%s.md.xyz' % (f, t)):
         with open('%s/%s.md.xyz' % (f, t), 'r') as xyzfile:
             xyz = xyzfile.read().splitlines()
-        natom = int(xyz[0])
-        nxyz = len(xyz) / (natom + 2)
+        if len(xyz) > 2:
+            natom = int(xyz[0])
+            nxyz = len(xyz) / (natom + 2)
+        else:
+            nxyz = 0
     else:
         nxyz = 0
 
@@ -2072,6 +2075,15 @@ def RUNread(key_dict):
     # print(len(kin[0]),len(pot[0][0]),len(pop[0][0]),len(coord[0]))
     # exit()
 
+    output_atom = key_dict['output_atom']
+
+    if len(output_atom) <= 0:
+        output_natom = natom
+        output_atom = [x for x in range(natom)]
+    else:
+        output_natom = len(output_atom)
+        output_atom = [x - 1 for x in output_atom]
+
     geom_i = {}
     time_i = {}
     pot_i = {}
@@ -2099,11 +2111,11 @@ def RUNread(key_dict):
         last_time = {}
         hop_time = {}
         for i_traj in traj_index:
-            init_snapshot += format1(natom, coord[i_traj - 1][0])
+            init_snapshot += format1(output_natom, np.array(coord[i_traj - 1][0])[output_atom])
             init_geom[i_traj] = format3(natom, coord[i_traj - 1][0])
             init_pot[i_traj] = pot[i_traj - 1][0]
             init_time[i_traj] = '0'
-            last_snapshot += format1(natom, coord[i_traj - 1][-1])
+            last_snapshot += format1(output_natom, np.array(coord[i_traj - 1][-1])[output_atom])
             last_geom[i_traj] = format3(natom, coord[i_traj - 1][-1])
             last_pot[i_traj] = pot[i_traj - 1][-1]
             last_time[i_traj] = label[i_traj - 1][-1].split()[3]  # step is the 4th data
@@ -2115,7 +2127,7 @@ def RUNread(key_dict):
 
             for i_hop in hop_index:
                 if len(coord[i_traj - 1]) >= i_hop:
-                    hop_snapshot += format1(natom, coord[i_traj - 1][i_hop - 1])
+                    hop_snapshot += format1(output_natom, np.array(coord[i_traj - 1][i_hop - 1])[output_atom])
 
             hop_geom[i_traj] = format3(natom, coord[i_traj - 1][hop_index[-1] - 1])
             hop_pot[i_traj] = pot[i_traj - 1][hop_index[-1] - 1]
