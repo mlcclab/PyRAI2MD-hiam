@@ -35,6 +35,7 @@ class KeyMD:
             'sfhp': 'nosh',
             'nactype': 'ktdc',
             'phasecheck': 1,
+            'popreset': 0,
             'gap': 0.5,
             'gapsoc': 0.5,
             'substep': 20,
@@ -89,6 +90,7 @@ class KeyMD:
             'sfhp': ReadVal('s'),
             'nactype': ReadVal('s'),
             'phasecheck': ReadVal('i'),
+            'popreset': ReadVal('i'),
             'gap': ReadVal('f'),
             'gapsoc': ReadVal('f'),
             'substep': ReadVal('i'),
@@ -157,6 +159,7 @@ class KeyMD:
   Surface hopping:            %-10s
   NAC type:                   %-10s
   Phase correction            %-10s
+  Population reset            %-10s
   Substep:                    %-10s
   Integrate probability       %-10s
   Decoherence:                %-10s
@@ -187,6 +190,7 @@ class KeyMD:
             keywords['sfhp'],
             keywords['nactype'],
             keywords['phasecheck'],
+            keywords['popreset'],
             keywords['substep'],
             keywords['integrate'],
             keywords['deco'],

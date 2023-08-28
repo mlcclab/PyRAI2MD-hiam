@@ -47,6 +47,7 @@ class Trajectory(Molecule):
             sfhp             str         surface hopping method
             nactype          str         nonadiabatic coupling approximation type
             phasecheck       int         nonadiabatic coupling phase correction based on the time overlap
+            popreset         int         reset population if exceed 0-1
             gap              float       energy gap threshold for Zhu-Nakamura surface hopping
             gapsoc           float       energy gap threshold for Zhu-Nakamura intersystem crossing
             delt             float       step size for fewest switches surface hopping 
@@ -114,7 +115,7 @@ class Trajectory(Molecule):
 
     __slots__ = ['gl_seed', 'initcond', 'excess', 'scale', 'target', 'graddesc', 'reset', 'resetstep', 'record_region',
                  'ninitcond', 'method', 'format', 'temp', 'step', 'size', 'root', 'attr', 'verbose', 'phasecheck',
-                 'sfhp', 'gap', 'gapsoc', 'substep', 'integrate', 'deco', 'adjust', 'reflect', 'maxh', 'delt',
+                 'popfix', 'sfhp', 'gap', 'gapsoc', 'substep', 'integrate', 'deco', 'adjust', 'reflect', 'maxh', 'delt',
                  'last_state', 'state', 'last_a', 'last_h', 'last_d', 'a', 'h', 'd', 'dosoc', 'last_nac', 'last_soc',
                  'coord1', 'coord2', 'kinetic1', 'kinetic2', 'energy1', 'energy2', 'grad1', 'grad2', 'activestate',
                  'thermo', 'thermodelay', 'vs', 'itr', 'itr_x', 'hoped', 'history', 'length', 'shinfo', 'nactype',
@@ -145,6 +146,7 @@ class Trajectory(Molecule):
         self.sfhp = key_dict['sfhp']
         self.nactype = key_dict['nactype']
         self.phasecheck = key_dict['phasecheck']
+        self.popfix = key_dict['popfix']
         self.gap = key_dict['gap']
         self.gapsoc = key_dict['gapsoc']
         self.substep = key_dict['substep']
@@ -281,6 +283,15 @@ class Trajectory(Molecule):
             cnac = np.array(cnac)
 
             self.nac = cnac
+
+        return self
+
+    def pop_rest(self):
+        ## reset population exceeding 0-1
+        for n, p in enumerate(np.diag(np.real(self.a))):
+            if p > 1.0:
+                self.a = np.zeros_like(self.a)
+                self.a[n, n] = 1.0
 
         return self
 

@@ -268,6 +268,8 @@ class AIMD:
         self.traj.update_el()
         # update current population, energy matrix, and non-adiabatic coupling matrix
         self.traj = surfhop(self.traj, skip=self.stop_hop)
+        # reset population exceeding 0–1
+        self.traj.pop_reset()
 
         return self.traj
 
@@ -717,10 +719,12 @@ class AIMD:
             ## check errors
             self._chkgeom()
             self._chkerror()
-            self._chkpopulation()
 
             ## detect surface hopping
             self._surfacehop()  # update A,H,D,V,state
+
+            ## check population
+            self._chkpopulation()
 
             if self.timing == 1:
                 print('surfacehop', time.time())
