@@ -286,7 +286,7 @@ class Trajectory(Molecule):
 
         return self
 
-    def pop_rest(self):
+    def pop_reset(self):
         ## reset population exceeding 0-1
         for n, p in enumerate(np.diag(np.real(self.a))):
             if p > 1.0:
