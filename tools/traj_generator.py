@@ -164,6 +164,8 @@ def main(argv):
             tompi = line.split()[1]
         elif 'xtb' == key:
             toxtb = line.split()[1]
+        elif 'orca' == key:
+            toorca = line.solit()[1]
 
     if inputs is not None and os.path.exists(inputs):
         print('\n>>> %s' % inputs)
