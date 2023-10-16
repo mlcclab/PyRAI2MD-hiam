@@ -387,8 +387,8 @@ def create_solvent(key_dict):
     rad_s = find_rad_in(geom_s)
     print(' checking constraining potential parameters')
     print(' radius of the solvent model is %8.2f Angstrom' % rad_s)
-    print(' suggested constraining radius is %8.2f Angstrom' % (rad_s + 1))
-    print(' compression ratio is %8.2f' % (rad_out/(rad_s + 1)))
+    print(' suggested constraining radius is %8.2f Angstrom' % (rad_s * 1.1))
+    print(' compression ratio is 0.90909091')
     print(' COMPLETE')
 
     return None
