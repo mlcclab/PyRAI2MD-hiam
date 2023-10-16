@@ -371,13 +371,24 @@ def create_solvent(key_dict):
     print(' computing inner radius %8.2f' % rad_in)
     print(' computing solvent unit radius %8.2f' % unit_rad)
     print(' creating %s layer of spherical shell from %8.2f to %8.2f Angstrom' % (nshell, rad_in, rad_out))
-    print(' total volume is %16.8f' % vol)
+    print(' total mass is %16.8f g/mol' % (mass * int(num)))
+    print(' total volume is %16.8f Angstrom^3' % vol)
     print(' total number of solvent molecule is %8.0f' % num)
     print(' writing packmol input > sol.pkm')
     write_packmol(solute, solvent, num, rad_in, rad_out)
     print(' running packmol\n')
     subprocess.run('%s/bin/packmol < sol.pkm > sol.log' % packmol, shell=True)
     print(' writing environment > env.xyz')
+
+    with open('env.xyz', 'r') as inxyz:
+        geom_s = inxyz.read().splitlines()
+
+    _, geom_s = read_xyz(geom_s)
+    rad_s = find_rad_in(geom_s)
+    print(' checking constraining potential parameters')
+    print(' radius of the solvent model is %8.2f Angstrom' % rad_s)
+    print(' suggested constraining radius is %8.2f Angstrom' % (rad_s + 1))
+    print(' compression ratio is %8.2f' % (rad_out/(rad_s + 1)))
     print(' COMPLETE')
 
     return None
