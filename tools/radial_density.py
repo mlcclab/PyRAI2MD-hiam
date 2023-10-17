@@ -11,8 +11,6 @@ mass_dict = {
 def radial_density(atoms, coord, maxrad, interval):
     block_list = np.zeros(int(maxrad / interval))
     den_list = np.zeros(int(maxrad / interval))
-    com = np.mean(coord, axis=0)
-    coord -= com
     dist = np.sum(coord ** 2, axis=1) ** 0.5
     for n, d in enumerate(dist):
         mass = mass_dict[atoms[n]]
@@ -23,13 +21,13 @@ def radial_density(atoms, coord, maxrad, interval):
         r1 = (n + 1) * interval
         r2 = n * interval
         vol = 4 / 3 * np.pi * (r1 ** 3 - r2 ** 3)
-        den = m / (6.022 * 1e23) / (vol / 10e24)
+        den = m / vol
         den_list[n] = den
 
     return den_list, np.amax(dist)
 
 def radial_density_wrapper(var):
-    idx, title, maxrad, interval, skip = var
+    idx, title, maxrad, interval, core = var
     filename = title.split('/')[-1]
     with open('%s/%s.md.xyz' % (title, filename), 'r') as infile:
         file = infile.read().splitlines()
@@ -40,8 +38,11 @@ def radial_density_wrapper(var):
     for n, line in enumerate(file):
         if 'coord' in line:
             coord = file[n + 1: n + 1 + natom]
-            atoms = [x.split()[0] for x in coord][skip:]
-            xyz = np.array([x.split()[1:4] for x in coord]).astype(float)[skip:]
+            atoms = [x.split()[0] for x in coord][core:]
+            xyz = np.array([x.split()[1:4] for x in coord]).astype(float)[core:]
+            cxyz = np.array([x.split()[1:4] for x in coord]).astype(float)[:core]
+            com = np.mean(cxyz, axis=0)
+            xyz -= com
             coord_list.append(xyz)
 
     den_list_1, max1 = radial_density(atoms, coord_list[0], maxrad, interval)
@@ -56,7 +57,7 @@ def main():
 
     ncpus = 20
     maxrad = float(sys.argv[2])
-    skip = int(sys.argv[3])
+    core = int(sys.argv[3])
     interval = 0.1
     den_list_1 = [[] for _ in file]
     den_list_2 = [[] for _ in file]
@@ -66,7 +67,7 @@ def main():
     r_max_3 = [[] for _ in file]
 
     ntraj = len(file)
-    variables_wrapper = [[n, x, maxrad, interval, skip] for n, x in enumerate(file)]
+    variables_wrapper = [[n, x, maxrad, interval, core] for n, x in enumerate(file)]
     pool = multiprocessing.Pool(processes=ncpus)
     n = 0
     sys.stdout.write('CPU: %3d Reading: 0/%d\r' % (ncpus, ntraj))
