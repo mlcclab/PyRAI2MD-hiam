@@ -27,7 +27,7 @@ def radial_density(atoms, coord, maxrad, interval):
     return den_list, np.amax(dist)
 
 def radial_density_wrapper(var):
-    idx, title, maxrad, interval, core = var
+    idx, title, maxrad, interval, core, snapshots = var
     filename = title.split('/')[-1]
     with open('%s/%s.md.xyz' % (title, filename), 'r') as infile:
         file = infile.read().splitlines()
@@ -35,19 +35,22 @@ def radial_density_wrapper(var):
     natom = int(file[0])
     coord_list = []
     atoms = []
+    sn = 0
     for n, line in enumerate(file):
         if 'coord' in line:
-            coord = file[n + 1: n + 1 + natom]
-            atoms = [x.split()[0] for x in coord][core:]
-            xyz = np.array([x.split()[1:4] for x in coord]).astype(float)[core:]
-            cxyz = np.array([x.split()[1:4] for x in coord]).astype(float)[:core]
-            com = np.mean(cxyz, axis=0)
-            xyz -= com
-            coord_list.append(xyz)
+            sn += 1
+            if sn in snapshots:
+                coord = file[n + 1: n + 1 + natom]
+                atoms = [x.split()[0] for x in coord][core:]
+                xyz = np.array([x.split()[1:4] for x in coord]).astype(float)[core:]
+                cxyz = np.array([x.split()[1:4] for x in coord]).astype(float)[:core]
+                com = np.mean(cxyz, axis=0)
+                xyz -= com
+                coord_list.append(xyz)
 
     den_list_1, max1 = radial_density(atoms, coord_list[0], maxrad, interval)
-    den_list_2, max2 = radial_density(atoms, coord_list[10], maxrad, interval)
-    den_list_3, max3 = radial_density(atoms, coord_list[-1], maxrad, interval)
+    den_list_2, max2 = radial_density(atoms, coord_list[1], maxrad, interval)
+    den_list_3, max3 = radial_density(atoms, coord_list[2], maxrad, interval)
 
     return idx, den_list_1, den_list_2, den_list_3, max1, max2, max3
 
@@ -59,6 +62,7 @@ def main():
     maxrad = float(sys.argv[2])
     core = int(sys.argv[3])
     interval = 0.1
+    snapshots = [1, 21, 101]
     den_list_1 = [[] for _ in file]
     den_list_2 = [[] for _ in file]
     den_list_3 = [[] for _ in file]
@@ -67,7 +71,7 @@ def main():
     r_max_3 = [[] for _ in file]
 
     ntraj = len(file)
-    variables_wrapper = [[n, x, maxrad, interval, core] for n, x in enumerate(file)]
+    variables_wrapper = [[n, x, maxrad, interval, core, snapshots] for n, x in enumerate(file)]
     pool = multiprocessing.Pool(processes=ncpus)
     n = 0
     sys.stdout.write('CPU: %3d Reading: 0/%d\r' % (ncpus, ntraj))
