@@ -210,9 +210,9 @@ def main(argv):
             read_init = line.split()[1]
         elif 'reorder' == key:
             reorder = int(line.split()[1].lower())
-        elif 'c_atom' == key:
+        elif 'c_atoms' == key:
             c_atom = int(line.split()[1].lower())
-        elif 'v_atom' == key:
+        elif 'v_atoms' == key:
             v_atom = int(line.split()[1].lower())
         elif 'init_to_xyz' == key:
             init_to_xyz = int(line.split()[1])
@@ -1047,7 +1047,7 @@ def reorder_mol(atom, c_atom, v_atom, initcond, edit_atom):
         v_mol = v_mol.reshape((nv, v_atom, -1))
 
         c_m = np.mean(c_mol[:, 0: 3], axis=0)
-        v_m = np.mean(v_mol[:, 0: 3], axis=1)
+        v_m = np.mean(v_mol[:, :, 0: 3], axis=1)
         d = np.sum((v_m - c_m) ** 2, axis=1) ** 0.5
         order = np.argsort(d)
         dist += 'Init %5s' % (idx + 1) + ''.join(['%8.2f' % x for x in d[order]]) + '\n'
