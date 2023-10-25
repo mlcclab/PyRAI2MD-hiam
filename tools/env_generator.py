@@ -911,9 +911,9 @@ def trans_rmsd(p, q):
 
     pc = np.mean(p, axis=0)
     qc = np.mean(q, axis=0)
-    p -= pc
-    q -= qc
-    rmsd = np.mean((p - q) ** 2) ** 0.5
+    ps = p - pc
+    qs = q - qc
+    rmsd = np.mean((ps - qs) ** 2) ** 0.5
 
     return rmsd
 
