@@ -1161,7 +1161,7 @@ def read_raw_data_molcas(files):
     ## subloops find crt_kin,crt_pot,crt_pop,crt_coord,crt_hop and
     ## append to trj_kin,trj_pot,trj_pop,trj_coord,trj_hop for each trajectory.
     ## natom, nstate, and dtime are supposed to be the same over all trajectories, so just pick up the last values.
-    ntraj, f, maxstep, pindex, pthrhd = files
+    ntraj, f, maxstep, pindex, pthrhd, output_atom = files
     t = f.split('/')[-1]
 
     if os.path.exists('%s/%s.log' % (f, t)):
@@ -1284,7 +1284,7 @@ def read_raw_data_molcas(files):
                         pstep = m
                         break
 
-            crt_coord = [trj_lab[m - 1]] + xyz[n - natom:n]  # combine label with coordinates
+            crt_coord = [trj_lab[m - 1]] + np.array(xyz[n - natom:n])[output_atom].tolist()  # combine label with coord
             trj_coord.append(crt_coord)
 
             if m == maxstep and maxstep != 0:  # cutoff trajectories
@@ -1318,6 +1318,9 @@ def read_raw_data_molcas(files):
             if s <= pstep:
                 trj_hop.append(s)
 
+    if len(output_atom) > 0:
+        natom = len(output_atom)
+
     return ntraj, natom, nstate, nstep, dtime, trj_kin, trj_pot, trj_pop, trj_lab, trj_coord, trj_hop, crt_state
 
 
@@ -1327,7 +1330,7 @@ def read_raw_data_newtonx(files):
     ## subloops find crt_kin,crt_pot,crt_pop,crt_coord,crt_hop and
     ## append to trj_kin,trj_pot,trj_pop,trj_coord,trj_hop for each trajectory.
     ## natom, nstate, and dtime are supposed to be the same over all trajectories, so just pick up the last values.
-    ntraj, f, maxstep, pindex, pthrhd = files
+    ntraj, f, maxstep, pindex, pthrhd, output_atom = files
 
     with open('%s/RESULTS/nx.log' % f, 'r') as nxfile:
         nx = nxfile.read().splitlines()
@@ -1386,7 +1389,7 @@ def read_raw_data_newtonx(files):
             xyz = ['%-5s %14.8f %14.8f %14.8f' % (
                 x.split()[0], float(x.split()[2]) * 0.529177, float(x.split()[3]) * 0.529177,
                 float(x.split()[4]) * 0.529177) for x in xyz]  # pick atom,x,y,z
-            crt_coord = [crt_label] + xyz  # combine label with coordinates
+            crt_coord = [crt_label] + np.array(xyz)[output_atom].tolist()  # combine label with coordinates
 
             if pindex and pstep == 0:
                 for k, p in enumerate(pindex):
@@ -1473,6 +1476,9 @@ def read_raw_data_newtonx(files):
             if s <= pstep:
                 trj_hop.append(s)
 
+    if len(output_atom) > 0:
+        natom = len(output_atom)
+
     return ntraj, natom, nstate, nstep, dtime, trj_kin, trj_pot, trj_pop, trj_lab, trj_coord, trj_hop, crt_state
 
 
@@ -1482,7 +1488,7 @@ def read_raw_data_sharc(files):
     ## subloops find crt_kin,crt_pot,crt_pop,crt_coord,crt_hop and
     ## append to trj_kin,trj_pot,trj_pop,trj_coord,trj_hop for each trajectory.
     ## natom, nstate, and dtime are supposed to be the same over all trajectories, so just pick up the last values.
-    ntraj, f, maxstep, pindex, pthrhd = files
+    ntraj, f, maxstep, pindex, pthrhd, output_atom = files
 
     with open('%s/output.dat' % f, 'r') as datfile:
         dat = datfile.read().splitlines()
@@ -1573,7 +1579,7 @@ def read_raw_data_sharc(files):
                         pstep = i
                         break
 
-            crt_coord = [crt_label] + xyz  # combine label with coordinates
+            crt_coord = [crt_label] + np.array(xyz)[output_atom].tolist()  # combine label with coordinates
             trj_coord.append(crt_coord)
 
         if i == maxstep and maxstep != 0:  # cutoff trajectories
@@ -1607,6 +1613,9 @@ def read_raw_data_sharc(files):
             if s <= pstep:
                 trj_hop.append(s)
 
+    if len(output_atom) > 0:
+        natom = len(output_atom)
+
     return ntraj, natom, nstate, nstep, dtime, trj_kin, trj_pot, trj_pop, trj_lab, trj_coord, trj_hop, crt_state
 
 
@@ -1616,7 +1625,7 @@ def read_raw_data_fromage(files):
     ## subloops find crt_kin,crt_pot,crt_pop,crt_coord,crt_hop and
     ## append to trj_kin,trj_pot,trj_pop,trj_coord,trj_hop for each trajectory.
     ## natom, nstate, and dtime are supposed to be the same over all trajectories, so just pick up the last values.
-    ntraj, f, maxstep, pindex, pthrhd = files
+    ntraj, f, maxstep, pindex, pthrhd, output_atom = files
 
     with open('%s/output.chk' % f, 'r') as datfile:
         dat = datfile.read().splitlines()
@@ -1684,7 +1693,7 @@ def read_raw_data_fromage(files):
         n += 1
         if n % (natom + 2) == 0:  # at the last line of each coordinates
             m += 1
-            crt_coord = [trj_lab[m - 1]] + xyz[n - natom: n]  # combine label with coordinates
+            crt_coord = [trj_lab[m - 1]] + np.array(xyz[n - natom: n])[output_atom].tolist()  # combine label with coord
             trj_coord.append(crt_coord)
 
             if pindex and pstep == 0:
@@ -1726,6 +1735,9 @@ def read_raw_data_fromage(files):
             if s <= pstep:
                 trj_hop.append(s)
 
+    if len(output_atom) > 0:
+        natom = len(output_atom)
+
     return ntraj, natom, nstate, nstep, dtime, trj_kin, trj_pot, trj_pop, trj_lab, trj_coord, trj_hop, crt_state
 
 
@@ -1736,7 +1748,7 @@ def read_pyrai2md(files):
     ## append to trj_kin,trj_pot,trj_pop,trj_coord,trj_hop for each trajectory.
     ## natom, nstate, and dtime are supposed to be the same over all trajectories, so just pick up the last values.
 
-    ntraj, f, pindex, pthrhd = files
+    ntraj, f, maxstep, pindex, pthrhd, output_atom = files
     t = f.split('/')[-1]
     nstate = 0
 
@@ -1771,6 +1783,9 @@ def read_pyrai2md(files):
             if stop:
                 break
 
+            if n == maxstep and maxstep != 0:  # cutoff trajectories
+                break
+
     if len(eng_m) < 2:
         trj_init = []
         trj_init_t = []
@@ -1788,12 +1803,14 @@ def read_pyrai2md(files):
 
         trj_init = [xyz_m[1: 2 + natom]]
         lb = trj_init[0][0].split()
-        trj_init[0][0] = 'traj %s coord 1 state %s' % (ntraj + 1, int(lb[4]) - 1)
+        coord = np.array(trj_init[0][1:])[output_atom].tolist()
+        trj_init = [['traj %s coord 1 state %s' % (ntraj + 1, int(lb[4]) - 1)] + coord]
         trj_init_t = [0]
 
         trj_final = [xyz_m[int((pstep - 1) * (natom + 2)) + 1: int(pstep * (natom + 2))]]
         lb = trj_final[0][0].split()
-        trj_final[0][0] = 'traj %s coord %s state %s' % (ntraj + 1, int(lb[2]), int(lb[4]) - 1)
+        coord = np.array(trj_final[0][1:])[output_atom].tolist()
+        trj_final = [['traj %s coord %s state %s' % (ntraj + 1, int(lb[2]), int(lb[4]) - 1)] + coord]
         trj_final_t = [int(lb[2])]
         hstep = int(trj_final_t[0])
 
@@ -1833,9 +1850,12 @@ def read_pyrai2md(files):
                     break
 
                 crt_label = 'traj %s coord %s state %s to %s CI' % (ntraj + 1, lb[2], int(lb[4]) - 1, int(lb[6]) - 1)
-                crt_hop = [crt_label] + xyz_h[n - natom:n]  # combine label with coordinates
+                crt_hop = [crt_label] + np.array(xyz_h[n - natom:n])[output_atom].tolist()  # combine label with coord
                 trj_hop.append(crt_hop)
                 trj_hop_t.append(lb[2])
+
+    if len(output_atom) > 0:
+        natom = len(output_atom)
 
     return ntraj, natom, nstate, trj_init, trj_final, trj_hop, trj_init_t, trj_final_t, trj_hop_t, trj_init_p, \
         trj_final_p, trj_hop_p
@@ -1993,6 +2013,7 @@ def RUNread(key_dict):
     maxstep = key_dict['maxstep']
     pindex = key_dict['pindex']
     pthrhd = key_dict['pthrhd']
+    output_atom = key_dict['output_atom']
     natom = 0
     nstate = 0
     ntraj = 0
@@ -2003,7 +2024,7 @@ def RUNread(key_dict):
     ## kin, pot, pop, coord, hop in the main dictionary.
     input_val = []
     for n, f in enumerate(read_files):
-        input_val.append([n, f, maxstep, pindex, pthrhd])
+        input_val.append([n, f, maxstep, pindex, pthrhd, output_atom])
     kin = [[] for _ in range(len(input_val))]
     pot = [[] for _ in range(len(input_val))]
     pop = [[] for _ in range(len(input_val))]
@@ -2075,15 +2096,6 @@ def RUNread(key_dict):
     # print(len(kin[0]),len(pot[0][0]),len(pop[0][0]),len(coord[0]))
     # exit()
 
-    output_atom = key_dict['output_atom']
-
-    if len(output_atom) <= 0:
-        output_natom = natom
-        output_atom = [0] + [x + 1 for x in range(natom)]
-    else:
-        output_natom = len(output_atom)
-        output_atom = [0] + [x for x in output_atom]
-
     geom_i = {}
     time_i = {}
     pot_i = {}
@@ -2111,11 +2123,11 @@ def RUNread(key_dict):
         last_time = {}
         hop_time = {}
         for i_traj in traj_index:
-            init_snapshot += format1(output_natom, np.array(coord[i_traj - 1][0])[output_atom])
+            init_snapshot += format1(natom, np.array(coord[i_traj - 1][0]))
             init_geom[i_traj] = format3(natom, coord[i_traj - 1][0])
             init_pot[i_traj] = pot[i_traj - 1][0]
             init_time[i_traj] = '0'
-            last_snapshot += format1(output_natom, np.array(coord[i_traj - 1][-1])[output_atom])
+            last_snapshot += format1(natom, np.array(coord[i_traj - 1][-1]))
             last_geom[i_traj] = format3(natom, coord[i_traj - 1][-1])
             last_pot[i_traj] = pot[i_traj - 1][-1]
             last_time[i_traj] = label[i_traj - 1][-1].split()[3]  # step is the 4th data
@@ -2127,7 +2139,7 @@ def RUNread(key_dict):
 
             for i_hop in hop_index:
                 if len(coord[i_traj - 1]) >= i_hop:
-                    hop_snapshot += format1(output_natom, np.array(coord[i_traj - 1][i_hop - 1])[output_atom])
+                    hop_snapshot += format1(natom, np.array(coord[i_traj - 1][i_hop - 1]))
 
             hop_geom[i_traj] = format3(natom, coord[i_traj - 1][hop_index[-1] - 1])
             hop_pot[i_traj] = pot[i_traj - 1][hop_index[-1] - 1]
@@ -2467,7 +2479,6 @@ def RUNclassify(key_dict):
     cpus = key_dict['cpus']
     classify = key_dict['classify']
     classify_state = key_dict['classify_state']
-    output_atom = key_dict['output_atom']
     align = key_dict['align']
     align_core = key_dict['align_core']
     select = key_dict['select']
@@ -2571,7 +2582,7 @@ Time step (a.u.):           %-10s
             0, geom_i, step_i, pot_i, 'initial', classify_state, param_list, thrhd, ref_coord, select
         )
         if align:
-            align_mol('Ini.S%d.xyz' % classify_state, align_core, output_atom, cpus)
+            align_mol('Ini.S%d.xyz' % classify_state, align_core, cpus)
 
     input_val_f = []
     param_f = []
@@ -2583,7 +2594,7 @@ Time step (a.u.):           %-10s
             1, geom_f, step_f, pot_f, 'final', classify_state, param_list, thrhd, ref_coord, select
         )
         if align:
-            align_mol('Fin.S%d.xyz' % classify_state, align_core, output_atom, cpus)
+            align_mol('Fin.S%d.xyz' % classify_state, align_core, cpus)
 
     input_val_h = []
     param_h = []
@@ -2595,7 +2606,7 @@ Time step (a.u.):           %-10s
             2, geom_h, step_h, pot_h, 'hop', classify_state, param_list, thrhd, ref_coord, select
         )
         if align:
-            align_mol('Hop.S%d.xyz' % classify_state, align_core, output_atom, cpus)
+            align_mol('Hop.S%d.xyz' % classify_state, align_core, cpus)
 
     input_val = input_val_i + input_val_f + input_val_h
     param_all = [param_i, param_f, param_h]
@@ -2823,6 +2834,8 @@ def RUNreadpmd(key_dict):
     title = key_dict['title']
     cpus = key_dict['cpus']
     read_files = key_dict['read_files']
+    output_atom = key_dict['output_atom']
+    maxstep = key_dict['maxstep']
     pindex = key_dict['pindex']
     pthrhd = key_dict['pthrhd']
 
@@ -2831,7 +2844,7 @@ def RUNreadpmd(key_dict):
     states = []
     input_val = []
     for n, f in enumerate(read_files):
-        input_val.append([n, f, pindex, pthrhd])
+        input_val.append([n, f, maxstep, pindex, pthrhd, output_atom])
 
     init = [[] for _ in range(len(input_val))]
     final = [[] for _ in range(len(input_val))]
@@ -2865,7 +2878,9 @@ def RUNreadpmd(key_dict):
         final_p[p] = trj_final_p
         hop_p[p] = trj_hop_p
         sys.stdout.write(
-            'CPU: %3d Reading snapshots: %6.2f%% %d/%d\r' % (cpus, ntraj * 100 / (len(input_val)), ntraj, len(input_val)))
+            'CPU: %3d Reading snapshots: %6.2f%% %d/%d\r' % (
+                cpus, ntraj * 100 / (len(input_val)), ntraj, len(input_val))
+        )
 
     main_dict = {
         'title': title,
@@ -2969,7 +2984,7 @@ def special_prep(order, traj_index, geom, step, pot, snapshot_type, label_key, p
     return param, input_val, ntraj_list, time_list, gap_list
 
 def aligner(var):
-    i_geom, coord, ref, core, out = var
+    i_geom, coord, ref, core = var
 
     head = coord[0: 2]
     ss = np.array([x.split() for x in coord[2:]])
@@ -2980,13 +2995,6 @@ def aligner(var):
 
     if len(core) <= 0:
         core = [x for x in range(len(ss))]
-    else:
-        core = [x - 1 for x in core]
-
-    if len(out) <= 0:
-        out = [x for x in range(len(ss))]
-    else:
-        out = [x - 1 for x in out]
 
     p = ss.copy()[core, :]
     q = rf.copy()[core, :]
@@ -3002,7 +3010,7 @@ def aligner(var):
         v[:, -1] = -v[:, -1]
     u = np.dot(v, w)
 
-    new_coord = np.dot(ss[out, :] - pc, u) + qc
+    new_coord = np.dot(ss - pc, u) + qc
 
     new_coord = '%s\n%s\n' % (len(new_coord), head[1]) + ''.join(
         ['%-5s %18.10f %18.10f %18.10f\n' % (atom[n], x[0], x[1], x[2]) for n, x in enumerate(new_coord)]
@@ -3010,7 +3018,7 @@ def aligner(var):
 
     return i_geom, new_coord
 
-def align_mol(title, align_core, output_atom, cpus):
+def align_mol(title, align_core, cpus):
     print('\nAlign snapshots from %s' % title)
 
     with open(title, 'r') as inxyz:
@@ -3023,7 +3031,7 @@ def align_mol(title, align_core, output_atom, cpus):
             coord = xyz[n - 1: n + 1 + natom]
             coord_list.append(coord)
 
-    variables_wrapper = [[n, x, coord_list[0], align_core, output_atom] for n, x in enumerate(coord_list)]
+    variables_wrapper = [[n, x, coord_list[0], align_core] for n, x in enumerate(coord_list)]
     if (len(variables_wrapper)) < cpus:
         cpus = len(variables_wrapper)
 
@@ -3057,7 +3065,6 @@ def RUNspecial(key_dict):
     read_init = key_dict['read_init']
     classify = key_dict['classify']
     classify_state = key_dict['classify_state']
-    output_atom = key_dict['output_atom']
     align = key_dict['align']
     align_core = key_dict['align_core']
     label_key = '%s to %s' % (classify_state + 1, classify_state)
@@ -3104,7 +3111,7 @@ def RUNspecial(key_dict):
                 0, traj_index, coord_i, init_t, init_p, 'ini', 'state', param_list, thrhd, select
             )
         if align:
-            align_mol('ini.pmd.xyz', align_core, output_atom, cpus)
+            align_mol('ini.pmd.xyz', align_core, cpus)
 
     input_val_f = []
     param_f = []
@@ -3116,7 +3123,7 @@ def RUNspecial(key_dict):
             1, traj_index, coord_f, final_t, final_p, 'fin', 'state', param_list, thrhd, select
         )
         if align:
-            align_mol('fin.pmd.xyz', align_core, output_atom, cpus)
+            align_mol('fin.pmd.xyz', align_core, cpus)
 
     input_val_h = []
     param_h = []
@@ -3128,7 +3135,7 @@ def RUNspecial(key_dict):
             2, traj_index, coord_h, hop_t, hop_p, 'hop', label_key, param_list, thrhd, select
         )
         if align:
-            align_mol('hop.pmd.xyz', align_core, output_atom, cpus)
+            align_mol('hop.pmd.xyz', align_core, cpus)
 
     input_val = input_val_i + input_val_f + input_val_h
     param_all = [param_i, param_f, param_h]
@@ -3344,9 +3351,11 @@ def main(argv):
 
     if len(output_atom) > 0:
         output_atom = getindex(output_atom)
+        output_atom = [x - 1 for x in output_atom]
 
     if len(align_core) > 0:
         align_core = getindex(align_core)
+        align_core = [x - 1 for x in output_atom]
 
     if prune_type:
         pindex, pthrhd = set_prune(prune_type, prune_index, prune_thrhd)
