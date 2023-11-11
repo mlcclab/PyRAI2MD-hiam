@@ -174,15 +174,24 @@ def print_coord(xyz):
 
     return coord
 
-def print_charge(charge, charge_name=''):
+def print_charge(charge, charge_name='', unit='Angstrom'):
     ## This function convert a numpy array of coordinates to a formatted string
     coord = ''
     if not isinstance(charge, np.ndarray):
         return coord
 
+    if unit == 'Angstrom':
+        f = 1
+    elif unit == 'Bohr':
+        f = 1 / 0.529177249
+    else:
+        f = 1
+
     for line in charge:
         q, x, y, z = line
-        coord += '%-5s%24.16f%24.16f%24.16f%24.16f\n' % (charge_name, float(q), float(x), float(y), float(z))
+        coord += '%-5s%24.16f%24.16f%24.16f%24.16f\n' % (
+            charge_name, float(q), float(x) * f, float(y) * f, float(z) * f
+        )
 
     return coord
 

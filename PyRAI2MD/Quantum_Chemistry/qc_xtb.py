@@ -160,7 +160,7 @@ cd $XTB_WORKDIR
         ## write xtb input file
         natom = len(x)
         xyz = '%s\n\n%s' % (natom, print_coord(x))
-        charge = print_charge(q)
+        charge = print_charge(q, unit='Bohr')
 
         ## Read input template from current directory
         ## general dft xTb template should end with '*xyz charge mult'
