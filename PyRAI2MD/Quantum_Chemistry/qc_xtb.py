@@ -172,7 +172,7 @@ cd $XTB_WORKDIR
 
         ## insert charge section
         if len(charge) > 0:
-            ld_input = ld_input + '$embedding\ninput=%s.pc\n$end\n' % charge
+            ld_input = ld_input + '$embedding\ninput=%s.pc\n$end\n' % self.project
             with open('%s/%s.pc' % (self.workdir, self.project), 'w') as out:
                 out.write('%s\n%s' % (len(q), charge))
 
