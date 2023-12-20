@@ -1268,6 +1268,11 @@ def read_raw_data_molcas(files):
     ## Find coordinates
     trj_coord = []  # coordinates list
     natom = int(xyz[0])
+
+    # initialize output_atom if it is empty
+    if len(output_atom) == 0:
+        output_atom = [x for x in range(natom)]
+
     n = 0  # count line number
     m = 0  # count structure number
     pstep = 0  # count step to prune trajectory
@@ -1318,8 +1323,8 @@ def read_raw_data_molcas(files):
             if s <= pstep:
                 trj_hop.append(s)
 
-    if len(output_atom) > 0:
-        natom = len(output_atom)
+    # update natom at the end
+    natom = len(output_atom)
 
     return ntraj, natom, nstate, nstep, dtime, trj_kin, trj_pot, trj_pop, trj_lab, trj_coord, trj_hop, crt_state
 
@@ -1364,6 +1369,10 @@ def read_raw_data_newtonx(files):
             nstate = int(line.split()[-1])
         if 'etot_drift' in line:
             break
+
+    # initialize output_atom if it is empty
+    if len(output_atom) == 0:
+        output_atom = [x for x in range(natom)]
 
     for line in log:
         n += 1
@@ -1476,8 +1485,8 @@ def read_raw_data_newtonx(files):
             if s <= pstep:
                 trj_hop.append(s)
 
-    if len(output_atom) > 0:
-        natom = len(output_atom)
+    # update natom at the end
+    natom = len(output_atom)
 
     return ntraj, natom, nstate, nstep, dtime, trj_kin, trj_pot, trj_pop, trj_lab, trj_coord, trj_hop, crt_state
 
@@ -1516,6 +1525,11 @@ def read_raw_data_sharc(files):
     for n, line in enumerate(dat):
         if 'natom' in line:
             natom = int(line.split()[-1])
+
+            # initialize output_atom if it is empty
+            if len(output_atom) == 0:
+                output_atom = [x for x in range(natom)]
+
         if 'nstates_m ' in line:
             nstate = np.sum([(n + 1) * int(x) for n, x in enumerate(line.split()[1:])])
             nstate = int(nstate)
@@ -1613,8 +1627,8 @@ def read_raw_data_sharc(files):
             if s <= pstep:
                 trj_hop.append(s)
 
-    if len(output_atom) > 0:
-        natom = len(output_atom)
+    # update natom at the end
+    natom = len(output_atom)
 
     return ntraj, natom, nstate, nstep, dtime, trj_kin, trj_pot, trj_pop, trj_lab, trj_coord, trj_hop, crt_state
 
@@ -1685,6 +1699,11 @@ def read_raw_data_fromage(files):
     ## Find coordinates
 
     natom = int(xyz[0])
+
+    # initialize output_atom if it is empty
+    if len(output_atom) == 0:
+        output_atom = [x for x in range(natom)]
+
     n = 0  # count line number
     m = 0  # count structure number
     pstep = 0  # count step to prune trajectory
@@ -1735,8 +1754,8 @@ def read_raw_data_fromage(files):
             if s <= pstep:
                 trj_hop.append(s)
 
-    if len(output_atom) > 0:
-        natom = len(output_atom)
+    # update natom at the end
+    natom = len(output_atom)
 
     return ntraj, natom, nstate, nstep, dtime, trj_kin, trj_pot, trj_pop, trj_lab, trj_coord, trj_hop, crt_state
 
@@ -1765,6 +1784,11 @@ def read_pyrai2md(files):
         xyz_m = xyzfile.read().splitlines()
 
     natom = int(xyz_m[0])
+
+    # initialize output_atom if it is empty
+    if len(output_atom) == 0:
+        output_atom = [x for x in range(natom)]
+
     n = 0
     pstep = 0
     stop = False
@@ -1854,8 +1878,8 @@ def read_pyrai2md(files):
                 trj_hop.append(crt_hop)
                 trj_hop_t.append(lb[2])
 
-    if len(output_atom) > 0:
-        natom = len(output_atom)
+    # update natom at the end
+    natom = len(output_atom)
 
     return ntraj, natom, nstate, trj_init, trj_final, trj_hop, trj_init_t, trj_final_t, trj_hop_t, trj_init_p, \
         trj_final_p, trj_hop_p
