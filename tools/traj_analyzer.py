@@ -3355,7 +3355,7 @@ def main(argv):
 
     if len(align_core) > 0:
         align_core = getindex(align_core)
-        align_core = [x - 1 for x in output_atom]
+        align_core = [x - 1 for x in align_core]
 
     if prune_type:
         pindex, pthrhd = set_prune(prune_type, prune_index, prune_thrhd)
