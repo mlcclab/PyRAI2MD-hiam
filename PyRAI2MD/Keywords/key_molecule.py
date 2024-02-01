@@ -31,6 +31,8 @@ class KeyMolecule:
             'factor': 40,
             'cavity': [],
             'center': [],
+            'center_type': 'xyz',
+            'groups': [],
             'compress': [],
             'track_type': None,
             'track_index': [],
@@ -63,6 +65,8 @@ class KeyMolecule:
             'factor': ReadVal('i'),
             'cavity': ReadVal('fl'),
             'center': ReadIndex('s', start=1),
+            'center_type': ReadVal('s'),
+            'groups': ReadIndex('g', start=0),
             'compress': ReadVal('fl'),
             'track_type': ReadVal('s'),
             'track_index': ReadIndex('g', start=1),
@@ -101,10 +105,12 @@ class KeyMolecule:
   Frozen atoms:               %-10s
   Constrained atoms:          %-10s
   External potential shape:   %-10s
-  External potential factor:  %-10s
   External potential radius:  %-10s
-  External potential center:  %-10s
-  Compress potential shape:   %-10s
+  External potential factor:  %-10s
+  Compress potential volume:  %-10s
+  Potential center:           %-10s
+  Potential center type:      %-10s
+  Constrained groups          %-10s
   Track geometry type:        %-10s
   Track indices:              %-10s
   Track threshold:            %-10s
@@ -127,10 +133,12 @@ class KeyMolecule:
             keywords['freeze'],
             keywords['constrain'],
             keywords['shape'],
-            keywords['factor'],
             keywords['cavity'],
-            keywords['center'],
+            keywords['factor'],
             keywords['compress'],
+            keywords['center'],
+            keywords['center_type'],
+            keywords['groups'],
             keywords['track_type'],
             keywords['track_index'],
             keywords['track_thrhd'],

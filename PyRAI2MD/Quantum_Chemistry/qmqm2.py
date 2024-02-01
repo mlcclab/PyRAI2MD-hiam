@@ -185,6 +185,7 @@ class QMQM2:
         energy_qm2_mid = np.repeat(traj_qm2_mid.energy, nstate)
         traj.energy += - energy_mm_mid + energy_qm2_mid  # replace the m+h region mm energy with qm2 energy
         traj.energy += - energy_qm2_high + energy_qm_high  # replace the h region qm2 energy with qm energy
+        traj.energy_qm = energy_qm_high
         traj.energy_qm2_1 = energy_qm2_high[0]
         traj.energy_qm2_2 = energy_qm2_mid[0]
 

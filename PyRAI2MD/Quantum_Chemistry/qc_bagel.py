@@ -256,7 +256,7 @@ cd $BAGEL_WORKDIR
         ## pack energy, only includes the requested states by self.nstate
         energy = []
         if os.path.exists('%s/ENERGY.out' % self.workdir):
-            energy = np.loadtxt('%s/ENERGY.out' % self.workdir)[0: self.nstate]
+            energy = np.loadtxt('%s/ENERGY.out' % self.workdir).reshape(-1)[0: self.nstate]
 
         ## pack force
         gradient = []

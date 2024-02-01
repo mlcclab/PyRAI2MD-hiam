@@ -15,10 +15,13 @@ class Constraint:
 
             Parameters:          Type:
                 keywords         dict        trajectory keyword list
+                natom            int         number of atoms
 
             Attribute:           Type:
                 alpha            int         exponential
                 ellipsoid        list        a list of radius along x, y, and z-axis
+                groups           list        a list of grouped atoms in sequential,
+                                             [[4,3],[5,6]] means four groups of 3 atoms and 5 groups of 6 atoms
 
             Function:            Returns:
                 apply_potential  self        apply external potential then update energy and gradients
@@ -26,16 +29,19 @@ class Constraint:
 
         """
 
-    def __init__(self, keywords=None):
+    def __init__(self, keywords=None, natom=0, mass=None):
 
         constrained_atoms = keywords['molecule']['constrain']
         frozen_atoms = keywords['molecule']['freeze']
         cavity = keywords['molecule']['cavity']
         center_frag = keywords['molecule']['center']
         compressor = keywords['molecule']['compress']
+        groups = keywords['molecule']['groups']
 
         self.alpha = np.amax([keywords['molecule']['factor'], 2])
         self.shape = keywords['molecule']['shape']
+        self.mass = mass
+        self.center_type = keywords['molecule']['center_type']
 
         if len(frozen_atoms) > 0:
             self.has_frozen = True
@@ -52,11 +58,21 @@ class Constraint:
             self.center_frag = np.zeros(0)
 
         if len(constrained_atoms) > 0 and self.has_center:
-            self.has_constrained = True
             self.constrained_atoms = np.array(constrained_atoms)
         else:
-            self.has_constrained = False
-            self.constrained_atoms = np.zeros(0)
+            # if constrain or center is not defined, put all atoms in constrain
+            self.constrained_atoms = np.arange(natom)
+
+        if len(groups) == 0:
+            # if groups is not defined, put each constrained atom in a single group
+            self.groups = np.array([[len(self.constrained_atoms), 1]]).astype(int)
+        else:
+            self.groups = np.array(groups).astype(int)
+
+        self.group_map, self.group_idx = self._gen_group_map()
+        self.group_mass = np.zeros_like(mass)
+        np.add.at(self.group_mass, self.group_map, self.mass[self.group_idx])
+        self.group_reduced_mass = self.mass / self.group_mass
 
         if len(cavity) == 1:
             self.has_potential = True
@@ -83,7 +99,56 @@ class Constraint:
             self.dr = 0
             self.pos = 0
 
-    def _polynomial_potential(self, coord, itr):
+    def _gen_group_map(self):
+        # generate a map for fast summation of molecular coordinates and mass
+
+        num_constrained_atoms = len(self.constrained_atoms)
+        groups_natom = np.cumsum(self.groups[:, 0] * self.groups[:, 1])
+        num_grouped_atoms = np.sum(groups_natom)
+
+        if num_constrained_atoms != num_grouped_atoms:
+            # stop if the number of atoms does not match
+            exit('\n  ValueError\n  PyRAI2MD: %s constrained atoms does not match %s grouped atoms!' % (
+                num_constrained_atoms, num_grouped_atoms
+            ))
+
+        # find the starting index of each group
+        starting_index = np.concatenate((np.array([0]), groups_natom[:-1]))
+
+        # expand the atom map
+        # e.g. [[0,1,2], [3,4,5]] -> [0,1,2,0,1,2,0,1,2,3,4,5,3,4,5,3,4,5]
+        group_map = np.zeros(0).astype(int)
+        # expand the atom index
+        # e.g. [[0,1,2], [3,4,5]] -> [0,0,0,1,1,1,2,2,2,3,3,3,4,4,4,5,5,5]
+        group_idx = np.zeros(0).astype(int)
+        for n, _ in enumerate(self.groups):
+            start = starting_index[n]
+            end = groups_natom[n]
+            nmol, natom = self.groups[n]
+            g_map = self.constrained_atoms[start:end].reshape((nmol, natom)).repeat(natom, axis=0).reshape(-1)
+            g_idx = self.constrained_atoms[start:end].repeat(natom)
+            group_map = np.concatenate((group_map, g_map))
+            group_idx = np.concatenate((group_idx, g_idx))
+
+        return group_map, group_idx
+
+    def _polynomial_potential(self, coord, center, itr):
+        # V_i = F_i ** (a / 2)
+        # F_i = (X_i - X_0) ** 2/ R ** 2
+        # X_i = sum(x_i * m_i)/sum(m_i)
+        # dX_i/dx_i = m_i/sum(m_i)  ==> group_reduced_mass
+        # dF_i/dX_i = 2 * (X_i - X_0) / R ** 2
+        # dV_i/dF_i = (a / 2) * F_i ** (a / 2 - 1)
+        # dV_i/dx_i = (a / 2) * F_i ** (a / 2 - 1) * 2 * (X_i - X_0) / R ** 2 * m_i/sum(m_i)
+
+        # compute X_i = sum(x_i * m_i)/sum(m_i)
+        x = np.zeros_like(coord)
+        np.add.at(x, self.group_map, coord[self.group_idx])
+
+        # compute X_i - X_0
+        x -= center
+
+        # compute cavity R
         cavity = np.ones_like(coord) * self.cavity
 
         if self.has_compressor:
@@ -92,15 +157,18 @@ class Constraint:
             else:
                 cavity *= 1 + self.dr * self.pos
 
+        # compute F_i
         if self.shape == 'ellipsoid':
-            r_over_r0 = np.sum(coord ** 2 / cavity ** 2, axis=1, keepdims=True)  # elementwise divide then atom-wise sum
+            r_over_r0 = np.sum(x ** 2 / cavity ** 2, axis=1, keepdims=True)  # elementwise divide then atom-wise sum
         else:  # cuboid
             r_over_r0 = coord ** 2 / cavity ** 2  # elementwise divide
 
+        # compute V = sum(V_i)
         energy = np.sum(r_over_r0 ** (self.alpha / 2))
-        vec = self.alpha * coord / cavity ** 2  # element-wise divide
-        scale = r_over_r0 ** (self.alpha / 2 - 1)
-        grad = vec * scale
+        scale = self.alpha * r_over_r0 ** (self.alpha / 2 - 1)
+        vec = x * self.group_reduced_mass[self.constrained_atoms] / cavity ** 2  # element-wise divide
+
+        grad = scale * vec
 
         return energy, grad
 
@@ -113,25 +181,24 @@ class Constraint:
         else:
             if self.has_center:
                 center_frag_coord = traj.coord[self.center_frag]
+                center_mass = self.mass[self.center_frag]
             else:
                 center_frag_coord = traj.coord
+                center_mass = self.mass
 
-            center = np.mean(center_frag_coord, axis=0)
+            if self.center_type == 'mass':
+                center = np.sum(center_frag_coord * center_mass, axis=0) / np.sum(center_mass)
+            else:
+                center = np.mean(center_frag_coord, axis=0)
+
             traj.center = np.copy(center)
             traj.record_center = True
 
-        shifted_coord = traj.coord - center
-
-        if self.has_constrained:
-            ext_energy, ext_grad = self._polynomial_potential(shifted_coord[self.constrained_atoms], traj.itr)
-            traj.energy += ext_energy  # numpy can automatic broad cast ext_energy
-            traj.grad[:, self.constrained_atoms, :] += ext_grad  # numpy can automatic broad cast ext_grad
-            traj.ext_pot = ext_energy
-        else:
-            ext_energy, ext_grad = self._polynomial_potential(shifted_coord, traj.itr)
-            traj.energy += ext_energy
-            traj.grad += ext_grad
-            traj.ext_pot = ext_energy
+        coord = traj.coord[self.constrained_atoms] * self.group_reduced_mass[self.constrained_atoms]
+        ext_energy, ext_grad = self._polynomial_potential(coord, center, traj.itr)
+        traj.energy += ext_energy
+        traj.grad[:, self.constrained_atoms, :] += ext_grad
+        traj.ext_pot = ext_energy
 
         return traj
 

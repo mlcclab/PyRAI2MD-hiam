@@ -75,6 +75,7 @@ class Molecule:
             qm2_charge       ndarray     charges in qm 2 region (external)
             qmqm2_atoms      ndarray     atom name in high level region and middle level region
             qmqm2_coord      ndarray     nuclear coordinates in high level region and middel level region
+            energy_qm        float       qm energy for high level region
             energy_qm2_1     float       qm2 energy for high level region
             energy_qm2_2     float       qm2 energy for high level region and middle level region
             energy_mm1       float       mm energy for high level region and middle level region
@@ -111,7 +112,7 @@ class Molecule:
                  'qm_atoms', 'qm_coord', 'Hcap_atoms', 'Hcap_coord', 'Hcap_jacob', 'boundary', 'nhigh', 'nmid', 'nlow',
                  'highlevel', 'midlevel', 'lowlevel', 'relax', 'freeze', 'constrain', 'primitive', 'lattice', 'status',
                  'charges', 'qm1_charge', 'qm2_charge', 'qm_energy', 'qm_grad', 'qm_nac', 'qm_soc', 'qmqm2_index',
-                 'qmqm2_atoms', 'qmqm2_coord', 'energy_qm2_1', 'energy_qm2_2', 'energy_mm1', 'energy_mm2',
+                 'qmqm2_atoms', 'qmqm2_coord', 'energy_qm','energy_qm2_1', 'energy_qm2_2', 'energy_mm1', 'energy_mm2',
                  'center', 'record_center', 'ext_pot']
 
     def __init__(self, mol, keywords=None):
@@ -149,6 +150,7 @@ class Molecule:
         self.qmqm2_index = np.zeros(0)
         self.qmqm2_atoms = np.zeros(0)
         self.qmqm2_coord = np.zeros(0)
+        self.energy_qm = 0
         self.energy_qm2_1 = 0
         self.energy_qm2_2 = 0
         self.energy_mm1 = 0
@@ -221,7 +223,7 @@ class Molecule:
         ## get molecule information
         self.natom = len(self.atoms)
         self.atomic_number = np.array([Atom(x).name for x in self.atoms.reshape(-1)])
-        self.mass = np.array([Atom(x).get_mass() * 1822.8852 for x in self.atoms.reshape(-1)]).reshape((-1, 1))
+        self.mass = np.array([Atom(x).get_mass() * 1822.8884871474306 for x in self.atoms.reshape(-1)]).reshape((-1, 1))
         self.relax = np.setdiff1d(np.arange(self.natom), self.freeze)
 
         ## partition atom in regions

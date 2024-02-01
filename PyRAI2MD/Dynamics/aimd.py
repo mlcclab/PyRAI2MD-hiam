@@ -98,7 +98,7 @@ class AIMD:
             self.logpath = os.getcwd()
 
         ## create a constraint object
-        self.ext_pot = Constraint(keywords=keywords)
+        self.ext_pot = Constraint(keywords=keywords, natom=trajectory.natom, mass=trajectory.mass)
         ## create a geometry tracker object
         self.geom_tracker = GeomTracker(keywords=keywords)
         ## create a trajectory object
@@ -388,18 +388,18 @@ class AIMD:
         ## prepare the surface hopping section using Molcas output format
         ## add surface hopping information to xyz comment line
         if self.traj.hoped == 0:
-            hop_info = ' A surface hopping is not allowed\n  **\n At state: %3d\n' % self.traj.state
+            hop_info = '  A surface hopping is not allowed\n  **\n At state: %3d\n' % self.traj.state
 
         elif self.traj.hoped == 1:
-            hop_info = ' A surface hopping event happened\n  **\n From state: %3d to state: %3d *\n' % (
+            hop_info = '  A surface hopping event happened\n  **\n From state: %3d to state: %3d *\n' % (
                 self.traj.last_state, self.traj.state)
             cmmt += ' to %d CI' % self.traj.state
 
         elif self.traj.hoped == 2:
-            hop_info = ' A surface hopping is frustrated\n  **\n At state: %3d\n' % self.traj.state
+            hop_info = '  A surface hopping is frustrated\n  **\n At state: %3d\n' % self.traj.state
 
         else:
-            hop_info = ' A surface hopping is not allowed\n  **\n At state: %3d\n' % self.traj.state
+            hop_info = '  A surface hopping is not allowed\n  **\n At state: %3d\n' % self.traj.state
 
         ## prepare population and potential energy info
         pop = ' '.join(['%28.16f' % x for x in np.diag(np.real(self.traj.a))])
@@ -436,12 +436,14 @@ class AIMD:
             log_info += """
   &multiscale energy
 -------------------------------------------------------
+  QM(high)  %16.8f
   QM2(high) %16.8f 
   QM2(mid)  %16.8f
   MM(mid)   %16.8f 
   MM(low)   %16.8f
 -------------------------------------------------------
 """ % (
+                self.traj.energy_qm,
                 self.traj.energy_qm2_1,
                 self.traj.energy_qm2_2,
                 self.traj.energy_mm1,
@@ -449,12 +451,15 @@ class AIMD:
             )
 
         if self.traj.ext_pot != 0:
-            log_info += ' constraining potential energy: %16.8f\n' % self.traj.ext_pot
+            log_info += '  &constrain\n  external potential energy: %16.8f\n' % self.traj.ext_pot
+            for n, group_info in enumerate(self.ext_pot.groups):
+                nmol, natom = group_info
+                log_info += '  group %8s:  %8s molecules with %8s atoms \n' % (n + 1, nmol, natom)
 
         if self.traj.tracker:
             log_info += ''
 
-        log_info += '\n Gnuplot: %s %s %28.16f\n  **\n  **\n  **\n%s\n' % (
+        log_info += '\n  Gnuplot: %s %s %28.16f\n  **\n  **\n  **\n%s\n' % (
             pop,
             pot,
             self.traj.energy[self.traj.last_state - 1],
