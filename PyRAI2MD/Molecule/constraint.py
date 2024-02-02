@@ -161,7 +161,7 @@ class Constraint:
         if self.shape == 'ellipsoid':
             r_over_r0 = np.sum(x ** 2 / cavity ** 2, axis=1, keepdims=True)  # elementwise divide then atom-wise sum
         else:  # cuboid
-            r_over_r0 = coord ** 2 / cavity ** 2  # elementwise divide
+            r_over_r0 = x ** 2 / cavity ** 2  # elementwise divide
 
         # compute V = sum(V_i)
         energy = np.sum(r_over_r0 ** (self.alpha / 2))

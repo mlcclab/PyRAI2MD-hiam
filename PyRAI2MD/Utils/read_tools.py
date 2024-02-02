@@ -103,8 +103,6 @@ class ReadIndex:
 
         if self.sort:
             index_list = sorted(list(set(index_list)))  # remove duplicates and sort from low to high
-        else:
-            index_list = list(set(index_list))  # remove duplicates but not sort from low to high
 
         return index_list
 
