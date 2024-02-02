@@ -13,10 +13,15 @@ import numpy as np
 ## import initial condition sampling module
 try:
     from PyRAI2MD.Utils.sampling import sampling
+    from PyRAI2MD.Molecule.atom import Atom
+
     has_sampling = True
+    has_mass = True
 except ModuleNotFoundError:
-    exit('PyRAI2MD is not installed, sampling is disabled')
+    exit('PyRAI2MD is not installed, sampling and rdf are disabled')
     has_sampling = False
+    has_mass = False
+
 
 def main(argv):
     ##  This is the main function
@@ -74,7 +79,15 @@ def main(argv):
       edit_atom     []  # edit initial conditions for the selected atoms
       append_init   filename  # name of the second .init or .init.xyz file
       remove_init   []  # initial condition indices to remove from the original .init or init.xyz file
-      
+      file          filename  # name of the list file for trajectory folders
+      center_rdf    []  # define the center of atoms to compute rdf
+      center_type   xyz  # set the type of center to compute rdf
+      maxrad        10  # set the maximum distance to compute rdf
+      interval      0.1  # set the interval to compute rdf
+      groups        []  # define groups of molecules to compute center of mass
+      skip_groups   []  # set the index to skip the group in rdf calculation
+      snapshots     1  # set the snapshots to compute rdf
+    
     Running this script will print more information about the requisite keywords
 
     """
@@ -126,6 +139,15 @@ def main(argv):
     edit_atom = []
     append_init = None
     remove_init = []
+
+    file = None
+    center_rdf = []
+    center_type = 'xyz'
+    maxrad = 10
+    interval = 0.1
+    groups = []
+    skip_groups = []
+    snapshots = [1]
 
     if len(argv) <= 1:
         exit(usage)
@@ -224,12 +246,43 @@ def main(argv):
             append_init = line.split()[1]
         elif 'remove_init' == key:
             remove_init = line.split()[1:]
+        elif 'file' == key:
+            file = line.split()[1]
+        elif 'center_rdf' == key:
+            center_rdf = line.split()[1:]
+        elif 'center_type' == key:
+            center_type = line.split()[1]
+        elif 'maxrad' == key:
+            maxrad = float(line.split()[1])
+        elif 'interval' == key:
+            interval = float(line.split()[1])
+        elif 'groups' == key:
+            groups = line.split()[1:]
+        elif 'skip_groups' == key:
+            skip_groups = line.split()[1:]
+        elif 'snapshots' == key:
+            snapshots = line.split()[1:]
 
     if len(edit_atom) > 0:
         edit_atom = getindex(edit_atom)
 
     if remove_init is not None:
         remove_init = getindex(remove_init)
+
+    if len(center_rdf) > 0:
+        center_rdf = getindex(center_rdf)
+
+    if len(groups) > 0:
+        groups = [x.split() for x in ' '.join(groups).split(',')]
+        groups = np.array(groups).astype(int)
+
+    if len(skip_groups) > 0:
+        skip_groups = getindex(skip_groups)
+
+    if len(snapshots) > 0:
+        snapshots = getindex(snapshots)
+    else:
+        snapshots = [1]
 
     key_dict = {
         'title': title,
@@ -274,6 +327,14 @@ def main(argv):
         'edit_atom': edit_atom,
         'append_init': append_init,
         'remove_init': remove_init,
+        'file': file,
+        'center_rdf': center_rdf,
+        'center_type': center_type,
+        'maxrad': maxrad,
+        'interval': interval,
+        'groups': groups,
+        'skip_groups': skip_groups,
+        'snapshots': snapshots,
     }
 
     if mode == 'create':
@@ -284,8 +345,11 @@ def main(argv):
         read_final_cond(key_dict)
     elif mode == 'edit':
         edit_cond(key_dict)
+    elif mode == 'rdf':
+        compute_rdf(key_dict)
     else:
         exit('\n KeywordError: unrecognized mode %s\n' % mode)
+
 
 def getindex(index):
     ## This function read single, range, separate range index and convert them to a list
@@ -300,6 +364,7 @@ def getindex(index):
 
     index_list = sorted(list(set(index_list)))  # remove duplicates and sort from low to high
     return index_list
+
 
 def create_env(key_dict):
     env_type = key_dict['env_type']
@@ -317,6 +382,7 @@ def create_env(key_dict):
     ''')
 
     return None
+
 
 def create_solvent(key_dict):
     print('''
@@ -401,6 +467,7 @@ def read_xyz(xyz):
 
     return atom, coord
 
+
 def find_rad_in(xyz):
     # compute the radius of the inner core for solute molecule
     natom = len(xyz)
@@ -415,6 +482,7 @@ def find_rad_in(xyz):
     rad = np.amax(d) / 2
 
     return rad
+
 
 def write_packmol(core, sol, num, rad_in, rad_out):
     output = """tolerance 2.5
@@ -437,6 +505,7 @@ end structure
         out.write(output)
 
     return None
+
 
 def create_aggregate(key_dict):
     print('''
@@ -567,14 +636,15 @@ def create_aggregate(key_dict):
 
     return None
 
-def read_cell(xyz):
 
+def read_cell(xyz):
     natom = int(xyz[0])
     coord = np.array([x.split()[0: 4] for x in xyz[2: 2 + natom]])
     atom = coord[:, 0]
     coord = coord[:, 1: 4].astype(float)
 
     return atom, coord
+
 
 def cut_cell(supercell, nref, radius):
     ref = supercell[nref - 1]
@@ -589,6 +659,7 @@ def cut_cell(supercell, nref, radius):
             cell.append(mol - center)
 
     return cell
+
 
 def align_cell(supercell, ref):
     mol = supercell[0]
@@ -617,6 +688,7 @@ def align_cell(supercell, ref):
 
     return aligned_cell
 
+
 def write_core(atom, xyz):
     natom = len(xyz)
     output = '%s\n\n' % natom
@@ -624,6 +696,7 @@ def write_core(atom, xyz):
         output += '%-5s %24.15f %24.16f %24.16f\n' % (atom[n], coord[0], coord[1], coord[2])
 
     return output
+
 
 def write_supercell(atom, supercell):
     nmol = len(supercell)
@@ -634,6 +707,7 @@ def write_supercell(atom, supercell):
             output += '%-5s %24.15f %24.16f %24.16f\n' % (atom[n], coord[0], coord[1], coord[2])
 
     return output
+
 
 def merge_env(key_dict):
     iformat = key_dict['iformat']
@@ -692,6 +766,7 @@ def merge_env(key_dict):
 
     return None
 
+
 def read_initcond(key_dict):
     print('''
  Tips for reading initial condition from .init.xyz file   
@@ -719,6 +794,7 @@ def read_initcond(key_dict):
             initcond.append(xyz)
 
     return atom, initcond
+
 
 def sample_initcond(key_dict):
     print('''
@@ -764,12 +840,14 @@ def sample_initcond(key_dict):
 
     return atom, initcond
 
+
 def merge_wrapper(var):
     n, env_atom, env, cond = var
     cond, rmsd = merge(env, cond)
     out = '%s' % write_init(n, env_atom, cond)
 
     return n, out, rmsd
+
 
 def merge(env, xyz):
     shell = env[len(xyz):]
@@ -780,6 +858,7 @@ def merge(env, xyz):
     rmsd = np.mean((env[:len(xyz), 0: 3] - xyz[:, 0: 3].astype(float)) ** 2) ** 0.5
 
     return cond, rmsd
+
 
 def write_init(idx, atom, cond):
     natom = len(atom)
@@ -801,6 +880,7 @@ def write_init(idx, atom, cond):
         output += '%-5s %24.16f %24.16f %24.16f %24.16f %24.16f %24.16f 0 0\n' % (name, x, y, z, vx, vy, vz)
 
     return output
+
 
 def read_final_cond(key_dict):
     print('''
@@ -883,6 +963,7 @@ def read_final_cond(key_dict):
 
     return None
 
+
 def read_wrapper(var):
     n, file, cond, skip, freq = var
     out = ''
@@ -906,6 +987,7 @@ def read_wrapper(var):
 
     return n, out, rmsd
 
+
 def trans_rmsd(p, q):
     ## This function compute RMSD at geometrical center
 
@@ -916,6 +998,7 @@ def trans_rmsd(p, q):
     rmsd = np.mean((ps - qs) ** 2) ** 0.5
 
     return rmsd
+
 
 def read_traj(file):
     filename = file.split('/')[-1]
@@ -942,6 +1025,7 @@ def read_traj(file):
     traj = np.array(traj)
 
     return atom, traj
+
 
 def edit_cond(key_dict):
     print('''
@@ -1019,6 +1103,7 @@ def edit_cond(key_dict):
 
     return None
 
+
 def init_reader(read_init):
     with open(read_init, 'r') as data:
         coord = data.read().splitlines()
@@ -1034,6 +1119,7 @@ def init_reader(read_init):
             initcond.append(cond)
 
     return atom, initcond
+
 
 def reorder_mol(atom, c_atom, v_atom, initcond, edit_atom):
     out_xyz = ''
@@ -1073,6 +1159,7 @@ def reorder_mol(atom, c_atom, v_atom, initcond, edit_atom):
 
     return None
 
+
 def conv_initcond(atom, initcond, edit_atom):
     output = ''
     for idx, cond in enumerate(initcond):
@@ -1086,6 +1173,7 @@ def conv_initcond(atom, initcond, edit_atom):
         out.write(output)
 
     return None
+
 
 def edit_initcond(atom, initcond, edit_atom, scale):
     scale = scale ** 0.5
@@ -1101,6 +1189,7 @@ def edit_initcond(atom, initcond, edit_atom, scale):
     with open('scaled.init', 'w') as out:
         out.write(output)
 
+
 def append_initcond(atom, initcond, initcond2):
     initcond = initcond + initcond2
     output = ''
@@ -1109,6 +1198,7 @@ def append_initcond(atom, initcond, initcond2):
 
     with open('appended.init', 'w') as out:
         out.write(output)
+
 
 def remove_initcond(atom, initcond, remove_init):
     output = ''
@@ -1121,6 +1211,199 @@ def remove_initcond(atom, initcond, remove_init):
 
     with open('removed.init', 'w') as out:
         out.write(output)
+
+
+def compute_rdf(key_dict):
+    print('''
+    Tips for computing radial distribution function 
+        the following keyword are required
+
+        file          filename  # name of the list file for trajectory folders
+        center_rdf    []  # define the center of atoms to compute rdf
+        center_type   xyz  # set the type of center to compute rdf
+        maxrad        10  # set the maximum distance to compute rdf
+        interval      0.1  # set the interval to compute rdf
+        groups        []  # define groups of molecules to compute center of mass
+        skip_groups   []  # set the index to skip the group in rdf calculation
+        snapshots     1  # set the snapshots to compute rdf
+
+       ''')
+
+    title = key_dict['title']
+    ncpus = key_dict['cpus']
+    file = key_dict['file']
+    center_rdf = key_dict['center_rdf']
+    center_type = key_dict['center_type']
+    maxrad = key_dict['maxrad']
+    interval = key_dict['interval']
+    groups = key_dict['groups']
+    skip_groups = key_dict['skip_groups']
+    snapshots = key_dict['snapshots']
+
+    if not file:
+        exit('\nfile is not set!\n')
+
+    if not os.path.exists(file):
+        exit('\nfile %s not found!\n' % file)
+
+    with open(file, 'r') as infile:
+        files = infile.read().splitlines()
+
+    mass = get_mass(files[0])
+    natom = len(mass)
+
+    if len(center_rdf) == 0:
+        center_rdf = np.arange(natom)
+    else:
+        center_rdf = [x - 1 for x in center_rdf]
+
+    if len(groups) == 0:
+        groups = np.array([[natom, 1]])
+
+    ntraj = len(files)
+    print(' reading trajectory list: %s' % file)
+    print(' reading %s trajectories' % ntraj)
+    print(' reading %s snapshots' % len(snapshots))
+    print(' rdf center type:    %8s' % center_type)
+    print(' rdf center atoms:   %8s' % len(center_rdf))
+    print(' rdf maximum radius: %8.2f' % maxrad)
+    print(' rdf interval:       %8.2f' % interval)
+
+    num_groups = len(groups) - len(skip_groups)
+    if num_groups <= 0:
+        exit('\n number of groups %s <= number of skipped group %s, group definition is wrong!\n' % (
+            len(groups), len(skip_groups)
+        ))
+    num_mol = np.sum(groups[:, 0])
+    group_map, group_idx = gen_group_map(natom, groups, skip_groups)
+    group_mass = np.zeros(num_mol)
+    np.add.at(group_mass, group_map, mass.reshape(-1))
+
+    variables_wrapper = [
+        [n, x, mass, group_mass, group_map, group_idx, center_rdf, center_type, maxrad, interval, snapshots]
+        for n, x in enumerate(files)
+    ]
+    rdf_summary = [[] for _ in files]
+    ncpus = np.amin([ntraj, ncpus])
+    pool = multiprocessing.Pool(processes=ncpus)
+    n = 0
+    sys.stdout.write('CPU: %3d Reading: 0/%d\r' % (ncpus, ntraj))
+    for val in pool.imap_unordered(radial_density_wrapper, variables_wrapper):
+        n += 1
+        idx, rdf = val
+        rdf_summary[idx] = rdf
+        sys.stdout.write('CPU: %3d computing rdf: %d/%d\r' % (ncpus, n, ntraj))
+    pool.close()
+    print(' saving rdf data ==> %s.rdf' % title)
+
+    avg_rdf = np.mean(np.array(rdf_summary), axis=0)
+
+    np.savetxt('%s.rdf' % title, avg_rdf)
+
+
+def radial_density_wrapper(var):
+    idx, file, mass, group_mass, group_map, group_idx, center_rdf, center_type, maxrad, interval, snapshots = var
+
+    filename = file.split('/')[-1]
+    with open('%s/%s.md.xyz' % (file, filename), 'r') as infile:
+        file = infile.read().splitlines()
+
+    natom = int(file[0])
+    sn = 0
+    rdf_all = []
+    for n, line in enumerate(file):
+        if 'coord' in line:
+            sn += 1
+            if sn in snapshots:
+                coord = file[n + 1: n + 1 + natom]
+                xyz = np.array([x.split()[1:4] for x in coord]).astype(float)
+                rdf = radial_density(
+                    xyz, mass, group_mass, group_map, group_idx, center_rdf, center_type, maxrad, interval
+                )
+                rdf_all.append(rdf)
+
+    return idx, rdf_all
+
+
+def radial_density(xyz, mass, group_mass, group_map, group_idx, center_rdf, center_type, maxrad, interval):
+    center_mass = mass[center_rdf]
+    center_coord = xyz[center_rdf]
+    if center_type == 'mass':
+        center = np.sum(center_coord * center_mass, axis=0) / np.sum(center_mass)
+    else:
+        center = np.mean(center_coord, axis=0)
+
+    # compute center of mass
+    mx = xyz * mass
+    mc = np.zeros((len(group_mass), 3))
+    np.add.at(mc, group_map, mx)
+    mc /= group_mass.reshape((-1, 1))
+    mc -= center
+
+    # remove skipped groups
+    mc = mc[group_idx]
+    group_mass = group_mass[group_idx]
+    r = np.sum(mc ** 2, axis=1) ** 0.5
+
+    # compute shell volume
+    points = int(maxrad / interval)
+    r0 = np.arange(points) * interval
+    r1 = r0 + interval
+    vol = 4 / 3 * np.pi * (r1 ** 3 - r0 ** 3)
+
+    # compute shell density
+    rdf = np.zeros(points)
+    rdf_map = r / interval
+    np.add.at(rdf, rdf_map.astype(int), group_mass)
+    rdf /= vol
+    rdf *= (10/6.022)  # to g/cm3
+
+    return rdf
+
+
+def get_mass(file):
+    filename = file.split('/')[-1]
+    with open('%s/%s.md.xyz' % (file, filename), 'r') as infile:
+        file = infile.read().splitlines()
+
+    natom = int(file[0])
+    atoms = [x.split()[0] for x in file[2: 2 + natom]]
+    mass = np.array([Atom(x).get_mass() for x in atoms]).reshape((natom, 1))
+
+    return mass
+
+
+def gen_group_map(num_atom, groups, skip_groups):
+    # generate a map for fast summation of molecular coordinates and mass
+
+    groups_natom = np.cumsum(groups[:, 0] * groups[:, 1])
+    num_grouped_atoms = groups_natom[-1]
+
+    if num_atom != num_grouped_atoms:
+        # stop if the number of atoms does not match
+        exit('\n  ValueError\n  PyRAI2MD: %s atoms in coordinates does not match %s grouped atoms!' % (
+            num_atom, num_grouped_atoms
+        ))
+
+    # expand the atom index
+    # e.g. [[0,1,2], [3,4,5]] -> [0,0,0,1,1,1]
+    group_map = np.zeros(0).astype(int)
+    group_idx = np.zeros(0).astype(int)
+    shift = 0
+    for n, _ in enumerate(groups):
+        nmol, natom = groups[n]
+        g_map = np.arange(nmol).repeat(natom).reshape(-1) + shift
+        g_idx = np.arange(nmol) + shift
+        group_map = np.concatenate((group_map, g_map))
+        shift += nmol
+
+        if n + 1 in skip_groups:
+            print(' group %8s has %8s molecules with %8s atoms (skipped)' % (n + 1, nmol, natom))
+        else:
+            print(' group %8s has %8s molecules with %8s atoms (recorded)' % (n + 1, nmol, natom))
+            group_idx = np.concatenate((group_idx, g_idx))
+
+    return group_map, group_idx
 
 
 if __name__ == '__main__':
