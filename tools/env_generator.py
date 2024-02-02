@@ -82,6 +82,7 @@ def main(argv):
       file          filename  # name of the list file for trajectory folders
       center_rdf    []  # define the center of atoms to compute rdf
       center_type   xyz  # set the type of center to compute rdf
+      rdf_axis      xyz  # choose the axis to compute rdf
       maxrad        10  # set the maximum distance to compute rdf
       interval      0.1  # set the interval to compute rdf
       groups        []  # define groups of molecules to compute center of mass
@@ -143,6 +144,7 @@ def main(argv):
     file = None
     center_rdf = []
     center_type = 'xyz'
+    rdf_axis = 'xyz'
     maxrad = 10
     interval = 0.1
     groups = []
@@ -252,6 +254,8 @@ def main(argv):
             center_rdf = line.split()[1:]
         elif 'center_type' == key:
             center_type = line.split()[1]
+        elif 'rdf_axis' == key:
+            rdf_axis = line.split()[1]
         elif 'maxrad' == key:
             maxrad = float(line.split()[1])
         elif 'interval' == key:
@@ -330,6 +334,7 @@ def main(argv):
         'file': file,
         'center_rdf': center_rdf,
         'center_type': center_type,
+        'rdf_axis': rdf_axis,
         'maxrad': maxrad,
         'interval': interval,
         'groups': groups,
@@ -1221,6 +1226,7 @@ def compute_rdf(key_dict):
         file          filename  # name of the list file for trajectory folders
         center_rdf    []  # define the center of atoms to compute rdf
         center_type   xyz  # set the type of center to compute rdf
+        rdf_axis      xyz  # choose the axis to compute rdf
         maxrad        10  # set the maximum distance to compute rdf
         interval      0.1  # set the interval to compute rdf
         groups        []  # define groups of molecules to compute center of mass
@@ -1234,6 +1240,7 @@ def compute_rdf(key_dict):
     file = key_dict['file']
     center_rdf = key_dict['center_rdf']
     center_type = key_dict['center_type']
+    rdf_axis = key_dict['rdf_axis']
     maxrad = key_dict['maxrad']
     interval = key_dict['interval']
     groups = key_dict['groups']
@@ -1268,6 +1275,7 @@ def compute_rdf(key_dict):
     print(' rdf center atoms:   %8s' % len(center_rdf))
     print(' rdf maximum radius: %8.2f' % maxrad)
     print(' rdf interval:       %8.2f' % interval)
+    print(' rdf axis:           %8s' % rdf_axis)
 
     num_groups = len(groups) - len(skip_groups)
     if num_groups <= 0:
@@ -1280,7 +1288,7 @@ def compute_rdf(key_dict):
     np.add.at(group_mass, group_map, mass.reshape(-1))
 
     variables_wrapper = [
-        [n, x, mass, group_mass, group_map, group_idx, center_rdf, center_type, maxrad, interval, snapshots]
+        [n, x, mass, group_mass, group_map, group_idx, center_rdf, center_type, rdf_axis, maxrad, interval, snapshots]
         for n, x in enumerate(files)
     ]
     rdf_summary = [[] for _ in files]
@@ -1302,7 +1310,7 @@ def compute_rdf(key_dict):
 
 
 def radial_density_wrapper(var):
-    idx, file, mass, group_mass, group_map, group_idx, center_rdf, center_type, maxrad, interval, snapshots = var
+    idx, file, mass, group_mass, group_map, group_idx, center_rdf, center_type, rdf_axis, maxrad, interval, snapshots = var
 
     filename = file.split('/')[-1]
     with open('%s/%s.md.xyz' % (file, filename), 'r') as infile:
@@ -1318,14 +1326,14 @@ def radial_density_wrapper(var):
                 coord = file[n + 1: n + 1 + natom]
                 xyz = np.array([x.split()[1:4] for x in coord]).astype(float)
                 rdf = radial_density(
-                    xyz, mass, group_mass, group_map, group_idx, center_rdf, center_type, maxrad, interval
+                    xyz, mass, group_mass, group_map, group_idx, center_rdf, center_type, rdf_axis, maxrad, interval
                 )
                 rdf_all.append(rdf)
 
     return idx, rdf_all
 
 
-def radial_density(xyz, mass, group_mass, group_map, group_idx, center_rdf, center_type, maxrad, interval):
+def radial_density(xyz, mass, group_mass, group_map, group_idx, center_rdf, center_type, rdf_axis, maxrad, interval):
     center_mass = mass[center_rdf]
     center_coord = xyz[center_rdf]
     if center_type == 'mass':
@@ -1343,20 +1351,45 @@ def radial_density(xyz, mass, group_mass, group_map, group_idx, center_rdf, cent
     # remove skipped groups
     mc = mc[group_idx]
     group_mass = group_mass[group_idx]
-    r = np.sum(mc ** 2, axis=1) ** 0.5
 
-    # compute shell volume
+    # prepare interval
     points = int(maxrad / interval)
     r0 = np.arange(points) * interval
     r1 = r0 + interval
-    vol = 4 / 3 * np.pi * (r1 ** 3 - r0 ** 3)
+
+    if rdf_axis == 'x':
+        mc = mc[:, 0]
+    elif rdf_axis == 'y':
+        mc = mc[:, 1]
+    elif rdf_axis == 'z':
+        mc = mc[:, 2]
+    elif rdf_axis == 'xy':
+        mc = mc[:, 0:2]
+    elif rdf_axis == 'yz':
+        mc = mc[:, 1:3]
+    elif rdf_axis == 'xz':
+        mc = mc[:, [0, 2]]
+
+    # compute distance
+    r = np.sum(mc ** 2, axis=1) ** 0.5
+
+    # compute shell volume
+    if rdf_axis in ['x', 'y', 'z']:
+        vol = (r1 - r0)
+        f = 1  # g/mol/A
+    elif rdf_axis in ['xy', 'yz', 'xz']:
+        vol = np.pi * (r1 ** 2 - r0 ** 2)
+        f = 1  # g/mol/A2
+    else:
+        vol = 4 / 3 * np.pi * (r1 ** 3 - r0 ** 3)
+        f = (10/6.022)  # g/mol/A3 to g/cm3
 
     # compute shell density
     rdf = np.zeros(points)
     rdf_map = r / interval
     np.add.at(rdf, rdf_map.astype(int), group_mass)
     rdf /= vol
-    rdf *= (10/6.022)  # to g/cm3
+    rdf *= f
 
     return rdf
 
