@@ -79,9 +79,10 @@ class ReadIndex:
             index            list        index list
     """
 
-    def __init__(self, index_type='s', start=0):
+    def __init__(self, index_type='s', start=0, sort=True):
         self.type = index_type
         self.start = start
+        self.sort = sort
 
     def __call__(self, var):
         if self.type != 'g':
@@ -100,7 +101,11 @@ class ReadIndex:
             else:
                 index_list.append(int(i) - self.start)
 
-        index_list = sorted(list(set(index_list)))  # remove duplicates and sort from low to high
+        if self.sort:
+            index_list = sorted(list(set(index_list)))  # remove duplicates and sort from low to high
+        else:
+            index_list = list(set(index_list))  # remove duplicates but not sort from low to high
+
         return index_list
 
     def _read_index(self, var):

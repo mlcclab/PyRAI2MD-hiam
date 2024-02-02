@@ -66,7 +66,7 @@ class KeyMolecule:
             'cavity': ReadVal('fl'),
             'center': ReadIndex('s', start=1),
             'center_type': ReadVal('s'),
-            'groups': ReadIndex('g', start=0),
+            'groups': ReadIndex('g', start=0, sort=False),
             'compress': ReadVal('fl'),
             'track_type': ReadVal('s'),
             'track_index': ReadIndex('g', start=1),
