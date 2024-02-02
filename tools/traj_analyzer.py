@@ -1956,13 +1956,14 @@ def RUNcheck(key_dict):
     maxdrift = key_dict['maxdrift']
     pindex = key_dict['pindex']
     pthrhd = key_dict['pthrhd']
+    output_atom = key_dict['output_atom']
 
     ## A parallelized loop goes over all trajectories to find
     ## trj_kin,trj_pot,trj_pop,trj_coord,trj_hop in each trajectory and appends to
     ## kin, pot, pop, coord, hop in the main dictionary.
     input_val = []
     for n, f in enumerate(read_files):
-        input_val.append([n, f, maxstep, pindex, pthrhd])
+        input_val.append([n, f, maxstep, pindex, pthrhd, output_atom])
 
     if (len(input_val)) < cpus:
         cpus = len(input_val)
