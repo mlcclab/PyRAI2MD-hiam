@@ -112,7 +112,7 @@ class Molecule:
                  'qm_atoms', 'qm_coord', 'Hcap_atoms', 'Hcap_coord', 'Hcap_jacob', 'boundary', 'nhigh', 'nmid', 'nlow',
                  'highlevel', 'midlevel', 'lowlevel', 'relax', 'freeze', 'constrain', 'primitive', 'lattice', 'status',
                  'charges', 'qm1_charge', 'qm2_charge', 'qm_energy', 'qm_grad', 'qm_nac', 'qm_soc', 'qmqm2_index',
-                 'qmqm2_atoms', 'qmqm2_coord', 'energy_qm','energy_qm2_1', 'energy_qm2_2', 'energy_mm1', 'energy_mm2',
+                 'qmqm2_atoms', 'qmqm2_coord', 'energy_qm', 'energy_qm2_1', 'energy_qm2_2', 'energy_mm1', 'energy_mm2',
                  'center', 'record_center', 'ext_pot']
 
     def __init__(self, mol, keywords=None):

@@ -104,7 +104,7 @@ class Constraint:
 
         num_constrained_atoms = len(self.constrained_atoms)
         groups_natom = np.cumsum(self.groups[:, 0] * self.groups[:, 1])
-        num_grouped_atoms = np.sum(groups_natom)
+        num_grouped_atoms = groups_natom[-1]
 
         if num_constrained_atoms != num_grouped_atoms:
             # stop if the number of atoms does not match

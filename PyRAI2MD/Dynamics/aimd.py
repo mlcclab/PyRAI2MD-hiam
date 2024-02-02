@@ -423,7 +423,7 @@ class AIMD:
 
         ## prepare logfile info
         log_info = \
-            ' Iter: %8d  Ekin = %28.16f au T = %8.2f K dt = %10d CI: %3d\n Root chosen for geometry opt %3d\n' % (
+            '  Iter: %8d  Ekin = %28.16f au T = %8.2f K dt = %10d CI: %3d\n  Root chosen for geometry opt %3d\n' % (
                 self.traj.itr,
                 self.traj.kinetic,
                 self.traj.temp,
@@ -451,7 +451,7 @@ class AIMD:
             )
 
         if self.traj.ext_pot != 0:
-            log_info += '  &constrain\n  external potential energy: %16.8f\n' % self.traj.ext_pot
+            log_info += '\n  &constrain\n  external potential energy: %16.8f\n' % self.traj.ext_pot
             for n, group_info in enumerate(self.ext_pot.groups):
                 nmol, natom = group_info
                 log_info += '  group %8s:  %8s molecules with %8s atoms \n' % (n + 1, nmol, natom)
