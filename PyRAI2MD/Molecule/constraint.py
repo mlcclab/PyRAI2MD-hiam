@@ -39,6 +39,7 @@ class Constraint:
         groups = keywords['molecule']['groups']
 
         self.alpha = np.amax([keywords['molecule']['factor'], 2])
+        self.pre_factor = keywords['molecule']['scale']
         self.shape = keywords['molecule']['shape']
         self.mass = mass
         self.center_type = keywords['molecule']['center_type']
@@ -164,8 +165,8 @@ class Constraint:
             r_over_r0 = x ** 2 / cavity ** 2  # elementwise divide
 
         # compute V = sum(V_i)
-        energy = np.sum(r_over_r0 ** (self.alpha / 2))
-        scale = self.alpha * r_over_r0 ** (self.alpha / 2 - 1)
+        energy = self.pre_factor * np.sum(r_over_r0 ** (self.alpha / 2))
+        scale = self.pre_factor * self.alpha * r_over_r0 ** (self.alpha / 2 - 1)
         vec = x * self.group_reduced_mass[self.constrained_atoms] / cavity ** 2  # element-wise divide
 
         grad = scale * vec
@@ -252,8 +253,6 @@ class GeomTracker:
 
     def check(self, traj):
         # track_index [[a, b, c, ...],[d, e, f, ...], ...]
-        stop = False
-
         if self.track_type == 'frag':
 
             if len(self.track_index) < 2:

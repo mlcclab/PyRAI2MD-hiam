@@ -29,6 +29,7 @@ class KeyMolecule:
             'constrain': [],
             'shape': 'ellipsoid',
             'factor': 40,
+            'scale': 1.0,
             'cavity': [],
             'center': [],
             'center_type': 'xyz',
@@ -63,6 +64,7 @@ class KeyMolecule:
             'constrain': ReadIndex('s', start=1),
             'shape': ReadVal('s'),
             'factor': ReadVal('i'),
+            'scale': ReadVal('f'),
             'cavity': ReadVal('fl'),
             'center': ReadIndex('s', start=1),
             'center_type': ReadVal('s'),
@@ -107,6 +109,7 @@ class KeyMolecule:
   External potential shape:   %-10s
   External potential radius:  %-10s
   External potential factor:  %-10s
+  External potential scale:   %-10s  
   Compress potential volume:  %-10s
   Potential center:           %-10s
   Potential center type:      %-10s
@@ -135,6 +138,7 @@ class KeyMolecule:
             keywords['shape'],
             keywords['cavity'],
             keywords['factor'],
+            keywords['scale'],
             keywords['compress'],
             keywords['center'],
             keywords['center_type'],
