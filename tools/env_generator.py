@@ -1358,11 +1358,11 @@ def radial_density(xyz, mass, group_mass, group_map, group_idx, center_rdf, cent
     r1 = r0 + interval
 
     if rdf_axis == 'x':
-        mc = mc[:, 0]
+        mc = mc[:, 0:1]
     elif rdf_axis == 'y':
-        mc = mc[:, 1]
+        mc = mc[:, 1:2]
     elif rdf_axis == 'z':
-        mc = mc[:, 2]
+        mc = mc[:, 2:3]
     elif rdf_axis == 'xy':
         mc = mc[:, 0:2]
     elif rdf_axis == 'yz':
