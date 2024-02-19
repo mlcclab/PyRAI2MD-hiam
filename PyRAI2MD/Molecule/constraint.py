@@ -189,6 +189,8 @@ class Constraint:
 
             if self.center_type == 'mass':
                 center = np.sum(center_frag_coord * center_mass, axis=0) / np.sum(center_mass)
+            elif self.center_type == 'origin':
+                center = np.array([0., 0., 0.])
             else:
                 center = np.mean(center_frag_coord, axis=0)
 
