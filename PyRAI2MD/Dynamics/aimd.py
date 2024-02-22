@@ -388,18 +388,18 @@ class AIMD:
         ## prepare the surface hopping section using Molcas output format
         ## add surface hopping information to xyz comment line
         if self.traj.hoped == 0:
-            hop_info = '  A surface hopping is not allowed\n  **\n At state: %3d\n' % self.traj.state
+            hop_info = '  A surface hopping is not allowed\n  **\n  At state: %3d\n' % self.traj.state
 
         elif self.traj.hoped == 1:
-            hop_info = '  A surface hopping event happened\n  **\n From state: %3d to state: %3d *\n' % (
+            hop_info = '  A surface hopping event happened\n  **\n  From state: %3d to state: %3d *\n' % (
                 self.traj.last_state, self.traj.state)
             cmmt += ' to %d CI' % self.traj.state
 
         elif self.traj.hoped == 2:
-            hop_info = '  A surface hopping is frustrated\n  **\n At state: %3d\n' % self.traj.state
+            hop_info = '  A surface hopping is frustrated\n  **\n  At state: %3d\n' % self.traj.state
 
         else:
-            hop_info = '  A surface hopping is not allowed\n  **\n At state: %3d\n' % self.traj.state
+            hop_info = '  A surface hopping is not allowed\n  **\n  At state: %3d\n' % self.traj.state
 
         ## prepare population and potential energy info
         pop = ' '.join(['%28.16f' % x for x in np.diag(np.real(self.traj.a))])
@@ -450,11 +450,29 @@ class AIMD:
                 self.traj.energy_mm2,
             )
 
-        if self.traj.ext_pot != 0:
-            log_info += '\n  &constrain\n  external potential energy: %16.8f\n' % self.traj.ext_pot
+        if len(self.traj.cavity) > 0:
+            log_info += '\n  &constraint\n  external potential energy: %16.8f\n' % self.traj.ext_pot
             for n, group_info in enumerate(self.ext_pot.groups):
                 nmol, natom = group_info
                 log_info += '  group %8s:  %8s molecules with %8s atoms \n' % (n + 1, nmol, natom)
+
+        if len(self.traj.cbond) > 0:
+            log_info += '\n  &restraint\n  biasing potential energy on bond: %16.8f\n' % self.traj.bond_pot
+            for n, val in enumerate(self.traj.record_bond):
+                bond_info = ' '.join(['%5s' % (x + 1) for x in self.traj.cbond[n]])
+                log_info += '  bond %8s:  %10.4f %10.4f %s\n' % (n + 1, val, self.traj.target_bond[n], bond_info)
+
+        if len(self.traj.cangle) > 0:
+            log_info += '\n  &restraint\n  biasing potential energy on angle: %16.8f\n' % self.traj.angle_pot
+            for n, val in enumerate(self.traj.record_angle):
+                angle_info = ' '.join(['%5s' % (x + 1) for x in self.traj.cangle[n]])
+                log_info += '  angle %8s:  %10.4f %10.4f %s\n' % (n + 1, val, self.traj.target_angle[n], angle_info)
+
+        if len(self.traj.cdihedral) > 0:
+            log_info += '\n  &restraint\n  biasing potential energy on dihedral: %16.8f\n' % self.traj.dihedral_pot
+            for n, val in enumerate(self.traj.record_dihedral):
+                dih_info = ' '.join(['%5s' % (x + 1) for x in self.traj.cdihedral[n]])
+                log_info += '  dihedral %8s:  %10.4f %10.4f %s\n' % (n + 1, val, self.traj.target_dihedral[n], dih_info)
 
         if self.traj.tracker:
             log_info += ''

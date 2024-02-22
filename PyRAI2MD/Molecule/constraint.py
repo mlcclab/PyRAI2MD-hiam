@@ -9,6 +9,10 @@
 
 import numpy as np
 
+from PyRAI2MD.Utils.geom_tools import BND
+from PyRAI2MD.Utils.geom_tools import AGL
+from PyRAI2MD.Utils.geom_tools import DHD
+
 
 class Constraint:
     """ Molecular constraint class
@@ -31,6 +35,10 @@ class Constraint:
 
     def __init__(self, keywords=None, natom=0, mass=None):
 
+        tbond = keywords['molecule']['tbond']
+        tangle = keywords['molecule']['tangle']
+        tdihedral = keywords['molecule']['tdihedral']
+
         constrained_atoms = keywords['molecule']['constrain']
         frozen_atoms = keywords['molecule']['freeze']
         cavity = keywords['molecule']['cavity']
@@ -38,6 +46,39 @@ class Constraint:
         compressor = keywords['molecule']['compress']
         groups = keywords['molecule']['groups']
 
+        # constraining potential on bond, angle, and dihedral
+        self.cbond = keywords['molecule']['cbond']
+        self.cangle = keywords['molecule']['cangle']
+        self.cdihedral = keywords['molecule']['cdihedral']
+        self.fbond = keywords['molecule']['fbond']
+        self.fangle = keywords['molecule']['fangle']
+        self.fdihedral = keywords['molecule']['fdihedral']
+        self.target_bond = np.zeros(0)
+        self.target_angle = np.zeros(0)
+        self.target_dihedral = np.zeros(0)
+
+        if len(self.cbond) > 0:
+            if len(tbond) > 0:
+                self.target_bond = self._match_list(self.cbond, tbond)
+            self.has_cbond = True
+        else:
+            self.has_cbond = False
+
+        if len(self.cangle) > 0:
+            if len(tangle) > 0:
+                self.target_angle = self._match_list(self.cangle, tangle)
+            self.has_cangle = True
+        else:
+            self.has_cangle = False
+
+        if len(self.cdihedral) > 0:
+            if len(tdihedral) > 0:
+                self.target_dihedral = self._match_list(self.cdihedral, tdihedral)
+            self.has_cdihedral = True
+        else:
+            self.has_cdihedral = False
+
+        # constraining potential on wall
         self.alpha = np.amax([keywords['molecule']['factor'], 2])
         self.pre_factor = keywords['molecule']['scale']
         self.shape = keywords['molecule']['shape']
@@ -76,19 +117,19 @@ class Constraint:
         self.group_reduced_mass = self.mass / self.group_mass
 
         if len(cavity) == 1:
-            self.has_potential = True
+            self.has_cavity = True
             self.cavity = np.array([cavity[0], cavity[0], cavity[0]]).reshape((1, 3))
 
         elif len(cavity) == 2:
-            self.has_potential = True
+            self.has_cavity = True
             self.cavity = np.array([cavity[0], cavity[1], cavity[1]]).reshape((1, 3))
 
         elif len(cavity) >= 3:
-            self.has_potential = True
+            self.has_cavity = True
             self.cavity = np.array([cavity[0], cavity[1], cavity[2]]).reshape((1, 3))
 
         else:
-            self.has_potential = False
+            self.has_cavity = False
             self.cavity = np.ones(3)
 
         if len(compressor) >= 2:
@@ -99,6 +140,19 @@ class Constraint:
             self.has_compressor = False
             self.dr = 0
             self.pos = 0
+
+    @staticmethod
+    def _match_list(tar_list, chk_list):
+        num_tar = len(tar_list)
+        num_chk = len(chk_list)
+
+        if num_tar > num_chk:
+            add_list = np.repeat(chk_list[-1], num_tar - num_chk).tolist()
+            out_list = np.array(chk_list + add_list)
+        else:
+            out_list = np.array(chk_list)[:num_tar]
+
+        return out_list
 
     def _gen_group_map(self):
         # generate a map for fast summation of molecular coordinates and mass
@@ -174,9 +228,110 @@ class Constraint:
         return energy, grad
 
     def apply_potential(self, traj):
-        if not self.has_potential:
-            return traj
+        if self.has_cavity:
+            traj = self.apply_cavity(traj)
 
+        if self.has_cbond:
+            traj = self.apply_cbond(traj)
+
+        if self.has_cangle:
+            traj = self.apply_cangle(traj)
+
+        if self.has_cdihedral:
+            traj = self.apply_cdihedral(traj)
+
+        return traj
+
+    def apply_cbond(self, traj):
+        if len(traj.target_bond) > 0:
+            target_bond = traj.target_bond
+        else:
+            if len(self.target_bond) > 0:
+                target_bond = self.target_bond
+            else:
+                target_bond = np.array([BND(traj.coord, idx) for idx in self.cbond])
+
+            traj.target_bond = target_bond
+
+        coord = traj.coord
+        bond_energy = 0
+        bond_grad = np.zeros_like(coord)
+        record_bond = []
+        for n, idx in enumerate(self.cbond):
+            r, g = BND(coord, idx, grad=True)
+            record_bond.append(r)
+            dr = (r - target_bond[n])
+            bond_energy += self.fbond * dr ** 2
+            bond_grad += 2 * self.fbond * dr * g
+            print(bond_grad)
+        traj.energy += bond_energy
+        traj.grad += bond_grad * 0.529177249
+        traj.bond_pot = bond_energy
+        traj.record_bond = record_bond
+
+        return traj
+
+    def apply_cangle(self, traj):
+        if len(traj.target_angle) > 0:
+            target_angle = traj.target_angle
+        else:
+            if len(self.target_angle) > 0:
+                target_angle = self.target_angle
+            else:
+                target_angle = np.array([AGL(traj.coord, idx) for idx in self.cangle])
+
+            traj.target_angle = target_angle
+
+        coord = traj.coord
+        angle_energy = 0
+        angle_grad = np.zeros_like(coord)
+        record_angle = []
+        for n, idx in enumerate(self.cangle):
+            r, g = AGL(coord, idx, grad=True)
+            record_angle.append(r)
+            dr = (r - target_angle[n])
+            angle_energy += self.fangle * dr ** 2
+            angle_grad += 2 * self.fangle * dr * g
+
+        traj.energy += angle_energy
+        traj.grad += angle_grad * 0.529177249
+        traj.angle_pot = angle_energy
+        traj.record_angle = record_angle
+
+        return traj
+
+    def apply_cdihedral(self, traj):
+        if len(traj.target_dihedral) > 0:
+            target_dihedral = traj.target_dihedral
+        else:
+            if len(self.target_dihedral) > 0:
+                target_dihedral = self.target_dihedral
+            else:
+                target_dihedral = np.array([DHD(traj.coord, idx) for idx in self.cdihedral])
+
+            traj.target_dihedral = target_dihedral
+
+        coord = traj.coord
+        dihedral_energy = 0
+        dihedral_grad = np.zeros_like(coord)
+        record_dihedral = []
+        for n, idx in enumerate(self.cdihedral):
+            r, g = DHD(coord, idx, grad=True)
+            record_dihedral.append(r)
+            dr = (r - target_dihedral[n])
+            if np.abs(dr) > 180:
+                dr = (360 - np.abs(dr)) * np.sign(target_dihedral[n])
+            dihedral_energy += self.fdihedral * dr ** 2
+            dihedral_grad += 2 * self.fdihedral * dr * g
+
+        traj.energy += dihedral_energy
+        traj.grad += dihedral_grad * 0.529177249
+        traj.dihedral_pot = dihedral_energy
+        traj.record_dihedral = record_dihedral
+
+        return traj
+
+    def apply_cavity(self, traj):
         if traj.record_center:
             center = traj.center
         else:
@@ -200,7 +355,7 @@ class Constraint:
         coord = traj.coord[self.constrained_atoms] * self.group_reduced_mass[self.constrained_atoms]
         ext_energy, ext_grad = self._polynomial_potential(coord, center, traj.itr)
         traj.energy += ext_energy
-        traj.grad[:, self.constrained_atoms, :] += ext_grad
+        traj.grad[:, self.constrained_atoms, :] += ext_grad * 0.529177249
         traj.ext_pot = ext_energy
 
         return traj

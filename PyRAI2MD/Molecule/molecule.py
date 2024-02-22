@@ -95,6 +95,15 @@ class Molecule:
             center           ndarray     the center of the constraining potential
             record_center    bool        record the center for the following step
             ext_pot          float       external potential energy
+            bond_pot         float       biasing potential energy on bond
+            angle_pot        float       biasing potential energy on angle
+            dihedral_pot     float       biasing potential energy on dihedral
+            target_bond      list        a list of target value for constrained bond
+            target_angle     list        a list of target value for constrained angle
+            target_dihedral  list        a list of target value for constrained dihedral
+            record_bond      list        a list of recorded value for constrained bond
+            record_angle     list        a list of recorded value for constrained angle
+            record_dihedral  list        a list of recorded value for constrained dihedral
             primitive        ndarray     primitive translation vectors in 1D 2D 3D
             lattice          ndarray     lattice constant
             status           int         molecular property calculation status
@@ -113,7 +122,9 @@ class Molecule:
                  'highlevel', 'midlevel', 'lowlevel', 'relax', 'freeze', 'constrain', 'primitive', 'lattice', 'status',
                  'charges', 'qm1_charge', 'qm2_charge', 'qm_energy', 'qm_grad', 'qm_nac', 'qm_soc', 'qmqm2_index',
                  'qmqm2_atoms', 'qmqm2_coord', 'energy_qm', 'energy_qm2_1', 'energy_qm2_2', 'energy_mm1', 'energy_mm2',
-                 'center', 'record_center', 'ext_pot']
+                 'cavity', 'center', 'record_center', 'ext_pot', 'bond_pot', 'angle_pot', 'dihedral_pot',
+                 'cbond', 'cangle', 'cdihedral',
+                 'target_bond', 'target_angle', 'target_dihedral', 'record_bond', 'record_angle', 'record_dihedral']
 
     def __init__(self, mol, keywords=None):
         key_dict = keywords['molecule'].copy()
@@ -159,7 +170,17 @@ class Molecule:
         self.lowlevel = np.zeros(0)
         self.center = np.zeros(3)
         self.record_center = False
+        self.cavity = False
         self.ext_pot = 0
+        self.target_bond = []
+        self.target_angle = []
+        self.target_dihedral = []
+        self.record_bond = []
+        self.record_angle = []
+        self.record_dihedral = []
+        self.bond_pot = 0
+        self.angle_pot = 0
+        self.dihedral_pot = 0
         self.txyz = []
 
         ## load variables from key_dict
@@ -177,6 +198,10 @@ class Molecule:
         self.constrain = key_dict['constrain']
         self.primitive = key_dict['primitive']
         self.lattice = key_dict['lattice']
+        self.cavity = key_dict['cavity']
+        self.cbond = key_dict['cbond']
+        self.cangle = key_dict['cangle']
+        self.cdihedral = key_dict['cdihedral']
         self.status = 0
 
         ## read coordinates from a file or a list

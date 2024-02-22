@@ -27,6 +27,15 @@ class KeyMolecule:
             'boundary': [],
             'freeze': [],
             'constrain': [],
+            'cbond': [],
+            'cangle': [],
+            'cdihedral': [],
+            'tbond': [],
+            'tangle': [],
+            'tdihedral': [],
+            'fbond': 10.0,
+            'fangle': 0.005,
+            'fdihedral': 1e-6,
             'shape': 'ellipsoid',
             'factor': 40,
             'scale': 1.0,
@@ -62,6 +71,15 @@ class KeyMolecule:
             'boundary': ReadIndex('g'),
             'freeze': ReadIndex('s', start=1),
             'constrain': ReadIndex('s', start=1),
+            'cbond': ReadIndex('g', start=1, sort=False),
+            'cangle': ReadIndex('g', start=1, sort=False),
+            'cdihedral': ReadIndex('g', start=1, sort=False),
+            'tbond': ReadVal('fl'),
+            'tangle': ReadVal('fl'),
+            'tdihedral': ReadVal('fl'),
+            'fbond': ReadVal('f'),
+            'fangle': ReadVal('f'),
+            'fdihedral': ReadVal('f'),
             'shape': ReadVal('s'),
             'factor': ReadVal('i'),
             'scale': ReadVal('f'),
@@ -106,6 +124,15 @@ class KeyMolecule:
   Reading charge:             %-10s
   Frozen atoms:               %-10s
   Constrained atoms:          %-10s
+  Restrained bonds:           %-10s
+  Restrained angles:          %-10s
+  Restrained dihedrals:       %-10s
+  Restrained bond value:      %-10s
+  Restrained angle value:     %-10s
+  Restrained dihedral value:  %-10s
+  Bond potential scale:       %-10s
+  Angle potential scale:      %-10s
+  Dihedral potential scale:   %-10s
   External potential shape:   %-10s
   External potential radius:  %-10s
   External potential factor:  %-10s
@@ -135,6 +162,15 @@ class KeyMolecule:
             keywords['read_charge'],
             keywords['freeze'],
             keywords['constrain'],
+            keywords['cbond'],
+            keywords['cangle'],
+            keywords['cdihedral'],
+            keywords['tbond'],
+            keywords['tangle'],
+            keywords['tdihedral'],
+            keywords['fbond'],
+            keywords['fangle'],
+            keywords['fdihedral'],
             keywords['shape'],
             keywords['cavity'],
             keywords['factor'],

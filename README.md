@@ -158,6 +158,7 @@
       |--extension.py                              additional tools for setup                        
       |--coordinates.py                            coordinates writing functions                    
       |--read_tools.py                             index reader                                     
+      |--geom_tools.py                             compute geometrical derivatives
       |--bonds.py                                  bond length library                               
       |--sampling.py                               initial condition sampling functions            
       |--timing.py                                 timing functions                                  
