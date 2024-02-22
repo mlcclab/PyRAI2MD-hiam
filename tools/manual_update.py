@@ -87,6 +87,7 @@ modules = [
     '/Utils/extension.py',
     '/Utils/coordinates.py',
     '/Utils/read_tools.py',
+    '/Utils/geom_tools.py',
     '/Utils/bonds.py',
     '/Utils/sampling.py',
     '/Utils/timing.py',
