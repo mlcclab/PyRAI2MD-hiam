@@ -35,7 +35,7 @@ class KeyMolecule:
             'tdihedral': [],
             'fbond': 10.0,
             'fangle': 0.005,
-            'fdihedral': 1e-6,
+            'fdihedral': 1e-8,
             'shape': 'ellipsoid',
             'factor': 40,
             'scale': 1.0,

@@ -471,8 +471,11 @@ class AIMD:
         if len(self.traj.cdihedral) > 0:
             log_info += '\n  &restraint\n  biasing potential energy on dihedral: %16.8f\n' % self.traj.dihedral_pot
             for n, val in enumerate(self.traj.record_dihedral):
-                dih_info = ' '.join(['%5s' % (x + 1) for x in self.traj.cdihedral[n]])
-                log_info += '  dihedral %8s:  %10.4f %10.4f %s\n' % (n + 1, val, self.traj.target_dihedral[n], dih_info)
+                dihedral_info = ' '.join(['%5s' % (x + 1) for x in self.traj.cdihedral[n]])
+                tar = self.traj.target_dihedral[n]
+                s_val = val - np.sign(val) * 180
+                s_tar = tar - np.sign(tar) * 180
+                log_info += '  dihedral %8s:  %10.4f %10.4f %s\n' % (n + 1, s_val, s_tar, dihedral_info)
 
         if self.traj.tracker:
             log_info += ''
