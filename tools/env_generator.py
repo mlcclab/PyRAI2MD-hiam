@@ -18,7 +18,7 @@ try:
     has_sampling = True
     has_mass = True
 except ModuleNotFoundError:
-    exit('PyRAI2MD is not installed, sampling and rdf are disabled')
+    exit('PyRAI2MD is not installed, sampling, rdf, and den are disabled')
     has_sampling = False
     has_mass = False
 
@@ -39,7 +39,7 @@ def main(argv):
 
       title         name of calculation
       cpus          1 # number of CPUs for merging and reading initial conditions
-      mode          create  # run mode, create, merge, read, or edit
+      mode          create  # run mode, create, merge, read, edit, rdf, or den
       env_type      solvent  # type of environment, solvent or aggregate 
       solute        solute.xyz  # solute molecule xyz file
       solvent       solvent.xyz  # solvent molecule xyz file
@@ -88,6 +88,13 @@ def main(argv):
       groups        []  # define groups of molecules to compute center of mass
       skip_groups   []  # set the index to skip the group in rdf calculation
       snapshots     1  # set the snapshots to compute rdf
+      xyz_file      filename  # name of a xyz file
+      box           60  # define a length of the box in Angstrom for Monte Carlo calculations
+      points        10000  # define the number of points for Monte Carlo calculations
+      batch_size    100  # define the batch size for Monte Carlo calculations
+      probe         100  # define the number of points on the probe sphere
+      probe_rad     1.0  # define the radius of the probe sphere in Angstrom
+      select_atom   []  # compute density for selected atoms, defaults is all
     
     Running this script will print more information about the requisite keywords
 
@@ -149,7 +156,15 @@ def main(argv):
     interval = 0.1
     groups = []
     skip_groups = []
-    snapshots = [1]
+    snapshots = ['1']
+
+    xyz_file = None
+    box = 60
+    points = 10000
+    batch_size = 100
+    probe = 100
+    probe_rad = 1.0
+    select_atom = []
 
     if len(argv) <= 1:
         exit(usage)
@@ -266,6 +281,20 @@ def main(argv):
             skip_groups = line.split()[1:]
         elif 'snapshots' == key:
             snapshots = line.split()[1:]
+        elif 'xyz_file' == key:
+            xyz_file = line.split()[1]
+        elif 'box' == key:
+            box = float(line.split()[1])
+        elif 'points' == key:
+            points = int(line.split()[1])
+        elif 'batch_size' == key:
+            batch_size = int(line.split()[1])
+        elif 'probe' == key:
+            probe = int(line.split()[1])
+        elif 'probe_rad' == key:
+            probe_rad = float(line.split()[1])
+        elif 'select_atom' == key:
+            select_atom = line.split()[1:]
 
     if len(edit_atom) > 0:
         edit_atom = getindex(edit_atom)
@@ -287,6 +316,9 @@ def main(argv):
         snapshots = getindex(snapshots)
     else:
         snapshots = [1]
+
+    if len(select_atom) > 0:
+        select_atom = getindex(edit_atom)
 
     key_dict = {
         'title': title,
@@ -340,6 +372,13 @@ def main(argv):
         'groups': groups,
         'skip_groups': skip_groups,
         'snapshots': snapshots,
+        'xyz_file': xyz_file,
+        'box': box,
+        'points': points,
+        'batch_size': batch_size,
+        'probe': probe,
+        'probe_rad': probe_rad,
+        'select_atom': select_atom,
     }
 
     if mode == 'create':
@@ -352,6 +391,8 @@ def main(argv):
         edit_cond(key_dict)
     elif mode == 'rdf':
         compute_rdf(key_dict)
+    elif mode == 'den':
+        compute_den(key_dict)
     else:
         exit('\n KeywordError: unrecognized mode %s\n' % mode)
 
@@ -472,6 +513,15 @@ def read_xyz(xyz):
 
     return atom, coord
 
+def read_xyz_list(xyz):
+    natom = int(xyz[0])
+    nline = natom + 2
+    nxyz = int(len(xyz) / nline)
+    atom = np.array([x.split()[0] for x in xyz[2: 2 + natom]])
+    xyz_list = np.array(xyz[: nxyz * nline]).reshape((nxyz, nline))[:, 2:nline].reshape(-1)
+    xyz_list = np.array([x.split()[1: 4] for x in xyz_list]).astype(float).reshape((nxyz, natom, 3))
+
+    return atom, xyz_list
 
 def find_rad_in(xyz):
     # compute the radius of the inner core for solute molecule
@@ -1437,6 +1487,137 @@ def gen_group_map(num_atom, groups, skip_groups):
             group_idx = np.concatenate((group_idx, g_idx))
 
     return group_map, group_idx
+
+
+def compute_den(key_dict):
+    print('''
+    Tips for computing molecular volume and density 
+        the following keyword are required
+
+        xyz_file      filename  # name of a xyz file
+        box           60  # define a length of the box in Angstrom for Monte Carlo calculations
+        points        10000  # define the number of points for Monte Carlo calculations
+        batch_size    100  # define the batch size for Monte Carlo calculations
+        probe         100  # define the number of points on the probe sphere
+        probe_rad     1.0  # define the radius of the probe sphere in Angstrom
+        select_atom   []  # compute density for selected atoms, defaults is all
+       ''')
+
+    title = key_dict['title']
+    ncpus = key_dict['cpus']
+    xyz_file = key_dict['xyz_file']
+    box = key_dict['box']
+    points = key_dict['points']
+    batch_size = key_dict['batch_size']
+    probe = key_dict['probe']
+    probe_rad = key_dict['probe_rad']
+    select_atom = key_dict['select_atom']
+
+    if not xyz_file:
+        exit('\nxyz_file is not set!\n')
+
+    if not os.path.exists(xyz_file):
+        exit('\nfile %s not found!\n' % xyz_file)
+
+    with open(xyz_file, 'r') as infile:
+        file = infile.read().splitlines()
+
+    atoms, coord_list = read_xyz_list(file)
+    nxyz = len(coord_list)
+
+    if len(select_atom) == 0:
+        select_atom = np.arange(len(atoms))
+    else:
+        select_atom = [x - 1 for x in select_atom]
+
+    nbatch = int(points / batch_size)
+    points = int(nbatch * batch_size)
+
+    print(' reading xyz file: %s' % xyz_file)
+    print(' reading %s systems' % nxyz)
+    print(' reading %s of %s atoms' % (len(select_atom), len(atoms)))
+    print(' box length:         %8.2f' % box)
+    print(' box points:         %8s' % points)
+    print(' probe points:       %8s' % probe)
+    print(' probe radius:       %8.2f' % probe_rad)
+    print(' batch:              %8s' % nbatch)
+    print(' batch size:         %8s' % batch_size)
+    print(' computing volume(A^3) and density(g/cm3)')
+
+    probe_points = get_probe_points(box, points, probe, probe_rad, nbatch)
+    mass = np.sum([Atom(x).get_mass() for x in atoms[select_atom]])
+    vdw_rad = np.array([Atom(x).get_radii() for x in atoms[select_atom]])
+    v = box ** 3
+
+    den_summary = []
+    for nmol, coord in enumerate(coord_list):
+        in_points = 0
+        coord = coord[select_atom]
+        com = np.mean(coord, axis=0)
+        coord -= com
+        r = np.sum(coord ** 2, axis=1) ** 0.5
+        variables_wrapper = [[i, coord, probe_points[i], batch_size, probe, vdw_rad] for i in range(nbatch)]
+        ncpus = np.amin([nbatch, ncpus])
+        pool = multiprocessing.Pool(processes=ncpus)
+        n = 0
+        print(' mol: %4s max intermolecular distance: %8.2f' % (nmol + 1, np.amax(r)))
+        sys.stdout.write('CPU: %3d computing density for mol %s in batch: 0/%d\r' % (ncpus, nmol + 1, nbatch))
+        for val in pool.imap_unordered(den_wrapper, variables_wrapper):
+            n += 1
+            idx, n_in = val
+            in_points += n_in
+            sys.stdout.write('CPU: %3d computing density for mol %s in batch: %d/%d\r' % (ncpus, nmol + 1, n, nbatch))
+        pool.close()
+
+        vol = np.sum(in_points) / points * v
+        den = mass / vol * (10/6.022)
+        den_summary.append([vol, den])
+        print(' mol: %4s vol: %16.4f dens: %8.4f                      ' % (nmol + 1, vol, den))
+
+    print(' saving density data ==> %s.den' % title)
+    np.savetxt('%s.den' % title, np.array(den_summary))
+
+
+def get_probe_points(box, points, probe, probe_rad, nbatch):
+    phi = np.pi * (5 ** 0.5 - 1)  # golden angle
+    z = 1 - np.arange(probe) / (probe - 1) * 2
+    r = (1 - z ** 2) ** 0.5
+    theta = np.arange(probe) * phi
+    x = np.cos(theta) * r
+    y = np.sin(theta) * r
+
+    pxyz = np.stack((x, y, z)).T * probe_rad
+
+    bx = np.random.uniform(-box/2, box/2, points)
+    by = np.random.uniform(-box/2, box/2, points)
+    bz = np.random.uniform(-box/2, box/2, points)
+
+    bxyz = np.stack((bx, by, bz)).T
+
+    # expand probe points [a, b, c] -> [[a, b, c], [a, b, c]]
+    # expand box points [a, b] -> [a, a, a, b, b, b]
+    probe_points = np.tile(pxyz, (points, 1)) + np.repeat(bxyz, probe, axis=0)
+    size = int(points * probe / nbatch)
+    probe_points = probe_points.reshape((nbatch, size, 3))
+
+    return probe_points
+
+def den_wrapper(var):
+    idx, coord, probe_points, points, probe, vdw_rad = var
+
+    # expand probe points [a, b, c] -> [[a, a], [b, b], [c, c]]
+    npoint = len(probe_points)
+    ncoord = len(coord)
+    probe_points = np.tile(probe_points, (1, ncoord)).reshape((npoint, ncoord, 3))
+
+    # compute distance between the probe points and atoms
+    d = np.sum((probe_points - coord) ** 2, axis=2) ** 0.5 - vdw_rad
+
+    # find the probe points inside molecule
+    inside = np.sum(d <= 0, axis=1).reshape((points, probe))
+    inside = np.sum(np.sum(inside, axis=1) > 0)
+
+    return idx, inside
 
 
 if __name__ == '__main__':
