@@ -318,7 +318,7 @@ def main(argv):
         snapshots = [1]
 
     if len(select_atom) > 0:
-        select_atom = getindex(edit_atom)
+        select_atom = getindex(select_atom)
 
     key_dict = {
         'title': title,
