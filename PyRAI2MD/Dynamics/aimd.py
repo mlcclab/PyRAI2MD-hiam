@@ -443,7 +443,7 @@ class AIMD:
   MM(low)   %16.8f
 -------------------------------------------------------
 """ % (
-                self.traj.energy_qm,
+                self.traj.energy_qm[self.traj.last_state - 1],
                 self.traj.energy_qm2_1,
                 self.traj.energy_qm2_2,
                 self.traj.energy_mm1,
