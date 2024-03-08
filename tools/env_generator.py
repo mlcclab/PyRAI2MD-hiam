@@ -70,6 +70,7 @@ def main(argv):
       skip          10  # number of MD step to be skipped before reading conditions
       freq          1  # frequency of reading conditions in each trajectory from the last snapshot
       reorder       0  # reorder environment molecules from the closest one to the farthest one.
+      expand        1  # expand the environment molecules from center toward the center of mass
       c_atoms       0  # define the number of atoms in the center molecule
       v_atoms       0  # define the number of atoms in the environment molecule
       combine       yes  # combine the initial velocity with the corresponding atoms in the final condition
@@ -140,6 +141,7 @@ def main(argv):
 
     read_init = None
     reorder = 0
+    expand = 1
     c_atom = 0
     v_atom = 0
     init_to_xyz = 0
@@ -249,9 +251,11 @@ def main(argv):
             read_init = line.split()[1]
         elif 'reorder' == key:
             reorder = int(line.split()[1].lower())
-        elif 'c_atoms' == key:
+        elif 'expand' == key:
+            expand = float(line.split()[1].lower())
+        elif 'c_atom' == key:
             c_atom = int(line.split()[1].lower())
-        elif 'v_atoms' == key:
+        elif 'v_atom' == key:
             v_atom = int(line.split()[1].lower())
         elif 'init_to_xyz' == key:
             init_to_xyz = int(line.split()[1])
@@ -356,6 +360,7 @@ def main(argv):
         'combine': combine,
         'read_init': read_init,
         'reorder': reorder,
+        'expand': expand,
         'c_atom': c_atom,
         'v_atom': v_atom,
         'init_to_xyz': init_to_xyz,
@@ -1089,8 +1094,9 @@ def edit_cond(key_dict):
 
         read_init     filename  # name of a .init or .init.xyz file
         reorder       0  # reorder environment molecule from the closest one to the farthest one
-        c_atoms       0  # define the number of atoms at the center molecule
-        v_atoms       0  # define the number of atoms in the environment molecule 
+        expand        1  # expand the environment molecules from center toward the center of mass
+        c_atom       0  # define the number of atoms at the center molecule
+        v_atom       0  # define the number of atoms in the environment molecule 
         init_to_xyz   1  # convert a init file to xyz
         scale         1  # scale the kinetic energy isotropically
         edit_atom     1-20  # apply edition for the selected atoms, default is all atoms
@@ -1101,6 +1107,7 @@ def edit_cond(key_dict):
 
     read_init = key_dict['read_init']
     reorder = key_dict['reorder']
+    expand = key_dict['expand']
     c_atom = key_dict['c_atom']
     v_atom = key_dict['v_atom']
     init_to_xyz = key_dict['init_to_xyz']
@@ -1125,13 +1132,14 @@ def edit_cond(key_dict):
     print(' editing %s atoms per condition' % len(edit_atom))
 
     if reorder == 1:
+        print(' expand environment molecules %s' % expand)
         print(' reorder environment molecules %s' % reorder)
         print(' number of atoms in the center molecule %s' % c_atom)
         print(' number of atoms in the environment molecule %s' % v_atom)
         print(' save molecule distances > reordered_dist.txt')
         print(' save reordered molecules conditions > reordered.init')
         print(' save reordered molecules xyz > reordered.xyz')
-        reorder_mol(atom, c_atom, v_atom, initcond, edit_atom)
+        reorder_mol(atom, c_atom, v_atom, initcond, edit_atom, expand)
 
     if init_to_xyz == 1:
         conv_initcond(atom, initcond, edit_atom)
@@ -1176,7 +1184,7 @@ def init_reader(read_init):
     return atom, initcond
 
 
-def reorder_mol(atom, c_atom, v_atom, initcond, edit_atom):
+def reorder_mol(atom, c_atom, v_atom, initcond, edit_atom, expand):
     out_xyz = ''
     out_init = ''
     dist = ''
@@ -1189,7 +1197,15 @@ def reorder_mol(atom, c_atom, v_atom, initcond, edit_atom):
 
         c_m = np.mean(c_mol[:, 0: 3], axis=0)
         v_m = np.mean(v_mol[:, :, 0: 3], axis=1)
-        d = np.sum((v_m - c_m) ** 2, axis=1) ** 0.5
+        v = v_m - c_m
+        d = np.sum(v ** 2, axis=1) ** 0.5
+
+        if expand != 1:
+            dv = v * (expand - 1)
+            dv = np.tile(dv, (1, v_atom)).reshape((nv, v_atom, 3))
+            v_mol[:, :, 0: 3] += dv
+            d *= expand
+
         order = np.argsort(d)
         dist += 'Init %5s' % (idx + 1) + ''.join(['%8.2f' % x for x in d[order]]) + '\n'
         new_v = v_mol[order].reshape((lv, -1))
@@ -1544,23 +1560,29 @@ def compute_den(key_dict):
     print(' batch size:         %8s' % batch_size)
     print(' computing volume(A^3) and density(g/cm3)')
 
-    probe_points = get_probe_points(box, points, probe, probe_rad, nbatch)
     mass = np.sum([Atom(x).get_mass() for x in atoms[select_atom]])
     vdw_rad = np.array([Atom(x).get_radii() for x in atoms[select_atom]])
     v = box ** 3
 
     den_summary = []
     for nmol, coord in enumerate(coord_list):
+        probe_points = get_probe_points(box, points, probe, probe_rad, nbatch)
         in_points = 0
         coord = coord[select_atom]
         com = np.mean(coord, axis=0)
         coord -= com
         r = np.sum(coord ** 2, axis=1) ** 0.5
+        mr = np.amax(r)
+        mx = np.amax(np.abs(coord[:, 0]))
+        my = np.amax(np.abs(coord[:, 1]))
+        mz = np.amax(np.abs(coord[:, 2]))
+
         variables_wrapper = [[i, coord, probe_points[i], batch_size, probe, vdw_rad] for i in range(nbatch)]
         ncpus = np.amin([nbatch, ncpus])
         pool = multiprocessing.Pool(processes=ncpus)
         n = 0
-        print(' mol: %4s max intermolecular distance: %8.2f' % (nmol + 1, np.amax(r)))
+        print(' mol: %4s max intermolecular distance: %8.2f' % (nmol + 1, mr))
+        print(' mol: %4s max x y z distance: %8.2f %8.2f %8.2f' % (nmol + 1, mx, my, mz))
         sys.stdout.write('CPU: %3d computing density for mol %s in batch: 0/%d\r' % (ncpus, nmol + 1, nbatch))
         for val in pool.imap_unordered(den_wrapper, variables_wrapper):
             n += 1
