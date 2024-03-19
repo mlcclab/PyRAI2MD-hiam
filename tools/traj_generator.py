@@ -1640,7 +1640,7 @@ def oqp_batch(inputs, j, start, end, in_path, slcr, sljb, sltm, slpt, slmm, tooq
 #SBATCH --error=%%j.e.slurm
 %s
 export OMP_NUM_THREADS=%s
-export OQP_TOOT=%s
+export OQP_ROOT=%s
 
 echo $SLURM_JOB_NAME
 
