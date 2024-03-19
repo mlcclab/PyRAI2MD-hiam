@@ -212,6 +212,8 @@ def read_molden(ld_input):
     ## The freq data has clear descriptions for all used variables
     ## The Molcas saves unnormalized and unmass-weighted normal modes
 
+    rmass = np.zeros(0)
+    inten = np.zeros(0)
     with open('%s.freq.molden' % ld_input, 'r') as molden:
         file = molden.read().splitlines()
         n = 0
@@ -252,7 +254,7 @@ def read_molden(ld_input):
     amass = amass.reshape((natom, 1))
     achrg = achrg.reshape((natom, 1))
     modes = np.array(modes).reshape((nmode, natom, 3))
-    rmass = rmass.reshape((nmode, 1))
+    rmass = rmass.reshape((-1, 1))
 
     freqdata = {
         'nfreq': nmode,  # number of degrees
