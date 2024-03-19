@@ -23,7 +23,7 @@
    !!! temperature  1 au   = 315775.024804      K         !!!
    !!! mass         1 au   = 9.1093837015e−31   kg        !!!
    !!! wavenumber   1 cm-1 = 4.55633518e-6      au        !!!
-   !!! molar mass   1 g/mol= 1822.88852         au or amu !!! 
+   !!! molar mass   1 g/mol= 1822.8885          au or amu !!!
 
 1. Prepare frequency calculation and file
 ------------------------------------------------------------------------
@@ -58,6 +58,11 @@
     pyrai2mdmolcas - pyrai2md dynamics with molcas
     pyrai2mdbagel  - pyrai2md dynamics with bagel
     pyrai2mdorca   - pyrai2md dynamics with orca
+
+    ORCA     -  file_name.inp
+
+    OQP      -  file_name.inp
+             -  file_name.json (OQP orbital data, optional)
 
 2. Quick command line usage (Not recommended)
 ------------------------------------------------------------------------

@@ -93,6 +93,7 @@ def main(argv):
     tompi = ''
     toxtb = '/share/apps/xtb-6.5.1/bin'
     toorca = '/share/apps/orca_5_0_3_linux_x86-64_openmpi411'
+    tooqp = '/share/apps/oqp/'
 
     if len(argv) <= 1:
         exit(usage)
@@ -166,6 +167,8 @@ def main(argv):
             toxtb = line.split()[1]
         elif 'orca' == key:
             toorca = line.split()[1]
+        elif 'oqp' == key:
+            tooqp = line.split()[1]
 
     if inputs is not None and os.path.exists(inputs):
         print('\n>>> %s' % inputs)
@@ -288,6 +291,12 @@ def main(argv):
                 print(usage)
                 print('!!! orca input not found !!!')
                 exit()
+        elif prog == 'oqp':
+            if not os.path.exists('%s.oqp' % inputs):
+                print('\n!!! OQP input not found !!!')
+                print(usage)
+                print('!!! OQP input not found !!!')
+                exit()
         else:
             print('\n!!! Program %s not found !!!' % prog)
             print(usage)
@@ -348,11 +357,14 @@ def main(argv):
         gen_pyrai2md(cpus, ensemble, inputs, slpt, sltm, slmm, slnd, slcr, sljb, slin, 'orca', iformat, shell)
     elif prog == 'pyrai2mdhybrid':
         gen_pyrai2md(cpus, ensemble, inputs, slpt, sltm, slmm, slnd, slcr, sljb, slin, 'hybrid', iformat, shell)
+    elif prog == 'pyrai2mdoqp':
+        gen_pyrai2md(cpus, ensemble, inputs, slpt, sltm, slmm, slnd, slcr, sljb, slin, 'oqp', iformat, shell)
     elif prog == 'fromage':
         gen_fromage(cpus, ensemble, inputs, slpt, sltm, slmm, slnd, slcr, sljb, slin, tomlcs, toxtb, iformat, shell)
     elif prog == 'orca':
         gen_orca(cpus, ensemble, inputs, slpt, sltm, slmm, slnd, slcr, sljb, slin, toorca, iformat, shell)
-
+    elif prog == 'oqp':
+        gen_oqp(cpus, ensemble, inputs, slpt, sltm, slmm, slnd, slcr, sljb, slin, tooqp, iformat, shell)
 
 def gen_molcas(cpus, ensemble, inputs, slpt, sltm, slmm, slnd, slcr, sljb, slin, tomlcs, iformat, shell):
     ## This function will group Molcas calculations to individual runset
@@ -1435,8 +1447,8 @@ rm -r $MOLCAS_WORKDIR
 
 
 def gen_orca(cpus, ensemble, inputs, slpt, sltm, slmm, slnd, slcr, sljb, slin, toorca, iformat, shell):
-    ## This function will group Molcas calculations to individual runset
-    ## this function will call molcas_batch and molcas to prepare files
+    ## This function will group ORCA calculations to individual runset
+    ## this function will call orca_batch and orca to prepare files
 
     in_temp = open('%s.orca' % inputs, 'r').read()
     in_path = os.getcwd()
@@ -1518,8 +1530,8 @@ wait
 
 
 def orca(var):
-    ## This function prepares MolCas calculation
-    ## It generates .inp .StrOrb .xyz .velocity.xyz
+    ## This function prepares ORCA calculation
+    ## It generates .inp .xyz .velocity.xyz
     ## This function generates a backup slurm batch file for each calculation
 
     inputname, inputpath, slmm, in_temp, in_xyz, in_velo, toorca, shell = var
@@ -1553,6 +1565,156 @@ $ORCA_EXE/orca $INPUT.inp > $INPUT.out
 
     with open('%s/%s.inp' % (inputpath, inputname), 'w') as out:
         out.write(in_temp)
+
+    with open('%s/%s.sh' % (inputpath, inputname), 'w') as out:
+        out.write(runscript)
+
+    with open('%s/%s.velocity.xyz' % (inputpath, inputname), 'w') as out:
+        out.write(in_velo)
+
+    os.system("chmod 777 %s/%s.sh" % (inputpath, inputname))
+
+
+def gen_oqp(cpus, ensemble, inputs, slpt, sltm, slmm, slnd, slcr, sljb, slin, tooqp, iformat, shell):
+    ## This function will group OQP calculations to individual runset
+    ## this function will call oqp_batch and oqp to prepare files
+
+    in_temp = open('%s.oqp' % inputs, 'r').read()
+    in_path = os.getcwd()
+
+    runall = ''
+    variables_wrapper = []
+    for j in range(slnd):
+        runall += 'sbatch runset-%d.sh\n' % (j + 1)
+        start = slin + j * sljb
+        end = start + sljb - 1
+        for i in range(sljb):
+            if iformat != 'xz':
+                # unpack initial condition to xyz and velocity
+                in_xyz, in_velo = Unpack(ensemble[i + j * sljb], 'molcas')
+            else:
+                in_xyz, in_velo = UnpackXZ(ensemble[i + j * sljb])
+            inputname = '%s-%s' % (inputs, i + start)
+            inputpath = '%s/%s' % (in_path, inputname)
+            # prepare calculations
+            variables_wrapper.append([
+                inputs, inputname, inputpath, slcr, sljb, slmm, in_temp, in_xyz, in_velo, tooqp, shell
+            ])
+
+        batch = oqp_batch(inputs, j, start, end, in_path, slcr, sljb, sltm, slpt, slmm, tooqp, shell)
+
+        with open('./runset-%d.sh' % (j + 1), 'w') as run:
+            run.write(batch)
+
+    task = len(variables_wrapper)
+    cpus = min([task, cpus])
+    pool = multiprocessing.Pool(processes=cpus)
+    n = 0
+    for _ in pool.imap_unordered(oqp, variables_wrapper):
+        n += 1
+        sys.stdout.write('CPU: %3d generating trajectory: %d/%d\r' % (cpus, n, task))
+    pool.close()
+
+    with open('./runall.sh', 'w') as out:
+        out.write(runall)
+
+    os.system("chmod 777 runall.sh")
+
+    print('\n\n Done\n')
+
+
+def oqp_batch(inputs, j, start, end, in_path, slcr, sljb, sltm, slpt, slmm, tooqp, shell):
+    ## This function will be called by gen_oqp function
+    ## This function generates runset for OQP calculation
+    oqppal = int(slcr / sljb)
+
+    batch = """#!/bin/sh
+## script for OQP
+#SBATCH --nodes=1
+#SBATCH --ntasks=%d
+#SBATCH --time=%s
+#SBATCH --job-name=%s-%d
+#SBATCH --partition=%s
+#SBATCH --mem=%dmb
+#SBATCH --output=%%j.o.slurm
+#SBATCH --error=%%j.e.slurm
+%s
+export OMP_NUM_THREADS=%s
+export OQP_TOOT=%s
+
+echo $SLURM_JOB_NAME
+
+for ((i=%d;i<=%d;i++))
+do
+  export INPUT="%s-$i"
+  export WORKDIR="%s/%s-$i"
+  cd $WORKDIR
+  oqua $INPUT.inp
+  sleep 5
+done
+wait
+
+""" % (
+        slcr, sltm, inputs, j + 1, slpt, int(slmm * slcr * 1.0), shell, oqppal, tooqp,
+        start, end, inputs, in_path, inputs)
+
+    return batch
+
+
+def oqp(var):
+    ## This function prepares OQP calculation
+    ## It generates .inp .xyz .velocity.xyz
+    ## This function generates a backup slurm batch file for each calculation
+
+    inputs, inputname, inputpath, slcr, sljb, slmm, in_temp, in_xyz, in_velo, tooqp, shell = var
+    oqppal = int(slcr / sljb)
+
+    if not os.path.exists('%s' % inputpath):
+        os.makedirs('%s' % inputpath)
+
+    # copy guess files
+    if os.path.exists('%s.json' % inputs) and not os.path.exists('%s/guess.json' % inputpath):
+        shutil.copy2('%s.json' % inputs, '%s/guess.json' % inputpath)
+
+    runscript = """#!/bin/sh
+## backup script for OQP
+#SBATCH --nodes=1
+#SBATCH --ntasks=%s
+#SBATCH --time=23:50:00
+#SBATCH --job-name=%s
+#SBATCH --partition=normal
+#SBATCH --mem=%dmb
+#SBATCH --output=%%j.o.slurm
+#SBATCH --error=%%j.e.slurm
+%s
+export INPUT=%s
+export WORKDIR=%s
+
+export OMP_NUM_THREADS=%s
+export OQP_ROOT=%s
+
+
+cd $WORKDIR
+oqua $INPUT.inp
+
+""" % (oqppal, inputname, int(slmm * 1.0), shell, inputname, inputpath, oqppal, tooqp)
+
+    new_in_temp = ''
+    for line in in_temp.split():
+        if 'system=' in line:
+            new_in_temp += 'system=%s.xyz\n' % inputname
+        elif 'type=json' in line:
+            new_in_temp += 'type=json\nfile=guess.json\n'
+        elif 'file=' in line:
+            continue
+        else:
+            new_in_temp += '%s\n' % line
+
+    with open('%s/%s.inp' % (inputpath, inputname), 'w') as out:
+        out.write(new_in_temp)
+
+    with open('%s/%s.xyz' % (inputpath, inputname), 'w') as out:
+        out.write(in_xyz)
 
     with open('%s/%s.sh' % (inputpath, inputname), 'w') as out:
         out.write(runscript)
