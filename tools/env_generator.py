@@ -71,8 +71,8 @@ def main(argv):
       freq          1  # frequency of reading conditions in each trajectory from the last snapshot
       reorder       0  # reorder environment molecules from the closest one to the farthest one.
       expand        1  # expand the environment molecules from center toward the center of mass
-      c_atoms       0  # define the number of atoms in the center molecule
-      v_atoms       0  # define the number of atoms in the environment molecule
+      c_atom        0  # define the number of atoms in the center molecule
+      v_atom        0  # define the number of atoms in the environment molecule
       combine       yes  # combine the initial velocity with the corresponding atoms in the final condition
       read_init     filename  # name of a .init or .init.xyz file
       init_to_xyz   1  # convert a init file to xyz
