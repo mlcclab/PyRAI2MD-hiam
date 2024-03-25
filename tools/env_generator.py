@@ -81,6 +81,7 @@ def main(argv):
       append_init   filename  # name of the second .init or .init.xyz file
       remove_init   []  # initial condition indices to remove from the original .init or init.xyz file
       file          filename  # name of the list file for trajectory folders
+      check_box     []  # define the a, b, c of the box to correct the coordinates for molecule cross the box
       center_rdf    []  # define the center of atoms to compute rdf
       center_type   xyz  # set the type of center to compute rdf
       rdf_axis      xyz  # choose the axis to compute rdf
@@ -149,6 +150,7 @@ def main(argv):
     edit_atom = []
     append_init = None
     remove_init = []
+    check_box = []
 
     file = None
     center_rdf = []
@@ -267,6 +269,8 @@ def main(argv):
             append_init = line.split()[1]
         elif 'remove_init' == key:
             remove_init = line.split()[1:]
+        elif 'check_box' == key:
+            check_box = line.split()[1:4]
         elif 'file' == key:
             file = line.split()[1]
         elif 'center_rdf' == key:
@@ -324,6 +328,9 @@ def main(argv):
     if len(select_atom) > 0:
         select_atom = getindex(select_atom)
 
+    if len(check_box) > 0:
+        check_box = np.array([float(x) for x in check_box])
+
     key_dict = {
         'title': title,
         'cpus': cpus,
@@ -368,6 +375,7 @@ def main(argv):
         'edit_atom': edit_atom,
         'append_init': append_init,
         'remove_init': remove_init,
+        'check_box': check_box,
         'file': file,
         'center_rdf': center_rdf,
         'center_type': center_type,
@@ -1102,7 +1110,8 @@ def edit_cond(key_dict):
         edit_atom     1-20  # apply edition for the selected atoms, default is all atoms
         append_init   filename  # name of the second .init or .init.xyz file
         remove_init   1 3 5  # initial condition indices to remove from the original .init or init.xyz file
-      
+        check_box     []  # define the a, b, c of the box to correct the coordinates for molecule cross the box
+
        ''')
 
     read_init = key_dict['read_init']
@@ -1115,6 +1124,7 @@ def edit_cond(key_dict):
     edit_atom = key_dict['edit_atom']
     append_init = key_dict['append_init']
     remove_init = key_dict['remove_init']
+    check_box = key_dict['check_box']
 
     if read_init is None:
         atom = []
@@ -1131,6 +1141,9 @@ def edit_cond(key_dict):
     print(' reading %s initial conditions' % len(initcond))
     print(' editing %s atoms per condition' % len(edit_atom))
 
+    if len(check_box) == 3:
+        print(' checking connectivity in the box %s %s %s' % (check_box[0], check_box[1], check_box[2]))
+
     if reorder == 1:
         print(' expand environment molecules %s' % expand)
         print(' reorder environment molecules %s' % reorder)
@@ -1139,7 +1152,7 @@ def edit_cond(key_dict):
         print(' save molecule distances > reordered_dist.txt')
         print(' save reordered molecules conditions > reordered.init')
         print(' save reordered molecules xyz > reordered.xyz')
-        reorder_mol(atom, c_atom, v_atom, initcond, edit_atom, expand)
+        reorder_mol(atom, c_atom, v_atom, initcond, edit_atom, expand, check_box)
 
     if init_to_xyz == 1:
         conv_initcond(atom, initcond, edit_atom)
@@ -1184,7 +1197,7 @@ def init_reader(read_init):
     return atom, initcond
 
 
-def reorder_mol(atom, c_atom, v_atom, initcond, edit_atom, expand):
+def reorder_mol(atom, c_atom, v_atom, initcond, edit_atom, expand, check_box):
     out_xyz = ''
     out_init = ''
     dist = ''
@@ -1194,7 +1207,7 @@ def reorder_mol(atom, c_atom, v_atom, initcond, edit_atom, expand):
         lv = len(v_mol)
         nv = int(lv / v_atom)
         v_mol = v_mol.reshape((nv, v_atom, -1))
-
+        v_mol = check_connectivity(check_box, v_mol)
         c_m = np.mean(c_mol[:, 0: 3], axis=0)
         v_m = np.mean(v_mol[:, :, 0: 3], axis=1)
         v = v_m - c_m
@@ -1229,6 +1242,21 @@ def reorder_mol(atom, c_atom, v_atom, initcond, edit_atom, expand):
         out.write(dist)
 
     return None
+
+
+def check_connectivity(box, mol):
+    if len(box) < 3:
+        return mol
+
+    # mol in [nsol, natom, 6]
+    a0 = mol[:, 0:1, 0:3]
+    a1 = mol[:, :, 0:3]
+    dist = box/2
+    f = np.abs(a1 - a0) > dist
+    s = np.sign(a1 - a0)
+    mol[:, :, 0:3] -= f * s * box
+
+    return mol
 
 
 def conv_initcond(atom, initcond, edit_atom):
