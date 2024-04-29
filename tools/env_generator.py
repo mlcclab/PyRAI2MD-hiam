@@ -926,7 +926,7 @@ def merge_env(key_dict):
     env_atom, env = read_func(geom_e)
 
     if len(initcond) > 0:
-        print(' align system to the initcond center')
+        print(' align system to the initcond mass center')
         output = ['' for _ in initcond]
         diff = [[] for _ in initcond]
         variables_wrapper = [(n, env_atom, env, cond) for n, cond in enumerate(initcond)]
@@ -943,8 +943,8 @@ def merge_env(key_dict):
         output = '\n'.join(output) + '\n'
         print(' maximum root-mean-square-deviation ', np.amax(diff))
     else:
-        print(' moving system center to 0 0 0')
-        cm = np.mean(env[:, 0: 3], axis=0)
+        print(' moving system mass center to 0 0 0')
+        cm = get_mass_center(env_atom, env[:, 0: 3])
         env[:, 0: 3] = env[:, 0: 3] - cm
         output = '%s' % write_init(0, env_atom, env)
 
@@ -1045,16 +1045,17 @@ def sample_initcond(key_dict):
 
 def merge_wrapper(var):
     n, env_atom, env, cond = var
-    cond, rmsd = merge(env, cond)
+    cond, rmsd = merge(env_atom, env, cond)
     out = '%s' % write_init(n, env_atom, cond)
 
     return n, out, rmsd
 
 
-def merge(env, xyz):
+def merge(env_atom, env, xyz):
     xyz = xyz.astype(float)
-    cm_env = np.mean(env[:len(xyz), 0: 3], axis=0)
-    cm_xyz = np.mean(xyz[:, 0: 3], axis=0)
+    atom = env_atom[:len(xyz)]
+    cm_env = get_mass_center(atom, env[:len(xyz), 0: 3])
+    cm_xyz = get_mass_center(atom, xyz[:, 0: 3])
     env[:, 0: 3] = env[:, 0: 3] - cm_env + cm_xyz
     rmsd = trans_rmsd(env[:len(xyz), 0: 3], xyz[:, 0: 3])
 
@@ -1064,6 +1065,14 @@ def merge(env, xyz):
     cond = np.concatenate((xyz, shell[:, 0: 6]), axis=0).astype(float)
 
     return cond, rmsd
+
+
+def get_mass_center(atom, coord):
+    natom = len(atom)
+    mass = np.array([Atom(x).get_mass() for x in atom]).reshape((natom, 1))
+    center = np.sum(coord * mass, axis=0) / np.sum(mass)
+
+    return center
 
 
 def write_init(idx, atom, cond):
@@ -1354,6 +1363,10 @@ def reorder_mol(atom, c_atom, v_atom, initcond, edit_atom, expand, check_box):
     dist = ''
     new_cond = []
     dist_cond = []
+
+    c_mass = np.array([Atom(x).get_mass() for x in atom[:c_atom]]).reshape((c_atom, 1))
+    v_mass = np.array([Atom(x).get_mass() for x in atom[c_atom:c_atom + v_atom]]).reshape((1, v_atom, 1))
+
     for idx, cond in enumerate(initcond):
         c_mol = cond[edit_atom][:c_atom]
         v_mol = cond[edit_atom][c_atom:]
@@ -1361,8 +1374,8 @@ def reorder_mol(atom, c_atom, v_atom, initcond, edit_atom, expand, check_box):
         nv = int(lv / v_atom)
         v_mol = v_mol.reshape((nv, v_atom, -1))
         v_mol = check_connectivity(check_box, v_mol)
-        c_m = np.mean(c_mol[:, 0: 3], axis=0)
-        v_m = np.mean(v_mol[:, :, 0: 3], axis=1)
+        c_m = np.sum(c_mol[:, 0: 3] * c_mass, axis=0) / np.sum(c_mass)
+        v_m = np.sum(v_mol[:, :, 0: 3] * v_mass, axis=1) / np.sum(v_mass)
         v = v_m - c_m
         d = np.sum(v ** 2, axis=1) ** 0.5
 
