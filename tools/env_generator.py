@@ -2,7 +2,7 @@
 ## Chemical environment generator - a script to automatically create solvent or aggregate environment
 ## ----------------------
 ##
-## New version Jan 1 2023 Jingbai Li
+## New version Apr 29 2024 Jingbai Li
 
 import os
 import sys
@@ -396,6 +396,8 @@ def main(argv):
 
     if mode == 'create':
         create_env(key_dict)
+    elif mode == 'postproc':
+        post_process_env(key_dict)
     elif mode == 'merge':
         merge_env(key_dict)
     elif mode == 'read':
@@ -777,7 +779,123 @@ def write_supercell(atom, supercell):
     return output
 
 
+def post_process_env(key_dict):
+    print('''
+ Tips for post processing the equilibrated solvent box
+    the following keyword must be set for creating solvent environment
+
+    title         name of calculation     
+    c_atom        0   # define the number of atoms in the center molecule
+    v_atom        0   # define the number of atoms in the environment molecule
+    radius        20  # cutoff radius to build a spherical solvent model from box
+
+          ''')
+    title = key_dict['title']
+    c_atom = key_dict['c_atom']
+    v_atom = key_dict['v_atom']
+    radius = key_dict['radius']
+
+    print(' reading environment file env.cond')
+    if not os.path.exists('env.cond'):
+        exit('\n FileNotFoundError: cannot find env.cond file')
+
+    atom, cond, box = read_lmp_cond()
+
+    print(' number of atoms in the center molecule %s' % c_atom)
+    print(' number of atoms in the environment molecule %s' % v_atom)
+    print(' checking connectivity in the box of %8.2f %8.2f %8.2f Angstrom' % (box[0], box[1], box[2]))
+    new_cond, dist_cond = reorder_mol(atom, c_atom, v_atom, [cond], np.arange(len(atom)), 1, box)
+
+    print(' save molecule distances > reordered_dist.txt')
+    print(' save reordered molecules conditions > reordered.init')
+    print(' save reordered molecules xyz > reordered.xyz')
+    cond = new_cond[0]
+    dist = dist_cond[0]
+
+    print(' apply radial cutoff %8.2f Angstrom' % radius)
+    nv = len(np.where(dist < radius)[0])
+    natom = c_atom + v_atom * nv
+    atom = atom[0: natom]
+    cond = cond[0: natom]
+
+    print(' selected solvent molecules %8d' % nv)
+    print(' maximum distance %12.4f Angstrom' % dist[nv - 1])
+    print(' writing post processed environment > env.init')
+    print(' writing post processed environment > env.xyz')
+    output = write_init(0, atom, cond)
+    with open('env.init', 'w') as out:
+        out.write(output)
+
+    output = write_xyz(0, atom, cond)
+    with open('env.xyz', 'w') as out:
+        out.write(output)
+
+    print(' computing radial distribution')
+    print(' rdf center type:    %8s' % 'mass')
+    print(' rdf center atoms:   %8s - 1' % c_atom)
+    print(' rdf maximum radius: %8.2f' % (radius + 5))
+    print(' rdf interval:       %8.2f' % 0.5)
+    center_rdf = np.arange(c_atom)
+    center_type = 'mass'
+    rdf_axis = 'xyz'
+    maxrad = radius + 5
+    interval = 0.5
+    groups = np.array([[1, c_atom], [nv * v_atom, 1]])
+    skip_groups = [1]
+    mass = np.array([Atom(x).get_mass() for x in atom]).reshape((natom, 1))
+    num_mol = np.sum(groups[:, 0])
+    group_map, group_idx = gen_group_map(natom, groups, skip_groups)
+    group_mass = np.zeros(num_mol)
+    np.add.at(group_mass, group_map, mass.reshape(-1))
+    xyz = cond[:, 0: 3]
+    rdf = radial_density(
+        xyz, mass, group_mass, group_map, group_idx, center_rdf, center_type, rdf_axis, maxrad, interval
+    )
+
+    print(' saving rdf data ==> %s.env.rdf' % title)
+    np.savetxt('%s.env.rdf' % title, rdf)
+
+    print(' COMPLETE')
+    print('''
+ HINTS: 
+    you might want to merge the post processed environment with the initial conditions
+    to do so, change mode to merge and change env_type to equsol
+   ''')
+
+def read_lmp_cond():
+    with open('env.cond', 'r') as infile:
+        cond = infile.read().splitlines()
+
+    natom = int(cond[3])
+    a = cond[5].split()
+    b = cond[6].split()
+    c = cond[7].split()
+    ba = float(a[1]) - float(a[0])
+    bb = float(b[1]) - float(b[0])
+    bc = float(c[1]) - float(c[0])
+    box = np.array([ba, bb, bc])
+    coord = cond[9: 9 + natom]
+    index = np.array([int(x.split()[0]) - 1 for x in coord])
+    order = np.argsort(index)
+    atom = np.array([x.split()[1] for x in coord])[order]
+    geom = np.array([x.split()[2: 8] for x in coord]).astype(float)[order]
+    geom[:, 3:6] *= 0.04571028438199123  # convert LAMMPS velocity unit Angstrom/fs to atomic unit Bohr/au
+
+    return atom, geom, box
+
+
 def merge_env(key_dict):
+    print('''
+ Tips for merging initial conditions with environments
+    the following keyword can be set for file reading
+    
+    cpus          1 # number of CPUs for merging and reading initial conditions
+    env_type      solvent  # type of environment, solvent or aggregate 
+    format        xyz  # frequency file format
+    
+    ''')
+
+    env_type = key_dict['env_type']
     iformat = key_dict['iformat']
     cpus = key_dict['cpus']
     if iformat == 'xyz':
@@ -789,16 +907,26 @@ def merge_env(key_dict):
     else:
         atom, initcond = sample_initcond(key_dict)
 
-    print(' reading environment file env.xyz')
-    if not os.path.exists('env.xyz'):
-        exit('\n FileNotFoundError: cannot find env.xyz file')
+    if env_type != 'equsol':
+        env_file = 'env.xyz'
+        read_func = read_xyz
+    else:
+        env_file = 'env.init'
+        read_func = read_cond
 
-    with open('env.xyz', 'r') as inxyz:
+    print(' reading environment file %s' % env_file)
+    print(' merging %s initial condition with environment' % (len(initcond)))
+
+    if not os.path.exists(env_file):
+        exit('\n FileNotFoundError: cannot find %s file' % env_file)
+
+    with open(env_file, 'r') as inxyz:
         geom_e = inxyz.read().splitlines()
 
-    env_atom, env = read_xyz(geom_e)
+    env_atom, env = read_func(geom_e)
 
     if len(initcond) > 0:
+        print(' align system to the initcond center')
         output = ['' for _ in initcond]
         diff = [[] for _ in initcond]
         variables_wrapper = [(n, env_atom, env, cond) for n, cond in enumerate(initcond)]
@@ -815,6 +943,7 @@ def merge_env(key_dict):
         output = '\n'.join(output) + '\n'
         print(' maximum root-mean-square-deviation ', np.amax(diff))
     else:
+        print(' moving system center to 0 0 0')
         cm = np.mean(env[:, 0: 3], axis=0)
         env[:, 0: 3] = env[:, 0: 3] - cm
         output = '%s' % write_init(0, env_atom, env)
@@ -822,8 +951,6 @@ def merge_env(key_dict):
     with open('merged.init', 'w') as out:
         out.write(output)
 
-    print(' merging %s initial condition with environment' % (len(initcond)))
-    print(' moving system center to 0 0 0')
     print(' writing initial condition with environment > merged.init')
     print(' COMPLETE')
     print('''
@@ -863,6 +990,13 @@ def read_initcond(key_dict):
 
     return atom, initcond
 
+
+def read_cond(cond):
+    natom = int(cond[0].split()[2])
+    atom = np.array([x.split()[0] for x in cond[1: 1 + natom]])
+    initcond = np.array([x.split()[1:7] for x in cond[1: 1 + natom]]).astype(float)
+
+    return atom, initcond
 
 def sample_initcond(key_dict):
     print('''
@@ -918,12 +1052,16 @@ def merge_wrapper(var):
 
 
 def merge(env, xyz):
+    xyz = xyz.astype(float)
+    cm_env = np.mean(env[:len(xyz), 0: 3], axis=0)
+    cm_xyz = np.mean(xyz[:, 0: 3], axis=0)
+    env[:, 0: 3] = env[:, 0: 3] - cm_env + cm_xyz
+    rmsd = trans_rmsd(env[:len(xyz), 0: 3], xyz[:, 0: 3])
+
     shell = env[len(xyz):]
-    shell = np.concatenate((shell, np.zeros((len(shell), 3))), axis=1)
-    cond = np.concatenate((xyz, shell), axis=0).astype(float)
-    cm = np.mean(cond[:, 0: 3], axis=0)
-    cond[:, 0: 3] = cond[:, 0: 3] - cm
-    rmsd = np.mean((env[:len(xyz), 0: 3] - xyz[:, 0: 3].astype(float)) ** 2) ** 0.5
+    if len(shell[0]) < 6:
+        shell = np.concatenate((shell[:, 0: 3], np.zeros((len(shell), 3))), axis=1).astype(float)
+    cond = np.concatenate((xyz, shell[:, 0: 6]), axis=0).astype(float)
 
     return cond, rmsd
 
@@ -946,6 +1084,19 @@ def write_init(idx, atom, cond):
             vy = 0
             vz = 0
         output += '%-5s %24.16f %24.16f %24.16f %24.16f %24.16f %24.16f 0 0\n' % (name, x, y, z, vx, vy, vz)
+
+    return output
+
+
+def write_xyz(idx, atom, cond):
+    natom = len(atom)
+    output = '%s\nGeom %s\n' % (natom, idx + 1)
+    for n in range(natom):
+        name = atom[n]
+        x = cond[n][0]
+        y = cond[n][1]
+        z = cond[n][2]
+        output += '%-5s %24.16f %24.16f %24.16f\n' % (name, x, y, z)
 
     return output
 
@@ -1201,6 +1352,8 @@ def reorder_mol(atom, c_atom, v_atom, initcond, edit_atom, expand, check_box):
     out_xyz = ''
     out_init = ''
     dist = ''
+    new_cond = []
+    dist_cond = []
     for idx, cond in enumerate(initcond):
         c_mol = cond[edit_atom][:c_atom]
         v_mol = cond[edit_atom][c_atom:]
@@ -1223,6 +1376,8 @@ def reorder_mol(atom, c_atom, v_atom, initcond, edit_atom, expand, check_box):
         dist += 'Init %5s' % (idx + 1) + ''.join(['%8.2f' % x for x in d[order]]) + '\n'
         new_v = v_mol[order].reshape((lv, -1))
         new_mol = np.concatenate((c_mol, new_v), axis=0)
+        new_cond.append(new_mol)
+        dist_cond.append(d[order])
 
         natom = len(cond)
         out_xyz += '%s\nInit %s\n' % (natom, idx + 1)
@@ -1241,7 +1396,7 @@ def reorder_mol(atom, c_atom, v_atom, initcond, edit_atom, expand, check_box):
     with open('reordered_dist.txt', 'w') as out:
         out.write(dist)
 
-    return None
+    return new_cond, dist_cond
 
 
 def check_connectivity(box, mol):
