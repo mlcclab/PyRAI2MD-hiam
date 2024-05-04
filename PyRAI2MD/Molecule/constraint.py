@@ -216,7 +216,7 @@ class Constraint:
                 cavity *= 1 + self.dr * self.pos
 
         # loop over potentials
-        energy = np.zeros(0)
+        energy = 0
         grad = np.zeros_like(coord)
         for n, alpha in enumerate(self.alpha):
             pre_factor = self.pre_factor[n]
