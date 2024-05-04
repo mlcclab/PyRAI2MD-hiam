@@ -217,7 +217,7 @@ class Constraint:
 
         # loop over potentials
         energy = np.zeros(0)
-        grad = np.zeros(0)
+        grad = np.zeros_like(coord)
         for n, alpha in enumerate(self.alpha):
             pre_factor = self.pre_factor[n]
             shape = self.shape[n]
