@@ -220,9 +220,10 @@ class Constraint:
         grad = np.zeros(0)
         for n, alpha in enumerate(self.alpha):
             pre_factor = self.pre_factor[n]
+            shape = self.shape[n]
 
             # compute F_i
-            if self.shape == 'ellipsoid':
+            if shape == 'ellipsoid':
                 r_over_r0 = np.sum(x ** 2 / cavity ** 2, axis=1, keepdims=True)  # elementwise divide then atom-wise sum
             else:  # cuboid
                 r_over_r0 = x ** 2 / cavity ** 2  # elementwise divide
