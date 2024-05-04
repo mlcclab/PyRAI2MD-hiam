@@ -80,7 +80,7 @@ class KeyMolecule:
             'fbond': ReadVal('f'),
             'fangle': ReadVal('f'),
             'fdihedral': ReadVal('f'),
-            'shape': ReadVal('s'),
+            'shape': ReadVal('sl'),
             'factor': ReadVal('il'),
             'scale': ReadVal('fl'),
             'cavity': ReadVal('fl'),
