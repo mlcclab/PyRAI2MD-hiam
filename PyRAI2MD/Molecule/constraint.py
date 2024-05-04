@@ -79,9 +79,12 @@ class Constraint:
             self.has_cdihedral = False
 
         # constraining potential on wall
-        self.alpha = np.amax([keywords['molecule']['factor'], 2])
-        self.pre_factor = keywords['molecule']['scale']
-        self.shape = keywords['molecule']['shape']
+        factor = keywords['molecule']['factor']
+        scale = keywords['molecule']['scale']
+        shape = keywords['molecule']['shape']
+        self.alpha = [np.amax([x, 2]) for x in factor]
+        self.pre_factor = self._match_list(self.alpha, scale)
+        self.shape = self._match_list(self.alpha, shape)
         self.mass = mass
         self.center_type = keywords['molecule']['center_type']
 
@@ -212,18 +215,23 @@ class Constraint:
             else:
                 cavity *= 1 + self.dr * self.pos
 
-        # compute F_i
-        if self.shape == 'ellipsoid':
-            r_over_r0 = np.sum(x ** 2 / cavity ** 2, axis=1, keepdims=True)  # elementwise divide then atom-wise sum
-        else:  # cuboid
-            r_over_r0 = x ** 2 / cavity ** 2  # elementwise divide
+        # loop over potentials
+        energy = np.zeros(0)
+        grad = np.zeros(0)
+        for n, alpha in enumerate(self.alpha):
+            pre_factor = self.pre_factor[n]
 
-        # compute V = sum(V_i)
-        energy = self.pre_factor * np.sum(r_over_r0 ** (self.alpha / 2))
-        scale = self.pre_factor * self.alpha * r_over_r0 ** (self.alpha / 2 - 1)
-        vec = x * self.group_reduced_mass[self.constrained_atoms] / cavity ** 2  # element-wise divide
+            # compute F_i
+            if self.shape == 'ellipsoid':
+                r_over_r0 = np.sum(x ** 2 / cavity ** 2, axis=1, keepdims=True)  # elementwise divide then atom-wise sum
+            else:  # cuboid
+                r_over_r0 = x ** 2 / cavity ** 2  # elementwise divide
 
-        grad = scale * vec
+            # compute V = sum(V_i)
+            energy += pre_factor * np.sum(r_over_r0 ** (alpha / 2))
+            scale = pre_factor * alpha * r_over_r0 ** (alpha / 2 - 1)
+            vec = x * self.group_reduced_mass[self.constrained_atoms] / cavity ** 2  # element-wise divide
+            grad += scale * vec
 
         return energy, grad
 
@@ -263,7 +271,7 @@ class Constraint:
             dr = (r - target_bond[n])
             bond_energy += self.fbond * dr ** 2
             bond_grad += 2 * self.fbond * dr * g
-            print(bond_grad)
+
         traj.energy += bond_energy
         traj.grad += bond_grad * 0.529177249
         traj.bond_pot = bond_energy
