@@ -1197,6 +1197,13 @@ def pyrai2md(var):
     if os.path.exists('%s.orca' % inputs) and not os.path.exists('%s/%s.orca' % (inputpath, inputs)):
         shutil.copy2('%s.orca' % inputs, '%s/%s.orca' % (inputpath, inputname))
 
+    # copy oqp files
+    if os.path.exists('%s.oqp' % inputs) and not os.path.exists('%s/%s.oqp' % (inputpath, inputs)):
+        shutil.copy2('%s.oqp' % inputs, '%s/%s.oqp' % (inputpath, inputname))
+
+    if os.path.exists('%s.json' % inputs) and not os.path.exists('%s/guess.json' % inputpath):
+        shutil.copy2('%s.json' % inputs, '%s/guess.json' % inputpath)
+
     # copy xtb files
     if os.path.exists('%s.xtb' % inputs) and not os.path.exists('%s/%s.xtb' % (inputpath, inputs)):
         shutil.copy2('%s.xtb' % inputs, '%s/%s.xtb' % (inputpath, inputname))

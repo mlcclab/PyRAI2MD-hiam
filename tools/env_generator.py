@@ -45,6 +45,7 @@ def main(argv):
       solvent       solvent.xyz  # solvent molecule xyz file
       nshell        2  # number of solvent shell
       density       1  # solvent density in g/cm**-3
+      solbox        60  # length of the solvent box in Angstrom
       mass          18  # molar mass of solvent in g/mol
       packmol       /path/to/packmol  # the path to packmol
       cell          cell.xyz  # unit cell molecule xyz file
@@ -431,16 +432,12 @@ def create_env(key_dict):
     env_type = key_dict['env_type']
     if env_type == 'solvent':
         create_solvent(key_dict)
+    elif env_type == 'equsol':
+        create_equsol(key_dict)
     elif env_type == 'aggregate':
         create_aggregate(key_dict)
     else:
         exit('\n KeywordError: unrecognized env_type %s\n' % env_type)
-
-    print('''
- HINTS: 
-    you might want to merge the environment with the initial conditions
-    to do so, change mode to merge
-    ''')
 
     return None
 
@@ -518,6 +515,12 @@ def create_solvent(key_dict):
     print(' compression ratio is 0.90909091')
     print(' COMPLETE')
 
+    print('''
+ HINTS: 
+    you might want to merge the environment with the initial conditions
+    to do so, change mode to merge
+       ''')
+
     return None
 
 
@@ -573,6 +576,88 @@ end structure
 
     with open('sol.pkm', 'w') as out:
         out.write(output)
+
+    return None
+
+
+def create_equsol(key_dict):
+    print('''
+ Tips for creating equilibrated solvent shell using packmol and LAMMPS
+    the following keyword must be set for creating solvent environment
+
+    solute    solute.chg  # solute molecule xyz file with charges and FF types
+    solvent   solvent.chg  # solvent molecule xyz file with charges and FF types
+    density   1  # solvent density in g/cm**-3
+    solbox    60  # length of the solvent box in Angstrom
+    mass      18  # molar mass of solvent in g/mol
+    packmol   /path/to/packmol  # the path to packmol
+
+    ''')
+
+    in_dict = {
+        'solute': key_dict['solute'],
+        'solvent': key_dict['solvent'],
+        'solbox': key_dict['solbox'],
+        'density': key_dict['density'],
+        'mass': key_dict['mass'],
+        'packmol': key_dict['packmol'],
+    }
+
+    for key in in_dict.keys():
+        if in_dict[key] is None:
+            exit('\n KeyError: missing keyword in env_file: %s\n' % key)
+
+    solute = in_dict['solute']
+    solvent = in_dict['solvent']
+    nshell = in_dict['nshell']
+    density = in_dict['density']
+    mass = in_dict['mass']
+    packmol = in_dict['packmol']
+
+    with open(solute, 'r') as inxyz:
+        geom_c = inxyz.read().splitlines()
+
+    _, geom_c = read_xyz(geom_c)
+    rad_in = find_rad_in(geom_c)
+
+    cm_to_a = 1e8  # angstrom to cm
+    avg = 6.022 * 1e23  # avogadro's number
+    fsphere = 4 / 3 * 3.1415926  # spherical volume factor
+
+    unit_den = density / cm_to_a ** 3 / mass * avg
+    unit_rad = (1 / unit_den / fsphere) ** (1 / 3)
+    rad_out = rad_in + unit_rad * nshell
+    vol = fsphere * (rad_out ** 3 - rad_in ** 3)
+    num = vol * unit_den
+
+    print(' computing inner radius %8.2f' % rad_in)
+    print(' computing solvent unit radius %8.2f' % unit_rad)
+    print(' creating %s layer of spherical shell from %8.2f to %8.2f Angstrom' % (nshell, rad_in, rad_out))
+    print(' total mass is %16.8f g/mol' % (mass * int(num)))
+    print(' total volume is %16.8f Angstrom^3' % vol)
+    print(' total number of solvent molecule is %8.0f' % num)
+    print(' writing packmol input > sol.pkm')
+    write_packmol(solute, solvent, num, rad_in, rad_out)
+    print(' running packmol\n')
+    subprocess.run('%s/bin/packmol < sol.pkm > sol.log' % packmol, shell=True)
+    print(' writing environment > env.xyz')
+
+    with open('env.xyz', 'r') as inxyz:
+        geom_s = inxyz.read().splitlines()
+
+    _, geom_s = read_xyz(geom_s)
+    rad_s = find_rad_in(geom_s)
+    print(' checking constraining potential parameters')
+    print(' radius of the solvent model is %8.2f Angstrom' % rad_s)
+    print(' suggested constraining radius is %8.2f Angstrom' % (rad_s * 1.1))
+    print(' compression ratio is 0.90909091')
+    print(' COMPLETE')
+
+    print('''
+ HINTS: 
+    you might want to merge the environment with the initial conditions
+    to do so, change mode to merge
+       ''')
 
     return None
 
@@ -703,6 +788,12 @@ def create_aggregate(key_dict):
     print(' writing center molecule > mol.xyz')
     print(' writing environment > env.xyz')
     print(' COMPLETE')
+
+    print('''
+ HINTS: 
+    you might want to merge the environment with the initial conditions
+    to do so, change mode to merge
+       ''')
 
     return None
 
