@@ -12,6 +12,7 @@ from PyRAI2MD.Keywords.key_molecule import KeyMolecule
 from PyRAI2MD.Keywords.key_molcas import KeyMolcas
 from PyRAI2MD.Keywords.key_bagel import KeyBagel
 from PyRAI2MD.Keywords.key_orca import KeyOrca
+from PyRAI2MD.Keywords.key_oqp import KeyOQP
 from PyRAI2MD.Keywords.key_xtb import KeyXtb
 from PyRAI2MD.Keywords.key_md import KeyMD
 from PyRAI2MD.Keywords.key_grid_search import KeySearch
@@ -33,6 +34,7 @@ def read_input(ld_input):
         'molcas': KeyMolcas(),
         'bagel': KeyBagel(),
         'orca': KeyOrca(),
+        'oqp': KeyOQP(),
         'xtb': KeyXtb(),
         'md': KeyMD(),
         'nn': KeyNN(nn_type='nn'),
@@ -109,6 +111,8 @@ def read_input(ld_input):
         variables_all['bagel']['verbose'] = variables_all['md']['verbose']
         variables_all['orca']['orca_project'] = variables_all['control']['title']
         variables_all['orca']['verbose'] = variables_all['md']['verbose']
+        variables_all['oqp']['oqp_project'] = variables_all['control']['title']
+        variables_all['oqp']['verbose'] = variables_all['md']['verbose']
         variables_all['xtb']['xtb_project'] = variables_all['control']['title']
         variables_all['xtb']['verbose'] = variables_all['md']['verbose']
         variables_all['demo'] = variables_all['nn']
@@ -140,6 +144,7 @@ def read_input(ld_input):
         'mlctkr': KeyMolcas().info(variables_all['molcas']),
         'bagel': KeyBagel().info(variables_all['bagel']),
         'orca': KeyOrca().info(variables_all['orca']),
+        'oqp': KeyOQP().info(variables_all['oqp']),
         'xtb': KeyXtb().info(variables_all['xtb']),
     }
 

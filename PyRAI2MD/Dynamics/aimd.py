@@ -21,6 +21,7 @@ from PyRAI2MD.Utils.timing import what_is_time
 from PyRAI2MD.Utils.timing import how_long
 from PyRAI2MD.Utils.coordinates import print_coord
 from PyRAI2MD.Utils.coordinates import print_charge
+from PyRAI2MD.Utils.coordinates import print_matrix
 from PyRAI2MD.Molecule.constraint import Constraint
 from PyRAI2MD.Molecule.constraint import GeomTracker
 
@@ -80,6 +81,7 @@ class AIMD:
         self.checkpoint = keywords['md']['checkpoint']
         self.restart = keywords['md']['restart']
         self.addstep = keywords['md']['addstep']
+        self.nactype = keywords['md']['nactype']
         self.stop = 0
         self.stop_hop = 0
         self.skipstep = 0
@@ -622,25 +624,33 @@ class AIMD:
 -------------------------------------------------------------------------------
 """ % (n + 1)
 
-        for n, pair in enumerate(self.traj.nac_coupling):
-            s1, s2 = pair
-            m1 = self.traj.statemult[s1]
-            m2 = self.traj.statemult[s2]
-            try:
-                coupling = self.traj.nac[n]
-                log_info += """
+        if self.nactype != 'nacme':
+            for n, pair in enumerate(self.traj.nac_coupling):
+                s1, s2 = pair
+                m1 = self.traj.statemult[s1]
+                m2 = self.traj.statemult[s2]
+                try:
+                    coupling = self.traj.nac[n]
+                    log_info += """
   &nonadiabatic coupling %3d - %3d in Hartree/Bohr M = %1d / %1d
 -------------------------------------------------------------------------------
 %s-------------------------------------------------------------------------------
 """ % (s1 + 1, s2 + 1, m1, m2, print_coord(np.concatenate((self.traj.atoms, coupling), axis=1)))
 
-            except IndexError:
-                log_info += """
+                except IndexError:
+                    log_info += """
   &nonadiabatic coupling %3d - %3d in Hartree/Bohr M = %1d / %1d
 -------------------------------------------------------------------------------
   Not computed
 -------------------------------------------------------------------------------
 """ % (s1 + 1, s2 + 1, m1, m2)
+
+        else:
+            log_info += """
+  &nonadiabatic coupling matrix          
+-------------------------------------------------------------------------------
+%s-------------------------------------------------------------------------------   
+""" % (print_matrix(self.traj.nac))
 
         soc_info = ''
         for n, pair in enumerate(self.traj.soc_coupling):

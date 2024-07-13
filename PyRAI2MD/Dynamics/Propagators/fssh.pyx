@@ -188,15 +188,18 @@ cpdef FSSH(dict traj):
     stop = 0
 
     ## initialize nac matrix
-    if iter > 2:
-        for n, pair in enumerate(nac_coupling):
-            s1, s2 = pair
-            if nactype == 'nac':
-                nacme = np.sum(V * N[n]) / avoid_singularity(E[s1], E[s2], s1, s2)
-            elif nactype == 'ktdc':
-                nacme = kTDC(s1, s2, E, Ep, Epp, delt * substep, gap)
-            Dt[s1, s2] = nacme
-            Dt[s2, s1] = -Dt[s1, s2]
+    if nactype == 'nacme':
+        Dt = N.astype(complex)
+    else:
+        if iter > 2:
+            for n, pair in enumerate(nac_coupling):
+                s1, s2 = pair
+                if nactype == 'nac':
+                    nacme = np.sum(V * N[n]) / avoid_singularity(E[s1], E[s2], s1, s2)
+                elif nactype == 'ktdc':
+                    nacme = kTDC(s1, s2, E, Ep, Epp, delt * substep, gap)
+                Dt[s1, s2] = nacme
+                Dt[s2, s1] = -Dt[s1, s2]
 
     ## initialize soc matrix
     for n, pair in enumerate(soc_coupling):
@@ -315,7 +318,7 @@ cpdef FSSH(dict traj):
                 print(A)
                 print('B transition matrix')
                 print(B)
-                print('Probabality')
+                print('Probability')
                 print(' '.join(['%12.8f' % (x) for x in g]))
                 print('Population')
                 print(' '.join(['%12.8f' % (np.real(x)) for x in np.diag(A)]))

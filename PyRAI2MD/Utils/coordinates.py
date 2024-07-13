@@ -24,12 +24,33 @@ def molcas_coord(xyz):
     return coord
 
 def orca_coord(xyz):
-    ## This function convert Molcas coordinates to list
+    ## This function convert orca coordinates to list
 
     coord = []
     for line in xyz:
         a, x, y, z = line.split()[0:4]
         coord.append([a, float(x), float(y), float(z)])
+
+    return coord
+
+def oqp_coord(xyz):
+    ## This function convert oqp coordinates to list
+
+    coord = []
+    for line in xyz:
+        idx, a, x, y, z = line.split()[0:5]
+        coord.append([Atom(int(a)).name, float(x), float(y), float(z)])
+
+    return coord
+
+def oqp_coord2list(atoms, xyz):
+    ## This function convert oqp coordinates to list
+    xyz = xyz.reshape((len(atoms), 3)) * 0.52917721090299996
+    coord = []
+    for n, line in enumerate(xyz):
+        a = atoms[n]
+        x, y, z = line
+        coord.append([Atom(int(a)).name, float(x), float(y), float(z)])
 
     return coord
 
@@ -194,6 +215,14 @@ def print_charge(charge, charge_name='', unit='Angstrom'):
         )
 
     return coord
+
+def print_matrix(mat):
+    ## This function convert a numpy array to a formatted string
+    matrix = ''
+    for row in mat:
+        matrix += ' '.join(['%24.16f' % x for x in row]) + '\n'
+
+    return matrix
 
 def mark_atom(xyz, marks):
     ## This function marks atoms for different basis set specification of Molcas
