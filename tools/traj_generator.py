@@ -11,6 +11,7 @@ import sys
 import os
 import shutil
 import json
+import copy
 import multiprocessing
 
 ## import initial condition sampling module
@@ -179,6 +180,7 @@ def main(argv):
         exit()
 
     iformat = inputs.split('.')[-1]
+    init_file = inputs.split('.')[-2]
     inputs = inputs.split('.')[0]
 
     if notraj == 0:
@@ -327,7 +329,10 @@ def main(argv):
     """)
 
     if repeat == 0:
-        ensemble = sampling(inputs, nesmb, iseed, temp, dist, iformat)  # generate initial conditions
+        if iformat == 'xyz' and init_file != 'init':
+            ensemble = read_xyzlist(inputs, nesmb)
+        else:
+            ensemble = sampling(inputs, nesmb, iseed, temp, dist, iformat)  # generate initial conditions
     else:
         print("Reuse the first sampled condition %s times" % nesmb)
         ensemble = sampling(inputs, 1, iseed, temp, dist, iformat)  # generate initial conditions
@@ -1475,7 +1480,7 @@ def gen_orca(cpus, ensemble, inputs, slpt, sltm, slmm, slnd, slcr, sljb, slin, t
             inputname = '%s-%s' % (inputs, i + start)
             inputpath = '%s/%s' % (in_path, inputname)
             # prepare calculations
-            variables_wrapper.append([inputname, inputpath, slmm, in_temp, in_xyz, in_velo, toorca, shell])
+            variables_wrapper.append([inputname, inputpath, slcr, sljb, slmm, in_temp, in_xyz, in_velo, toorca, shell])
 
         batch = orca_batch(inputs, j, start, end, in_path, slcr, sltm, slpt, slmm, toorca, shell)
 
@@ -1515,7 +1520,6 @@ def orca_batch(inputs, j, start, end, in_path, slcr, sltm, slpt, slmm, toorca, s
 #SBATCH --error=%%j.e.slurm
 %s
 export ORCA_EXE=%s
-module load openmpi/openmpi-4.1.1
 
 echo $SLURM_JOB_NAME
 
@@ -1530,7 +1534,7 @@ done
 wait
 
 """ % (
-        slcr, sltm, inputs, j + 1, slpt, int(slmm * slcr * 1.333), shell, toorca,
+        slcr, sltm, inputs, j + 1, slpt, int(slmm * slcr * 1.0), shell, toorca,
         start, end, inputs, in_path, inputs)
 
     return batch
@@ -1541,14 +1545,16 @@ def orca(var):
     ## It generates .inp .xyz .velocity.xyz
     ## This function generates a backup slurm batch file for each calculation
 
-    inputname, inputpath, slmm, in_temp, in_xyz, in_velo, toorca, shell = var
+    inputname, inputpath, slcr, sljb, slmm, in_temp, in_xyz, in_velo, toorca, shell = var
+    orcapal = int(slcr / sljb)
+
     if not os.path.exists('%s' % inputpath):
         os.makedirs('%s' % inputpath)
 
     runscript = """#!/bin/sh
 ## backup script for ORCA
 #SBATCH --nodes=1
-#SBATCH --ntasks=1
+#SBATCH --ntasks=%s
 #SBATCH --time=23:50:00
 #SBATCH --job-name=%s
 #SBATCH --partition=normal
@@ -1560,12 +1566,11 @@ export INPUT=%s
 export WORKDIR=%s
 
 export ORCA_EXE=%s
-module load openmpi/openmpi-4.1.1
 
 cd $WORKDIR
 $ORCA_EXE/orca $INPUT.inp > $INPUT.out
 
-""" % (inputname, int(slmm * 1.333), shell, inputname, inputpath, toorca)
+""" % (orcapal, inputname, int(slmm * orcapal * 1.0), shell, inputname, inputpath, toorca)
 
     in_xyz = '\n'.join(in_xyz.splitlines()[2:])
     in_temp += in_xyz + '\n*\n'
@@ -1704,7 +1709,7 @@ export OQP_ROOT=%s
 cd $WORKDIR
 oqua $INPUT.inp
 
-""" % (oqppal, inputname, int(slmm * 1.0), shell, inputname, inputpath, oqppal, tooqp)
+""" % (oqppal, inputname, int(slmm * oqppal * 1.0), shell, inputname, inputpath, oqppal, tooqp)
 
     new_in_temp = ''
     for line in in_temp.split():
@@ -1730,6 +1735,38 @@ oqua $INPUT.inp
         out.write(in_velo)
 
     os.system("chmod 777 %s/%s.sh" % (inputpath, inputname))
+
+
+def read_xyzlist(inputs, nesmb):
+    ensemble = []
+
+    with open('%s.xyz' % inputs, 'r') as infile:
+        file = infile.read().splitlines()
+
+    natom = int(file[0])
+    nmol = int(len(file) / (natom + 2))
+
+    if nmol < nesmb:
+        sys.exit('Not enough  structures!!! %s provided < %s requested.' % (nmol, nesmb))
+    elif nmol > nesmb:
+        print('More initial structures received. Skip %s - %s. ' % (nesmb + 1, nmol))
+
+    file = file[0: nmol * (natom + 2)]
+
+    mol = []
+    for n, line in enumerate(file):
+        if 0 < (n + 1) % (natom + 2) < 3:
+            continue
+
+        a, x, y, z = line.split()[0:4]
+
+        mol.append([a, float(x), float(y), float(z), 0, 0, 0, 0, 0])
+
+        if (n + 1) % (natom + 2) == 0:
+            ensemble.append(copy.deepcopy(mol))
+            mol = []
+
+    return ensemble
 
 
 if __name__ == '__main__':
