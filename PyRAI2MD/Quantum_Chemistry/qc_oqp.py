@@ -285,7 +285,7 @@ oqua ${OQP_PROJECT}.inp
         ## pack energy, only includes the requested states by self.nstate
         energy = []
         if os.path.exists('%s/energies' % self.workdir):
-            energy = np.loadtxt('%s/energies' % self.workdir).reshape(-1)[0: self.nstate]
+            energy = np.loadtxt('%s/energies' % self.workdir).reshape(-1)[1: self.nstate + 1]  # skip the reference
 
         ## pack force
         gradient = []
@@ -328,7 +328,7 @@ oqua ${OQP_PROJECT}.inp
         system = results['system']
         coord = oqp_coord2list(atoms, system)
 
-        energy = results['energy']
+        energy = results['energy'][1:self.nstate + 1]
         gradient = np.array(results['grad'])[1:self.nstate + 1]
         nac = np.array(results['nac'])
 
