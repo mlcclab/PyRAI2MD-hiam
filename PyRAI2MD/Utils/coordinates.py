@@ -39,7 +39,7 @@ def oqp_coord(xyz):
     coord = []
     for line in xyz:
         idx, a, x, y, z = line.split()[0:5]
-        coord.append([Atom(int(a)).name, float(x), float(y), float(z)])
+        coord.append([Atom(int(float(a))).symbol, float(x), float(y), float(z)])
 
     return coord
 

@@ -83,7 +83,7 @@ class OQP:
 
         elif job_id == 'Read':
             self.workdir = self.workdir
-
+            use_hpc = 1
         else:
             self.workdir = '%s/tmp_OQP' % self.workdir
 
@@ -103,9 +103,12 @@ class OQP:
             self._read_data = self._read_data_mem
 
     def _read_oqp(self):
-        # read oqp input file as dict
-        with open('%s.oqp' % self.project, 'r') as template:
-            ld_input = template.read()
+        # read oqp input file as dictf
+        if os.path.exists('%s.oqp' % self.project):
+            with open('%s.oqp' % self.project, 'r') as template:
+                ld_input = template.read()
+        else:
+            ld_input = ''
 
         ld_input = ld_input.split('[')
         input_dict = {}
@@ -280,7 +283,7 @@ oqua ${OQP_PROJECT}.inp
         for n, line in enumerate(log):
             if 'Cartesian Coordinate in Angstrom' in line:
                 coord = oqp_coord(log[n + 4: n + 4 + natom])
-            break
+                break
 
         ## pack energy, only includes the requested states by self.nstate
         energy = []
@@ -449,6 +452,6 @@ oqua ${OQP_PROJECT}.inp
 
     def read_data(self, natom):
         ## function to read the logfile
-        coord, energy, gradient, nac, soc = self._read_data(natom)
+        coord, energy, gradient, nac, soc = self._read_data_io(natom)
 
-        return coord, energy, gradient, nac, soc
+        return coord, np.array(energy), np.array(gradient), np.array(nac), np.array(soc)
