@@ -168,7 +168,7 @@ export OMP_NUM_THREADS=%s
 
 cd $OQP_WORKDIR
 
-oqua ${OQP_PROJECT}.inp
+openqp ${OQP_PROJECT}.inp
 
 """ % (
             submission,
