@@ -33,8 +33,8 @@ def orca_coord(xyz):
 
     return coord
 
-def oqp_coord(xyz):
-    ## This function convert oqp coordinates to list
+def openqp_coord(xyz):
+    ## This function convert openqp coordinates to list
 
     coord = []
     for line in xyz:
@@ -43,8 +43,8 @@ def oqp_coord(xyz):
 
     return coord
 
-def oqp_coord2list(atoms, xyz):
-    ## This function convert oqp coordinates to list
+def openqp_coord2list(atoms, xyz):
+    ## This function convert openqp coordinates to list
     xyz = xyz.reshape((len(atoms), 3)) * 0.52917721090299996
     coord = []
     for n, line in enumerate(xyz):

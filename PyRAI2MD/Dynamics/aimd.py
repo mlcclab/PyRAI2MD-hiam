@@ -624,7 +624,7 @@ class AIMD:
 -------------------------------------------------------------------------------
 """ % (n + 1)
 
-        if self.nactype != 'nacme':
+        if self.nactype != 'dcm':
             for n, pair in enumerate(self.traj.nac_coupling):
                 s1, s2 = pair
                 m1 = self.traj.statemult[s1]
@@ -632,14 +632,14 @@ class AIMD:
                 try:
                     coupling = self.traj.nac[n]
                     log_info += """
-  &nonadiabatic coupling %3d - %3d in Hartree/Bohr M = %1d / %1d
+  &nonadiabatic coupling vectors %3d - %3d in Hartree/Bohr M = %1d / %1d
 -------------------------------------------------------------------------------
 %s-------------------------------------------------------------------------------
 """ % (s1 + 1, s2 + 1, m1, m2, print_coord(np.concatenate((self.traj.atoms, coupling), axis=1)))
 
                 except IndexError:
                     log_info += """
-  &nonadiabatic coupling %3d - %3d in Hartree/Bohr M = %1d / %1d
+  &nonadiabatic coupling vectors %3d - %3d in Hartree/Bohr M = %1d / %1d
 -------------------------------------------------------------------------------
   Not computed
 -------------------------------------------------------------------------------
@@ -647,7 +647,7 @@ class AIMD:
 
         else:
             log_info += """
-  &nonadiabatic coupling matrix          
+  &derivative coupling matrix          
 -------------------------------------------------------------------------------
 %s-------------------------------------------------------------------------------   
 """ % (print_matrix(self.traj.nac))

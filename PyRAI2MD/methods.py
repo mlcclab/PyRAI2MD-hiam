@@ -11,7 +11,7 @@ from PyRAI2MD.Quantum_Chemistry.qc_bagel import Bagel
 from PyRAI2MD.Quantum_Chemistry.qc_molcas import Molcas
 from PyRAI2MD.Quantum_Chemistry.qc_molcas_tinker import MolcasTinker
 from PyRAI2MD.Quantum_Chemistry.qc_orca import Orca
-from PyRAI2MD.Quantum_Chemistry.qc_oqp import OQP
+from PyRAI2MD.Quantum_Chemistry.qc_openqp import OpenQP
 from PyRAI2MD.Quantum_Chemistry.qc_xtb import Xtb
 from PyRAI2MD.Quantum_Chemistry.qmqm2 import QMQM2
 from PyRAI2MD.Machine_Learning.model_NN import DNN
@@ -67,7 +67,7 @@ class QM:
             'mlctkr': MolcasTinker,
             'bagel': Bagel,
             'orca': Orca,
-            'oqp': OQP,
+            'openqp': OpenQP,
             'xtb': Xtb,
             'nn': DNN,
             'demo': Demo,
@@ -82,7 +82,7 @@ class QM:
             'molcas': Molcas,
             'bagel': Bagel,
             'orca': Orca,
-            'oqp': OQP,
+            'openqp': OpenQP,
             'xtb': Xtb,
             'nn': DNN,
             'demo': Demo,
