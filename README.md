@@ -57,7 +57,7 @@
  - Machine learning nonadiabatic molecular dynamics (ML-NAMD).
  - Neural network training and grid search.
  - Active learning with ML-NAMD trajectories.
- - Support BAGEL, Molcas, ORCA, GFN-xTB for QM, and Molcas/Tinker for QM/MM calculations.
+ - Support BAGEL, Molcas, ORCA, OpenQP, GFN-xTB for QM, and Molcas/Tinker for QM/MM calculations.
  - Generalized FSSH and ZNSH with nonadiabatic coupling and spin-orbit coupling
  - Add curvature-driven time-dependent coupling for FSSH
  - Support QMQM2 scheme multiscale dynamics
