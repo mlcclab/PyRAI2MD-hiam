@@ -12,6 +12,7 @@ test_bagel = 0
 test_molcas = 0
 test_molcas_tinker = 0
 test_orca = 0
+test_openqp = 1
 test_xtb = 0
 test_qmqm2 = 0
 test_fssh = 0
@@ -40,6 +41,7 @@ class TestCase:
         molcas local hpc
         molcas_tinker local hpc
         orca local hpc
+        openqp local hpc
         xtb local hpc
 
     3. test ml method
@@ -72,6 +74,7 @@ class TestCase:
             'molcas': test_molcas,
             'molcas_tinker': test_molcas_tinker,
             'orca': test_orca,
+            'openqp': test_openqp,
             'xtb': test_xtb,
             'qmqm2': test_qmqm2,
             'fssh': test_fssh,
@@ -106,6 +109,10 @@ class TestCase:
         if os.path.exists('./orca/test_orca.py'):
             from orca.test_orca import TestORCA
             self.test_func['orca'] = TestORCA
+
+        if os.path.exists('./openqp/test_openqp.py'):
+            from openqp.test_openqp import TestOpenQP
+            self.test_func['openqp'] = TestOpenQP
 
         if os.path.exists('./xtb/test_xtb.py'):
             from xtb.test_xtb import TestxTB
