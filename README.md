@@ -87,6 +87,7 @@
   |   |--key_molcas.py                             keywords for molcas calculation                  
   |   |--key_bagel.py                              keywords for bagel calculation                   
   |   |--key_orca                                  keywords for orca calculation                    
+  |   |--key_openqp                                keywords for openqp calculation                    
   |   |--key_xtb.py                                keywords for xtb calculation                      
   |   |--key_mlp.py                                keywords for mlp settings                        
   |   |--key_schnet.py                             keywords for schnet settings                     
@@ -108,6 +109,7 @@
   |   |--qc_bagel.py                               BAGEL interface                                  
   |   |--qc_molcas_tinker                          OpenMolcas/Tinker interface                      
   |   |--qc_orca                                   ORCA interface                                   
+  |   |--qc_openQP                                 OpenQP interface
   |   |--qc_xtb                                    GFN-xTB interface                                
   |    `-qmqm2                                     Multiscale calculation interface                 
   |

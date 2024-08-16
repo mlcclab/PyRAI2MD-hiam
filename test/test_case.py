@@ -7,7 +7,7 @@
 #
 ######################################################
 
-test_first_run = 0
+test_first_run = 1
 test_bagel = 0
 test_molcas = 0
 test_molcas_tinker = 0
@@ -21,7 +21,7 @@ test_pynnsmd = 0
 test_grid_search = 0
 test_aimd = 0
 test_mixaimd = 0
-test_adaptive_sampling = 1
+test_adaptive_sampling = 0
 test_md = 0
 
 # TODO: test_e2n2, test_dimenet

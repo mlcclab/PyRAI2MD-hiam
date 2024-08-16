@@ -37,6 +37,7 @@ register = {
     'key_molecule': '/Keywords/key_molecule.py',
     'key_nn': '/Keywords/key_nn.py',
     'key_orca': '/Keywords/key_orca.py',
+    'key_openqp': '/Keywords/key_openqp.py',
     'key_read_file': '/Keywords/key_read_file.py',
     'key_schnet': '/Keywords/key_schnet.py',
     'key_templ': '/Keywords/key_templ.py',
@@ -46,6 +47,7 @@ register = {
     'qc_bagel': '/Quantum_Chemistry/qc_bagel.py',
     'qc_molcas_tinker': '/Quantum_Chemistry/qc_molcas_tinker.py',
     'qc_orca': '/Quantum_Chemistry/qc_orca.py',
+    'qc_openqp': '/Quantum_Chemistry/qc_openqp.py',
     'qc_xtb': '/Quantum_Chemistry/qc_xtb.py',
     'qmqm2': '/Quantum_Chemistry/qmqm2.py',
     'Dimenet': '/Machine_Learning/Dimenet.py',
@@ -125,6 +127,7 @@ def review(length, totline, totfile):
   |   |--key_molcas.py                             keywords for molcas calculation             %8s
   |   |--key_bagel.py                              keywords for bagel calculation              %8s
   |   |--key_orca                                  keywords for orca calculation               %8s
+  |   |--key_openqp                                keywords for openqp calculation             %8s
   |   |--key_xtb.py                                keywords for xtb calculation                %8s
   |   |--key_mlp.py                                keywords for mlp settings                   %8s
   |   |--key_schnet.py                             keywords for schnet settings                %8s
@@ -146,6 +149,7 @@ def review(length, totline, totfile):
   |   |--qc_bagel.py                               BAGEL interface                             %8s
   |   |--qc_molcas_tinker                          OpenMolcas/Tinker interface                 %8s
   |   |--qc_orca                                   ORCA interface                              %8s
+  |   |--qc_openqp                                 OpenQP interface                            %8s
   |   |--qc_xtb                                    GFN-xTB interface                           %8s
   |    `-qmqm2                                     Multiscale calculation interface            %8s
   |
@@ -214,6 +218,7 @@ Total %4s/%4s files                                                             
        length['key_molcas'],
        length['key_bagel'],
        length['key_orca'],
+       length['key_openqp'],
        length['key_xtb'],
        length['key_mlp'],
        length['key_schnet'],
@@ -231,6 +236,7 @@ Total %4s/%4s files                                                             
        length['qc_bagel'],
        length['qc_molcas_tinker'],
        length['qc_orca'],
+       length['qc_openqp'],
        length['qc_xtb'],
        length['qmqm2'],
        length['model_demo'],
