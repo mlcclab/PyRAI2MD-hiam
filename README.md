@@ -208,3 +208,4 @@ We are currently working on the tutorials for users manual.
 - Jingbai Li, Rachel Stein, Daniel Adrion, Steven A. Lopez, "Machine-learning photodynamics simulations uncover the role of substituent effects on the photochemical formation of cubanes", J. Am. Chem. Soc. 2021, 143, 48, 20166–20175. DOI:10.1021/jacs.1c07725
 - Jingbai Li, Steven A. Lopez, “Excited-state distortions promote the reactivities and regioselectivities of photochemical 4π-electrocyclizations of fluorobenzenes”, Chem. A Eur J. 2022, 28, e202200651. DOI:10.1002/chem.202200651
 - Jingbai Li, Steven A. Lopez, “A Look Inside the Black Box of Machine Learning Photodynamics Simulations”, Acc. Chem. Res., 2022, 55, 1972–1984. DOI:10.1021/acs.accounts.2c00288
+- L. Wang, C. Salguero, S.A. Lopez, J. Li, "Machine learning photodynamics uncover blocked non-radiative mechanisms in aggregation-induced emission", Chem, 2024, 10, 2295–2310. DOI: 10.1016/j.chempr.2024.04.017
