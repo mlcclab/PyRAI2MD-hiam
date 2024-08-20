@@ -94,7 +94,7 @@ def main(argv):
     tompi = ''
     toxtb = '/share/apps/xtb-6.5.1/bin'
     toorca = '/share/apps/orca_5_0_3_linux_x86-64_openmpi411'
-    tooqp = '/share/apps/oqp/'
+    tooqp = '/share/apps/openqp/'
 
     if len(argv) <= 1:
         exit(usage)
@@ -168,7 +168,7 @@ def main(argv):
             toxtb = line.split()[1]
         elif 'orca' == key:
             toorca = line.split()[1]
-        elif 'oqp' == key:
+        elif 'openqp' == key:
             tooqp = line.split()[1]
 
     if inputs is not None and os.path.exists(inputs):
@@ -293,11 +293,11 @@ def main(argv):
                 print(usage)
                 print('!!! orca input not found !!!')
                 exit()
-        elif prog == 'oqp':
-            if not os.path.exists('%s.oqp' % inputs):
-                print('\n!!! OQP input not found !!!')
+        elif prog == 'openqp':
+            if not os.path.exists('%s.openqp' % inputs):
+                print('\n!!! OpenQP input not found !!!')
                 print(usage)
-                print('!!! OQP input not found !!!')
+                print('!!! OpenQP input not found !!!')
                 exit()
         else:
             print('\n!!! Program %s not found !!!' % prog)
@@ -742,7 +742,7 @@ do
   export INPUT=%s-$i
   export WORKDIR=%s/%s-$i
   cd $WORKDIR
-  $BAGEL $INPUT.json > $INPUT.log
+  $BAGEL $INPUT.json > $INPUT.log &
   sleep 5
 done
 wait
@@ -1203,8 +1203,8 @@ def pyrai2md(var):
         shutil.copy2('%s.orca' % inputs, '%s/%s.orca' % (inputpath, inputname))
 
     # copy oqp files
-    if os.path.exists('%s.oqp' % inputs) and not os.path.exists('%s/%s.oqp' % (inputpath, inputs)):
-        shutil.copy2('%s.oqp' % inputs, '%s/%s.oqp' % (inputpath, inputname))
+    if os.path.exists('%s.openqp' % inputs) and not os.path.exists('%s/%s.openqp' % (inputpath, inputs)):
+        shutil.copy2('%s.openqp' % inputs, '%s/%s.openqp' % (inputpath, inputname))
 
     if os.path.exists('%s.json' % inputs) and not os.path.exists('%s/guess.json' % inputpath):
         shutil.copy2('%s.json' % inputs, '%s/guess.json' % inputpath)
@@ -1591,7 +1591,7 @@ def gen_oqp(cpus, ensemble, inputs, slpt, sltm, slmm, slnd, slcr, sljb, slin, to
     ## This function will group OQP calculations to individual runset
     ## this function will call oqp_batch and oqp to prepare files
 
-    in_temp = open('%s.oqp' % inputs, 'r').read()
+    in_temp = open('%s.openqp' % inputs, 'r').read()
     in_path = os.getcwd()
 
     runall = ''
@@ -1652,7 +1652,7 @@ def oqp_batch(inputs, j, start, end, in_path, slcr, sljb, sltm, slpt, slmm, tooq
 #SBATCH --error=%%j.e.slurm
 %s
 export OMP_NUM_THREADS=%s
-export OQP_ROOT=%s
+export OPENQP_ROOT=%s
 
 echo $SLURM_JOB_NAME
 
@@ -1661,7 +1661,7 @@ do
   export INPUT="%s-$i"
   export WORKDIR="%s/%s-$i"
   cd $WORKDIR
-  oqua $INPUT.inp
+  openqp $INPUT.inp &
   sleep 5
 done
 wait
