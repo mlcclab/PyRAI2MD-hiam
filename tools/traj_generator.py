@@ -368,7 +368,7 @@ def main(argv):
         gen_fromage(cpus, ensemble, inputs, slpt, sltm, slmm, slnd, slcr, sljb, slin, tomlcs, toxtb, iformat, shell)
     elif prog == 'orca':
         gen_orca(cpus, ensemble, inputs, slpt, sltm, slmm, slnd, slcr, sljb, slin, toorca, iformat, shell)
-    elif prog == 'oqp':
+    elif prog == 'openqp':
         gen_oqp(cpus, ensemble, inputs, slpt, sltm, slmm, slnd, slcr, sljb, slin, tooqp, iformat, shell)
 
 def gen_molcas(cpus, ensemble, inputs, slpt, sltm, slmm, slnd, slcr, sljb, slin, tomlcs, iformat, shell):
