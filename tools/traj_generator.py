@@ -1641,7 +1641,7 @@ def oqp_batch(inputs, j, start, end, in_path, slcr, sljb, sltm, slpt, slmm, tooq
     oqppal = int(slcr / sljb)
 
     batch = """#!/bin/sh
-## script for OQP
+## script for OpenQP
 #SBATCH --nodes=1
 #SBATCH --ntasks=%d
 #SBATCH --time=%s
@@ -1689,7 +1689,7 @@ def oqp(var):
         shutil.copy2('%s.json' % inputs, '%s/guess.json' % inputpath)
 
     runscript = """#!/bin/sh
-## backup script for OQP
+## backup script for OpenQP
 #SBATCH --nodes=1
 #SBATCH --ntasks=%s
 #SBATCH --time=23:50:00
@@ -1703,11 +1703,11 @@ export INPUT=%s
 export WORKDIR=%s
 
 export OMP_NUM_THREADS=%s
-export OQP_ROOT=%s
+export OPENQP_ROOT=%s
 
 
 cd $WORKDIR
-oqua $INPUT.inp
+openqp $INPUT.inp
 
 """ % (oqppal, inputname, int(slmm * oqppal * 1.0), shell, inputname, inputpath, oqppal, tooqp)
 
