@@ -134,7 +134,7 @@ class OpenQP:
                 input_dict[section_name][key] = val
 
         # assign requisite values
-        for key in ['input', 'guess', 'properties', 'nac', 'soc']:
+        for key in ['input', 'guess', 'properties', 'nac']:  # add soc later
             if key not in input_dict.keys():
                 input_dict[key] = {}
 
