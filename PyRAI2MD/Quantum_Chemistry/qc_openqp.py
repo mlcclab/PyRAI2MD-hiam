@@ -87,6 +87,10 @@ class OpenQP:
         else:
             self.workdir = '%s/tmp_OpenQP' % self.workdir
 
+        ## make calculation folder
+        if not os.path.exists(self.workdir):
+            os.makedirs(self.workdir)
+
         ## read openqp input template
         self.input_dict = self._read_openqp()
 
@@ -193,10 +197,6 @@ openqp ${OPENQP_PROJECT}.inp
         self.input_dict['properties']['back_door'] = 'true'
 
     def _setup_openqp(self, x, q=None):
-        ## make calculation folder and input file
-        if not os.path.exists(self.workdir):
-            os.makedirs(self.workdir)
-
         ## clean calculation folder
         os.system("rm %s/*.log > /dev/null 2>&1" % self.workdir)
         os.system("rm %s/*.json > /dev/null 2>&1" % self.workdir)
