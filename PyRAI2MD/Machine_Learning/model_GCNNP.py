@@ -356,7 +356,7 @@ class E2N2:
         return metrics
 
     def load(self):
-        self.model.load()
+        self.model.load(device=self.device)
 
         return self
 
