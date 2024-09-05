@@ -65,6 +65,7 @@ class OpenQP:
         self.activestate = 0
         self.nactype = keywords['md']['nactype']
         variables = keywords['openqp']
+        self.guess_type = variables['guess_type']
         self.keep_tmp = variables['keep_tmp']
         self.verbose = variables['verbose']
         self.project = variables['openqp_project']
@@ -140,7 +141,7 @@ class OpenQP:
 
         input_dict['input']['runtype'] = 'prop'
         input_dict['input']['system'] = '%s/%s.xyz' % (self.workdir, self.project)
-        input_dict['guess']['type'] = 'auto'
+        input_dict['guess']['type'] = self.guess_type
         input_dict['guess']['file'] = '%s/guess.json' % self.workdir
         input_dict['guess']['continue_geom'] = 'false'
         input_dict['guess']['save_mol'] = 'true'

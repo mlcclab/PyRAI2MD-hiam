@@ -20,6 +20,7 @@ class KeyOpenQP:
             'openqp_project': None,
             'openqp_workdir': os.getcwd(),
             'threads': 1,
+            'guess_type': 'auto',
             'use_hpc': 0,
             'keep_tmp': 1,
             'verbose': 0,
@@ -36,6 +37,7 @@ class KeyOpenQP:
             'openqp_project': ReadVal('s'),
             'openqp_workdir': ReadVal('s'),
             'threads': ReadVal('i'),
+            'guess_type': ReadVal('s'),
             'use_hpc': ReadVal('i'),
             'keep_tmp': ReadVal('i'),
             'verbose': ReadVal('i'),
@@ -61,6 +63,7 @@ class KeyOpenQP:
   OpenQP_project:           %-10s
   OpenQP_workdir:           %-10s
   Num_omp_threads:          %-10s
+  Guess orbital type:       %-10s
   Keep tmp_OpenQP:          %-10s
   Job distribution:         %-10s
 -------------------------------------------------------
@@ -69,6 +72,7 @@ class KeyOpenQP:
             keywords['openqp_project'],
             keywords['openqp_workdir'],
             keywords['threads'],
+            keywords['guess_type'],
             keywords['keep_tmp'],
             keywords['use_hpc']
         )
