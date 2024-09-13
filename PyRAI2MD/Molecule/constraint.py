@@ -115,9 +115,9 @@ class Constraint:
             self.groups = np.array(groups).astype(int)
 
         self.group_map, self.group_idx = self._gen_group_map()
-        self.group_mass = np.zeros_like(mass)
-        np.add.at(self.group_mass, self.group_map, self.mass[self.group_idx])
-        self.group_reduced_mass = self.mass / self.group_mass
+        self.group_mass = np.zeros_like(mass[self.constrained_atoms])
+        np.add.at(self.group_mass, self.group_map, self.mass[self.constrained_atoms][self.group_idx])
+        self.group_reduced_mass = self.mass[self.constrained_atoms] / self.group_mass
 
         if len(cavity) == 1:
             self.has_cavity = True
@@ -183,8 +183,8 @@ class Constraint:
             start = starting_index[n]
             end = groups_natom[n]
             nmol, natom = self.groups[n]
-            g_map = self.constrained_atoms[start:end].reshape((nmol, natom)).repeat(natom, axis=0).reshape(-1)
-            g_idx = self.constrained_atoms[start:end].repeat(natom)
+            g_map = np.arange(start, end).reshape((nmol, natom)).repeat(natom, axis=0).reshape(-1)
+            g_idx = np.arange(start, end).repeat(natom)
             group_map = np.concatenate((group_map, g_map))
             group_idx = np.concatenate((group_idx, g_idx))
 
@@ -231,7 +231,7 @@ class Constraint:
             # compute V = sum(V_i)
             energy += pre_factor * np.sum(r_over_r0 ** (alpha / 2))
             scale = pre_factor * alpha * r_over_r0 ** (alpha / 2 - 1)
-            vec = x * self.group_reduced_mass[self.constrained_atoms] / cavity ** 2  # element-wise divide
+            vec = x * self.group_reduced_mass / cavity ** 2  # element-wise divide
             grad += scale * vec
 
         return energy, grad
@@ -361,7 +361,7 @@ class Constraint:
             traj.center = np.copy(center)
             traj.record_center = True
 
-        coord = traj.coord[self.constrained_atoms] * self.group_reduced_mass[self.constrained_atoms]
+        coord = traj.coord[self.constrained_atoms] * self.group_reduced_mass
         ext_energy, ext_grad = self._polynomial_potential(coord, center, traj.itr)
         traj.energy += ext_energy
         traj.grad[:, self.constrained_atoms, :] += ext_grad * 0.529177249
