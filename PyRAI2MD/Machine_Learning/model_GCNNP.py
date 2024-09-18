@@ -64,6 +64,7 @@ class E2N2:
         variables = keywords['e2n2'].copy()
         modeldir = variables['modeldir']
         data = variables['data']
+        train_mode = variables['train_mode']
         nn_eg_type = variables['nn_eg_type']
         nn_nac_type = variables['nn_nac_type']
         nn_soc_type = variables['nn_soc_type']
@@ -107,7 +108,7 @@ class E2N2:
         hyp_dict_soc = set_e2n2_hyper_soc(hyp_soc, soc_unit, data.info, splits, shuffle)
 
         ## retraining has some bug at the moment, do not use
-        self.train_mode = 'training'
+        self.retrain = True if train_mode == 'retrain' else False
 
         if job_id is None or job_id == 1:
             self.name = f"NN-{title}"
@@ -282,7 +283,7 @@ class E2N2:
 
         xyz = np.concatenate((self.atoms.reshape((-1, self.natom, 1)), self.geos), axis=-1).tolist()
         self.model.build()
-        errors = self.model.train(xyz, self.y_dict, remote=True, device=self.device)
+        errors = self.model.train(xyz, self.y_dict, remote=True, device=self.device, retrain=self.retrain)
 
         if self.model_register['energy_grad']:
             eg_error = errors['energy_grad']
