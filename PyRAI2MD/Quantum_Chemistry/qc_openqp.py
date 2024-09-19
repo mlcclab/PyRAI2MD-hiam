@@ -63,6 +63,7 @@ class OpenQP:
         self.nac_coupling = []
         self.state = 0
         self.activestate = 0
+        self.jobtype = keywords['control']['jobtype']
         self.nactype = keywords['md']['nactype']
         variables = keywords['openqp']
         self.guess_type = variables['guess_type']
@@ -139,7 +140,12 @@ class OpenQP:
             if key not in input_dict.keys():
                 input_dict[key] = {}
 
-        input_dict['input']['runtype'] = 'prop'
+        if self.jobtype == 'md':
+            runtype = 'prop'
+        else:
+            runtype = 'data'
+
+        input_dict['input']['runtype'] = runtype
         input_dict['input']['system'] = '%s/%s.xyz' % (self.workdir, self.project)
         input_dict['guess']['type'] = self.guess_type
         input_dict['guess']['file'] = '%s/guess.json' % self.workdir
