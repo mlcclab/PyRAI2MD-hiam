@@ -180,7 +180,7 @@ export OMP_NUM_THREADS=%s
 
 cd $OPENQP_WORKDIR
 
-openqp ${OPENQP_PROJECT}.inp
+openqp ${OPENQP_PROJECT}.inp --nompi
 
 """ % (
             submission,
@@ -262,7 +262,8 @@ openqp ${OPENQP_PROJECT}.inp
                                  input_file='%s/%s.inp' % (self.workdir, self.project),
                                  input_dict=self.input_dict,
                                  log='%s/%s.log' % (self.workdir, self.project),
-                                 silent=1)
+                                 silent=1,
+                                 usempi=False)
 
     def _run_openqp_io(self):
         ## run openqp via I/O
