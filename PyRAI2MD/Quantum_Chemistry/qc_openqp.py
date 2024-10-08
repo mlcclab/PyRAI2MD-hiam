@@ -317,8 +317,8 @@ openqp ${OPENQP_PROJECT}.inp --nompi
         if self.nactype == 'nac':
             for pair in self.nac_coupling:
                 pa, pb = pair
-                if os.path.exists('%s/nac_%s_%s' % (self.workdir, pa, pb)):
-                    n = np.loadtxt('%s/nac_%s_%s' % (self.workdir, pa, pb))
+                if os.path.exists('%s/nac_%s_%s' % (self.workdir, pa + 1, pb + 1)):
+                    n = np.loadtxt('%s/nac_%s_%s' % (self.workdir, pa + 1, pb + 1))
                     nac.append(n)
             nac = np.array(nac)
 
