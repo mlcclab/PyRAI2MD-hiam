@@ -228,7 +228,7 @@ openqp ${OPENQP_PROJECT}.inp --nompi
             self.input_dict['properties']['grad'] = ','.join(['%s' % (x + 1) for x in range(self.nstate)])
 
         if self.nactype == 'nac':
-            self.input_dict['nac']['states'] = ','.join([' '.join(x) for x in self.nac_coupling])
+            self.input_dict['nac']['states'] = ','.join(['%s %s' % (x[0] + 1, x[1] + 1) for x in self.nac_coupling])
 
         ## save input file
         si_input = ''
