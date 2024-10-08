@@ -354,7 +354,7 @@ openqp ${OPENQP_PROJECT}.inp --nompi
                 nacm[pb, pa] = dcm[pb, pa]
 
             nac = np.array(nacm)
-        elif self.nactype == 'nacv':
+        elif self.nactype == 'nac':
             nac = []
             for pair in self.nac_coupling:
                 pa, pb = pair
