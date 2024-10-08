@@ -343,16 +343,26 @@ openqp ${OPENQP_PROJECT}.inp --nompi
 
         energy = results['energy'][1:self.nstate + 1]
         gradient = np.array(results['grad'])[1:self.nstate + 1]
-        nac = np.array(results['dcm'])
+        dcm = np.array(results['dcm'])
+        nacv = np.array(results['nac'])
 
         if self.nactype == 'dcm':
             nacm = np.zeros((self.nstate, self.nstate))
             for pair in self.nac_coupling:
                 pa, pb = pair
-                nacm[pa, pb] = nac[pa, pb]
-                nacm[pb, pa] = nac[pb, pa]
+                nacm[pa, pb] = dcm[pa, pb]
+                nacm[pb, pa] = dcm[pb, pa]
 
             nac = np.array(nacm)
+        elif self.nactype == 'nacv':
+            nac = []
+            for pair in self.nac_coupling:
+                pa, pb = pair
+                nac.append(nacv[pa, pb])
+
+            nac = np.array(nac)
+        else:
+            nac = np.zeros(0)
 
         soc = np.array(results['soc'])
         self.back_door_data = (system, results['data'])
