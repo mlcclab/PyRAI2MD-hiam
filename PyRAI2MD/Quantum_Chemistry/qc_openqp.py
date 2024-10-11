@@ -206,7 +206,7 @@ openqp ${OPENQP_PROJECT}.inp --nompi
     def _setup_openqp(self, x, q=None):
         ## clean calculation folder
         os.system("rm %s/*.log > /dev/null 2>&1" % self.workdir)
-        os.system("rm %s/*.json > /dev/null 2>&1" % self.workdir)
+        # os.system("rm %s/*.json > /dev/null 2>&1" % self.workdir)
         os.system("rm %s/energies > /dev/null 2>&1" % self.workdir)
         os.system("rm %s/grad_* > /dev/null 2>&1" % self.workdir)
         os.system("rm %s/grad_* > /dev/null 2>&1" % self.workdir)
