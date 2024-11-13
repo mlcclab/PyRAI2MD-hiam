@@ -76,6 +76,7 @@ class OpenQP:
         self.activestate = 0
         self.pyoqp = None
         self.back_door_data = None
+        self.hf = None
         use_hpc = variables['use_hpc']
 
         ## check calculation folder
@@ -161,6 +162,8 @@ class OpenQP:
         else:
             input_dict['properties']['nac'] = 'false'
 
+        self.hf = input_dict['input']['method']
+
         return input_dict
 
     def _init_io(self):
@@ -226,6 +229,9 @@ openqp ${OPENQP_PROJECT}.inp --nompi
             self.input_dict['properties']['grad'] = '%s' % self.state
         else:
             self.input_dict['properties']['grad'] = ','.join(['%s' % (x + 1) for x in range(self.nstate)])
+
+        if self.hf == 'hf':
+            self.input_dict['properties']['grad'] = '0'
 
         if self.nactype == 'nac':
             self.input_dict['nac']['states'] = ','.join(['%s %s' % (x[0] + 1, x[1] + 1) for x in self.nac_coupling])
@@ -297,20 +303,33 @@ openqp ${OPENQP_PROJECT}.inp --nompi
 
         ## pack energy, only includes the requested states by self.nstate
         energy = []
-        if os.path.exists('%s/energies' % self.workdir):
-            energy = np.loadtxt('%s/energies' % self.workdir).reshape(-1)[1: self.nstate + 1]  # skip the reference
-
-        ## pack force
         gradient = []
-        for i in range(self.nstate):
-            if os.path.exists('%s/grad_%s' % (self.workdir, i + 1)):
-                g = np.loadtxt('%s/grad_%s' % (self.workdir, i + 1))
+
+        if self.hf == 'hf':
+            if os.path.exists('%s/energies' % self.workdir):
+                energy = np.loadtxt('%s/energies' % self.workdir).reshape(-1)[0:1]  # pick the first
+
+            if os.path.exists('%s/grad_0' % self.workdir):
+                g = np.loadtxt('%s/grad_0' % self.workdir)
             else:
                 g = [[0, 0, 0] for _ in range(natom)]
 
             gradient.append(g)
 
-        gradient = np.array(gradient)
+        else:
+            if os.path.exists('%s/energies' % self.workdir):
+                energy = np.loadtxt('%s/energies' % self.workdir).reshape(-1)[1: self.nstate + 1]  # skip the reference
+
+            ## pack force
+            for i in range(self.nstate):
+                if os.path.exists('%s/grad_%s' % (self.workdir, i + 1)):
+                    g = np.loadtxt('%s/grad_%s' % (self.workdir, i + 1))
+                else:
+                    g = [[0, 0, 0] for _ in range(natom)]
+
+                gradient.append(g)
+
+            gradient = np.array(gradient)
 
         ## pack nac
         nac = []
@@ -341,8 +360,12 @@ openqp ${OPENQP_PROJECT}.inp --nompi
         system = results['system']
         coord = openqp_coord2list(atoms, system)
 
-        energy = results['energy'][1:self.nstate + 1]
-        gradient = np.array(results['grad'])[1:self.nstate + 1]
+        if self.hf == 'hf':
+            energy = results['energy'][0:1]
+            gradient = np.array(results['grad'])[0:1]
+        else:
+            energy = results['energy'][1:self.nstate + 1]
+            gradient = np.array(results['grad'])[1:self.nstate + 1]
         dcm = np.array(results['dcm'])
         nacv = np.array(results['nac'])
 
