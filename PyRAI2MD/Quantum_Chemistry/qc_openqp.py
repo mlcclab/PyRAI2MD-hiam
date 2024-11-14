@@ -67,6 +67,7 @@ class OpenQP:
         self.nactype = keywords['md']['nactype']
         variables = keywords['openqp']
         self.guess_type = variables['guess_type']
+        self.method = variables['method']
         self.keep_tmp = variables['keep_tmp']
         self.verbose = variables['verbose']
         self.project = variables['openqp_project']
@@ -76,7 +77,6 @@ class OpenQP:
         self.activestate = 0
         self.pyoqp = None
         self.back_door_data = None
-        self.hf = None
         use_hpc = variables['use_hpc']
 
         ## check calculation folder
@@ -148,6 +148,7 @@ class OpenQP:
 
         input_dict['input']['runtype'] = runtype
         input_dict['input']['system'] = '%s/%s.xyz' % (self.workdir, self.project)
+        input_dict['input']['method'] = self.method
         input_dict['guess']['type'] = self.guess_type
         input_dict['guess']['file'] = '%s/guess.json' % self.workdir
         input_dict['guess']['continue_geom'] = 'false'
@@ -161,8 +162,6 @@ class OpenQP:
             input_dict['properties']['nac'] = 'nac'
         else:
             input_dict['properties']['nac'] = 'false'
-
-        self.hf = input_dict['input']['method']
 
         return input_dict
 
@@ -230,7 +229,7 @@ openqp ${OPENQP_PROJECT}.inp --nompi
         else:
             self.input_dict['properties']['grad'] = ','.join(['%s' % (x + 1) for x in range(self.nstate)])
 
-        if self.hf == 'hf':
+        if self.method == 'hf':
             self.input_dict['properties']['grad'] = '0'
 
         if self.nactype == 'nac':
@@ -305,7 +304,7 @@ openqp ${OPENQP_PROJECT}.inp --nompi
         energy = []
         gradient = []
 
-        if self.hf == 'hf':
+        if  self.method == 'hf':
             if os.path.exists('%s/energies' % self.workdir):
                 energy = np.loadtxt('%s/energies' % self.workdir).reshape(-1)[0:1]  # pick the first
 
@@ -360,7 +359,7 @@ openqp ${OPENQP_PROJECT}.inp --nompi
         system = results['system']
         coord = openqp_coord2list(atoms, system)
 
-        if self.hf == 'hf':
+        if self.method == 'hf':
             energy = results['energy'][0:1]
             gradient = np.array(results['grad'])[0:1]
         else:
