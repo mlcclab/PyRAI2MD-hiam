@@ -304,7 +304,7 @@ openqp ${OPENQP_PROJECT}.inp --nompi
         energy = []
         gradient = []
 
-        if  self.method == 'hf':
+        if self.method == 'hf':
             if os.path.exists('%s/energies' % self.workdir):
                 energy = np.loadtxt('%s/energies' % self.workdir).reshape(-1)[0:1]  # pick the first
 
@@ -341,6 +341,7 @@ openqp ${OPENQP_PROJECT}.inp --nompi
             nac = np.array(nac)
 
         elif self.nactype == 'dcm':
+            self.nnac = self.nstate
             nac = np.zeros((self.nstate, self.nstate))
             if os.path.exists('%s/dcme' % self.workdir):
                 dcm = np.loadtxt('%s/dcme' % self.workdir)
@@ -369,6 +370,7 @@ openqp ${OPENQP_PROJECT}.inp --nompi
         nacv = np.array(results['nac'])
 
         if self.nactype == 'dcm':
+            self.nnac = self.nstate
             nacm = np.zeros((self.nstate, self.nstate))
             for pair in self.nac_coupling:
                 pa, pb = pair
