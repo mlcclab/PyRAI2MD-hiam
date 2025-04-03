@@ -30,6 +30,7 @@ register = {
     'key_control': '/Keywords/key_control.py',
     'key_dimenet': '/Keywords/key_dimenet.py',
     'key_e2n2': '/Keywords/key_e2n2.py',
+    'key_e2n2demo': '/Keywords/key_e2n2demo.py',
     'key_grid_search': '/Keywords/key_grid_search.py',
     'key_md': '/Keywords/key_md.py',
     'key_mlp': '/Keywords/key_mlp.py',
@@ -54,12 +55,14 @@ register = {
     'model_demo': '/Machine_Learning/model_demo.py',
     'model_NN': '/Machine_Learning/model_NN.py',
     'model_pyNNsMD': '/Machine_Learning/model_pyNNsMD.py',
-    'model_GCNNP': '/Machine_Learning/model_GCNNP.py',
+    'model_ESNNP': '/Machine_Learning/model_esnnp.py',
+    'model_GCNNP': '/Machine_Learning/model_gcnnp.py',
     'model_DimeNet': '/Machine_Learning/model_DimeNet.py',
     'model_templ': '/Machine_Learning/model_templ.py',
     'model_helper': '/Machine_Learning/model_helper.py',
     'hyper_nn': '/Machine_Learning/hyper_nn.py',
     'hyper_pynnsmd': '/Machine_Learning/hyper_pynnsmd.py',
+    'hyper_esnnp': '/Machine_Learning/hyper_esnnp.py',
     'hyper_gcnnp': '/Machine_Learning/hyper_gcnnp.py',
     'hyper_dimenet': '/Machine_Learning/hyper_dimenet.py',
     'hyper_templ': '/Machine_Learning/hyper_templ.py',
@@ -68,7 +71,7 @@ register = {
     'adaptive_sampling': '/Machine_Learning/adaptive_sampling.py',
     'grid_search': '/Machine_Learning/grid_search.py',
     'search_nn': '/Machine_Learning/search_nn.py',
-    'search_GCNNP': '/Machine_Learning/search_GCNNP.py',
+    'search_GCNNP': '/Machine_Learning/search_gcnnp.py',
     'remote_train': '/Machine_Learning/remote_train.py',
     'aimd': '/Dynamics/aimd.py',
     'mixaimd': '/Dynamics/mixaimd.py',
@@ -132,6 +135,7 @@ def review(length, totline, totfile):
   |   |--key_mlp.py                                keywords for mlp settings                   %8s
   |   |--key_schnet.py                             keywords for schnet settings                %8s
   |   |--key_e2n2.py                               keywords for e2n2 settings                  %8s
+  |   |--key_e2n2demo.py                           keywords for e2n2 demo settings             %8s
   |   |--key_dimenet.py                            keywords for dimenet (NAC model) setting    %8s
   |   |--key_read_file.py                          keywords for reading training data          %8s
   |    `-key_templ.py                              keywords class template                     %8s
@@ -157,13 +161,15 @@ def review(length, totline, totfile):
   |   |--model_demo.py                             demo version neural network                 %8s
   |   |--model_NN.py                               native neural network interface             %8s
   |   |--model_pyNNsMD.py                          pyNNsMD interface                           %8s
-  |   |--model_GCNNP.py                            GCNNP interface                             %8s
+  |   |--model_esnnp.py                            esnnp interface                             %8s
+  |   |--model_gcnnp.py                            gcnnp interface                             %8s
   |   |--model_DimeNet.py                          DimeNet NAC model interface                 %8s
   |   |--model_templ.py                            NN interface template                       %8s
   |   |--model_helper.py                           additional tools for neural network         %8s
   |   |--hyper_nn.py                               native neural network hyperparameter        %8s
   |   |--hyper_pynnsmd.py                          pyNNsMD hyperparameter                      %8s
-  |   |--hyper_gcnnp.py                            GCNNP hyperparameter                        %8s
+  |   |--hyper_esnnp.py                            esnnp hyperparameter                        %8s
+  |   |--hyper_gcnnp.py                            gcnnp hyperparameter                        %8s
   |   |--hyper_dimenet.py                          DimeNet NAC model hyperparameter            %8s
   |   |--hyper_templ.py                            hyperparameter template                     %8s
   |   |--training_data.py                          training data manager                       %8s
@@ -171,7 +177,7 @@ def review(length, totline, totfile):
   |   |--adaptive_sampling.py                      adaptive sampling class                     %8s
   |   |--grid_search.py                            grid search manager                         %8s
   |   |--search_nn.py                              grid search function for native nn          %8s
-  |   |--search_GCNNP.py                           grid search function for e2n2               %8s  
+  |   |--search_gcnnp.py                           grid search function for library            %8s  
   |   |--remote_train.py                           remote training function                    %8s
   |   |--Dimenet.py                                Dimenet NAC model                           %8s
   |   |--NNsMD                                     demo version neural network library  
@@ -223,6 +229,7 @@ Total %4s/%4s files                                                             
        length['key_mlp'],
        length['key_schnet'],
        length['key_e2n2'],
+       length['key_e2n2demo'],
        length['key_dimenet'],
        length['key_read_file'],
        length['key_templ'],
@@ -242,12 +249,14 @@ Total %4s/%4s files                                                             
        length['model_demo'],
        length['model_NN'],
        length['model_pyNNsMD'],
+       length['model_ESNNP'],
        length['model_GCNNP'],
        length['model_DimeNet'],
        length['model_templ'],
        length['model_helper'],
        length['hyper_nn'],
        length['hyper_pynnsmd'],
+       length['hyper_esnnp'],
        length['hyper_gcnnp'],
        length['hyper_dimenet'],
        length['hyper_templ'],

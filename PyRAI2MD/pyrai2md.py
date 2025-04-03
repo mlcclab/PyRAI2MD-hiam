@@ -47,7 +47,7 @@ class PYRAI2MD:
 
     def __init__(self, ld_input):
         ## check input
-        version = '2.4.0'
+        version = '2.5.0'
         self.logo = print_logo(version)
 
         if ld_input is None:
@@ -168,7 +168,7 @@ class PYRAI2MD:
                 np.savetxt(initvelo, velo, fmt='%30s%30s%30s')
 
         ## create a trajectory and method model
-        if self.qm[0] in ['nn', 'mlp', 'schnet', 'e2n2', 'demo']:
+        if self.qm[0] in ['nn', 'mlp', 'schnet', 'library', 'demo']:
             train_data = self.keywords[self.qm[0]]['train_data']
             data = Data()
             data.load(train_data)

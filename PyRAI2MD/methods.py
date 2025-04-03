@@ -30,7 +30,13 @@ except ModuleNotFoundError:
     Schnet = DummyModel
 
 try:
-    from PyRAI2MD.Machine_Learning.model_GCNNP import E2N2
+    from PyRAI2MD.Machine_Learning.model_gcnnp import E2N2Demo
+
+except ModuleNotFoundError:
+    E2N2Demo = DummyModel
+
+try:
+    from PyRAI2MD.Machine_Learning.model_esnnp import E2N2
 
 except ModuleNotFoundError:
     E2N2 = DummyModel
@@ -73,6 +79,7 @@ class QM:
             'demo': Demo,
             'mlp': MLP,
             'schnet': Schnet,
+            'e2n2_demo': E2N2Demo,
             'e2n2': E2N2,
             'dimenet': DimenetModel,
         }
@@ -88,6 +95,7 @@ class QM:
             'demo': Demo,
             'mlp': MLP,
             'schnet': Schnet,
+            'e2n2_demo': E2N2Demo,
             'e2n2': E2N2,
             'dimenet': DimenetModel,
         }

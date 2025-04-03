@@ -1,9 +1,9 @@
 #####################################################
 #
-# PyRAI2MD 2 module for gcnnp hyperparameter
+# PyRAI2MD 2 module for esnnp hyperparameter
 #
 # Author Jingbai Li
-# Sep 1 2022
+# Mar 24 2025
 #
 ######################################################
 
@@ -41,16 +41,17 @@ def set_e2n2_hyper_eg(hyp, unit, info, splits, shuffle):
     ## setup hypers
     hyp_dict = {
         'model': {
+            'model_option': hyp['model'],  # model option
             'class_name': 'energy_grad',  # name of the class
             'class_module': 'scalar_grad',  # name of the model
             'model_id': 0,  # index of the model
-            'config': {
-                # Properties
-                'states': info['nstate'],  # number of electronic states
-                'node_info': None,  # a list of unique atom numbers
-                'nedges': hyp['n_edges'],  # number of edges
+            # Properties
+            'states': info['nstate'],  # number of electronic states
+            'node_info': None,  # a list of unique atom numbers
+            'nedges': hyp['n_edges'],  # number of edges
+            'maxradius': hyp['maxradius'],  # maximum atom-centered radius in Angstrom
+            'atomic': {
                 # NN architecture
-                'maxradius': hyp['maxradius'],  # maximum atom-centered radius in Angstrom
                 'n_features': hyp['n_features'],  # number of node features
                 'n_blocks': hyp['n_blocks'],  # number of interaction blocks
                 'l_max': hyp['l_max'],  # the largest rotation order
@@ -78,6 +79,44 @@ def set_e2n2_hyper_eg(hyp, unit, info, splits, shuffle):
                     'e': hyp['act_gates_e'],
                     'o': hyp['act_gates_o']
                 },  # activation for gated tensors
+            },
+            'distance': {
+                # distance e2n2 architecture
+                'n_features': hyp['n_features'],  # number of edge features
+                'n_blocks': hyp['n_blocks'],  # number of interaction blocks
+                'l_max': hyp['l_max'],  # the largest rotation order
+                'parity': hyp['parity'],  # use parity or not in o3 irreps
+                # Radial net
+                'n_rbf': hyp['n_rbf'],  # number of radial basis function
+                'trainable_rbf': hyp['trainable_rbf'],  # trainable radial basis function
+                'rbf_cutoff': hyp['rbf_cutoff'],  # rbf envelop function cutoff
+                'normalization_y': hyp['normalization_y'],
+                # normalization scheme for projecting edge vectors to spherical harmonics
+                'normalize_y': hyp['normalize_y'],  # normalize edge vectors when projecting to spherical harmonics
+                # Convolution
+                'two_body_mlp_nonlinearity': hyp['mlp_act'],
+                'two_body_mlp_initialization': hyp['mlp_init'],
+                'two_body_mlp_dropout': 0.0,
+                'two_body_mlp_batchnorm': hyp['mlp_norm'],
+                'two_body_mlp_latent_dimension': hyp['edge_neurons'],
+                'latent_mlp_nonlinearity': hyp['mlp_act'],
+                'latent_mlp_initialization': hyp['mlp_init'],
+                'latent_mlp_dropout': 0.0,
+                'latent_mlp_batchnorm': hyp['mlp_norm'],
+                'latent_mlp_latent_dimension': hyp['latent_neurons'],
+                'embedding_mlp_nonlinearity': hyp['mlp_act'],
+                'embedding_mlp_initialization': hyp['mlp_init'],
+                'embedding_mlp_dropout': 0.0,
+                'embedding_mlp_batchnorm': hyp['mlp_norm'],
+                'embedding_mlp_latent_dimension': hyp['embedding_neurons'],
+                'output_mlp_nonlinearity': hyp['mlp_act'],
+                'output_mlp_initialization': hyp['mlp_init'],
+                'output_mlp_dropout': 0.0,
+                'output_mlp_batchnorm': hyp['mlp_norm'],
+                'output_mlp_latent_dimension': hyp['output_neurons'],
+                'latent_resnet_update_ratios': hyp['resnet_ratio'],
+                'latent_resnet_update_ratios_learnable': hyp['resnet_trainable'],
+                'resnet': hyp['resnet'],  # use resnet feature update
             },
         },
         'training': {
@@ -137,16 +176,17 @@ def set_e2n2_hyper_nac(hyp, unit, info, splits, shuffle):
     ## setup hypers
     hyp_dict = {
         'model': {
+            'model_option': hyp['model'],  # model option
             'class_name': 'nac',  # name of the class
             'class_module': 'grad',  # name of the model
             'model_id': 0,  # index of the model
-            'config': {
-                # Properties
-                'states': info['nstate'],  # number of electronic states
-                'node_info': None,  # a list of unique atom numbers
-                'nedges': hyp['n_edges'],  # number of edges
+            # Properties
+            'states': info['nstate'],  # number of electronic states
+            'node_info': None,  # a list of unique atom numbers
+            'nedges': hyp['n_edges'],  # number of edges
+            'maxradius': hyp['maxradius'],  # maximum atom-centered radius in Angstrom
+            'atomic': {
                 # NN architecture
-                'maxradius': hyp['maxradius'],  # maximum atom-centered radius in Angstrom
                 'n_features': hyp['n_features'],  # number of node features
                 'n_blocks': hyp['n_blocks'],  # number of interaction blocks
                 'l_max': hyp['l_max'],  # the largest rotation order
@@ -174,6 +214,44 @@ def set_e2n2_hyper_nac(hyp, unit, info, splits, shuffle):
                     'e': hyp['act_gates_e'],
                     'o': hyp['act_gates_o']
                 },  # activation for gated tensors
+            },
+            'distance': {
+                # distance e2n2 architecture
+                'n_features': hyp['n_features'],  # number of edge features
+                'n_blocks': hyp['n_blocks'],  # number of interaction blocks
+                'l_max': hyp['l_max'],  # the largest rotation order
+                'parity': hyp['parity'],  # use parity or not in o3 irreps
+                # Radial net
+                'n_rbf': hyp['n_rbf'],  # number of radial basis function
+                'trainable_rbf': hyp['trainable_rbf'],  # trainable radial basis function
+                'rbf_cutoff': hyp['rbf_cutoff'],  # rbf envelop function cutoff
+                'normalization_y': hyp['normalization_y'],
+                # normalization scheme for projecting edge vectors to spherical harmonics
+                'normalize_y': hyp['normalize_y'],  # normalize edge vectors when projecting to spherical harmonics
+                # Convolution
+                'two_body_mlp_nonlinearity': hyp['mlp_act'],
+                'two_body_mlp_initialization': hyp['mlp_init'],
+                'two_body_mlp_dropout': 0.0,
+                'two_body_mlp_batchnorm': hyp['mlp_norm'],
+                'two_body_mlp_latent_dimension': hyp['edge_neurons'],
+                'latent_mlp_nonlinearity': hyp['mlp_act'],
+                'latent_mlp_initialization': hyp['mlp_init'],
+                'latent_mlp_dropout': 0.0,
+                'latent_mlp_batchnorm': hyp['mlp_norm'],
+                'latent_mlp_latent_dimension': hyp['latent_neurons'],
+                'embedding_mlp_nonlinearity': hyp['mlp_act'],
+                'embedding_mlp_initialization': hyp['mlp_init'],
+                'embedding_mlp_dropout': 0.0,
+                'embedding_mlp_batchnorm': hyp['mlp_norm'],
+                'embedding_mlp_latent_dimension': hyp['embedding_neurons'],
+                'output_mlp_nonlinearity': hyp['mlp_act'],
+                'output_mlp_initialization': hyp['mlp_init'],
+                'output_mlp_dropout': 0.0,
+                'output_mlp_batchnorm': hyp['mlp_norm'],
+                'output_mlp_latent_dimension': hyp['output_neurons'],
+                'latent_resnet_update_ratios': hyp['resnet_ratio'],
+                'latent_resnet_update_ratios_learnable': hyp['resnet_trainable'],
+                'resnet': hyp['resnet'],  # use resnet feature update
             },
         },
         'training': {
@@ -232,17 +310,18 @@ def set_e2n2_hyper_soc(hyp, unit, info, splits, shuffle):
     ## setup hypers
     hyp_dict = {
         'model': {
+            'model_option': hyp['model'],  # model option
             'class_name': 'soc',  # name of the class
             'class_module': 'scalar',  # name of the model
             'model_id': 0,  # index of the model
-            'config': {
-                # Properties
-                'states': info['nstate'],  # number of electronic states
-                'node_info': None,  # a list of unique atom numbers
-                'nedges': hyp['n_edges'],  # number of edges
-                'edge_list': None,  # a list of pairwise atom indices in edges
+            # Properties
+            'states': info['nstate'],  # number of electronic states
+            'node_info': None,  # a list of unique atom numbers
+            'nedges': hyp['n_edges'],  # number of edges
+            'edge_list': None,  # a list of pairwise atom indices in edges
+            'maxradius': hyp['maxradius'],  # maximum atom-centered radius in Angstrom
+            'atomic': {
                 # NN architecture
-                'maxradius': hyp['maxradius'],  # maximum atom-centered radius in Angstrom
                 'n_features': hyp['n_features'],  # number of node features
                 'n_blocks': hyp['n_blocks'],  # number of interaction blocks
                 'l_max': hyp['l_max'],  # the largest rotation order
@@ -270,6 +349,44 @@ def set_e2n2_hyper_soc(hyp, unit, info, splits, shuffle):
                     'e': hyp['act_gates_e'],
                     'o': hyp['act_gates_o']
                 },  # activation for gated tensors
+            },
+            'distance': {
+                # distance e2n2 architecture
+                'n_features': hyp['n_features'],  # number of edge features
+                'n_blocks': hyp['n_blocks'],  # number of interaction blocks
+                'l_max': hyp['l_max'],  # the largest rotation order
+                'parity': hyp['parity'],  # use parity or not in o3 irreps
+                # Radial net
+                'n_rbf': hyp['n_rbf'],  # number of radial basis function
+                'trainable_rbf': hyp['trainable_rbf'],  # trainable radial basis function
+                'rbf_cutoff': hyp['rbf_cutoff'],  # rbf envelop function cutoff
+                'normalization_y': hyp['normalization_y'],
+                # normalization scheme for projecting edge vectors to spherical harmonics
+                'normalize_y': hyp['normalize_y'],  # normalize edge vectors when projecting to spherical harmonics
+                # Convolution
+                'two_body_mlp_nonlinearity': hyp['mlp_act'],
+                'two_body_mlp_initialization': hyp['mlp_init'],
+                'two_body_mlp_dropout': 0.0,
+                'two_body_mlp_batchnorm': hyp['mlp_norm'],
+                'two_body_mlp_latent_dimension': hyp['edge_neurons'],
+                'latent_mlp_nonlinearity': hyp['mlp_act'],
+                'latent_mlp_initialization': hyp['mlp_init'],
+                'latent_mlp_dropout': 0.0,
+                'latent_mlp_batchnorm': hyp['mlp_norm'],
+                'latent_mlp_latent_dimension': hyp['latent_neurons'],
+                'embedding_mlp_nonlinearity': hyp['mlp_act'],
+                'embedding_mlp_initialization': hyp['mlp_init'],
+                'embedding_mlp_dropout': 0.0,
+                'embedding_mlp_batchnorm': hyp['mlp_norm'],
+                'embedding_mlp_latent_dimension': hyp['embedding_neurons'],
+                'output_mlp_nonlinearity': hyp['mlp_act'],
+                'output_mlp_initialization': hyp['mlp_init'],
+                'output_mlp_dropout': 0.0,
+                'output_mlp_batchnorm': hyp['mlp_norm'],
+                'output_mlp_latent_dimension': hyp['output_neurons'],
+                'latent_resnet_update_ratios': hyp['resnet_ratio'],
+                'latent_resnet_update_ratios_learnable': hyp['resnet_trainable'],
+                'resnet': hyp['resnet'],  # use resnet feature update
             },
         },
         'training': {

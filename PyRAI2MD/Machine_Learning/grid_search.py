@@ -17,7 +17,7 @@ from PyRAI2MD.methods import QM
 from PyRAI2MD.Machine_Learning.remote_train import RemoteTrain
 from PyRAI2MD.Machine_Learning.training_data import Data
 from PyRAI2MD.Machine_Learning.search_nn import SearchNN
-from PyRAI2MD.Machine_Learning.search_GCNNP import SearchE2N2
+from PyRAI2MD.Machine_Learning.search_gcnnp import SearchE2N2
 from PyRAI2MD.Utils.timing import what_is_time
 from PyRAI2MD.Utils.timing import how_long
 
@@ -58,11 +58,11 @@ class GridSearch:
         self.keywords[self.ml]['train_data'] = os.path.realpath(self.keywords[self.ml]['train_data'])
         if self.ml in ['nn', 'demo']:
             hspace = SearchNN(keywords=self.keywords)
-        elif self.ml in ['e2n2']:
+        elif self.ml in ['library']:
             hspace = SearchE2N2(keywords=self.keywords)
         else:
             hspace = None
-            exit('\n KeywordError: grid search only supports nn, demo, or e2n2, found %s instead\n' % self.ml)
+            exit('\n KeywordError: grid search only supports nn, demo, or library, found %s instead\n' % self.ml)
         self.hspace = hspace
         self.nsearch = hspace.nsearch()
 

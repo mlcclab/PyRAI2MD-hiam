@@ -3,7 +3,7 @@
 # PyRAI2MD 2 module for reading input keywords
 #
 # Author Jingbai Li
-# Apr 20 2023
+# Mar 20 2024
 #
 ######################################################
 
@@ -15,6 +15,7 @@ class KeyE2N2:
 
     def __init__(self, key_type='eg'):
         eg = {
+            'model': 'distance',
             'n_edges': 10,
             'maxradius': 4,
             'n_features': 64,
@@ -40,10 +41,16 @@ class KeyE2N2:
             'use_step_callback': True,
             'callbacks': [],
             'initialize_weights': True,
+            'mlp_act': 'silu',
+            'mlp_init': 'uniform',
+            'mlp_norm': False,
+            'edge_neurons': [64, 128, 64],
+            'latent_neurons': [64, 64],
+            'embedding_neurons': [],
+            'output_neurons': [32],
+            'resnet_ratio': 0.0,
+            'resnet_trainable': False,
             'loss_weights': [10, 1],
-            'use_reg_loss': 'l2',
-            'reg_l1': 1e-5,
-            'reg_l2': 1e-5,
             'epo': 400,
             'epostep': 10,
             'subset': 0,
@@ -58,6 +65,7 @@ class KeyE2N2:
         }
 
         nac = {
+            'model': 'distance',
             'n_edges': 10,
             'maxradius': 4,
             'n_features': 64,
@@ -83,9 +91,16 @@ class KeyE2N2:
             'use_step_callback': True,
             'callbacks': [],
             'initialize_weights': True,
-            'use_reg_loss': 'l2',
-            'reg_l1': 1e-5,
-            'reg_l2': 1e-5,
+            'mlp_act': 'silu',
+            'mlp_init': 'uniform',
+            'mlp_norm': False,
+            'edge_neurons': [64, 128, 64],
+            'latent_neurons': [64, 64],
+            'embedding_neurons': [],
+            'output_neurons': [32],
+            'resnet_ratio': 0.0,
+            'resnet_trainable': False,
+            'loss_weights': 'N/A',
             'epo': 400,
             'epostep': 10,
             'subset': 0,
@@ -100,6 +115,7 @@ class KeyE2N2:
         }
 
         soc = {
+            'model': 'distance',
             'n_edges': 10,
             'maxradius': 4,
             'n_features': 64,
@@ -125,9 +141,16 @@ class KeyE2N2:
             'use_step_callback': True,
             'callbacks': [],
             'initialize_weights': True,
-            'use_reg_loss': 'l2',
-            'reg_l1': 1e-5,
-            'reg_l2': 1e-5,
+            'mlp_act': 'silu',
+            'mlp_init': 'uniform',
+            'mlp_norm': False,
+            'edge_neurons': [64, 128, 64],
+            'latent_neurons': [64, 64],
+            'embedding_neurons': [],
+            'output_neurons': [32],
+            'resnet_ratio': 0.0,
+            'resnet_trainable': False,
+            'loss_weights': 'N/A',
             'epo': 400,
             'epostep': 10,
             'subset': 0,
@@ -157,6 +180,7 @@ class KeyE2N2:
         ## This function read variables from &e2n2_eg,&e2n2_nac,&e2n2_soc
         keywords = self.keywords.copy()
         keyfunc = {
+            'model': ReadVal('s'),
             'n_edges': ReadVal('i'),
             'maxradius': ReadVal('f'),
             'n_features': ReadVal('i'),
@@ -180,10 +204,16 @@ class KeyE2N2:
             'act_gates_o': ReadVal('s'),
             'use_step_callback': ReadVal('b'),
             'initialize_weights': ReadVal('b'),
+            'mlp_act': ReadVal('s'),
+            'mlp_init': ReadVal('s'),
+            'mlp_norm': ReadVal('b'),
+            'edge_neurons': ReadVal('il'),
+            'latent_neurons': ReadVal('il'),
+            'embedding_neurons': ReadVal('il'),
+            'output_neurons': ReadVal('il'),
+            'resnet_ratio': ReadVal('f'),
+            'resnet_trainable': ReadVal('b'),
             'loss_weights': ReadVal('fl'),
-            'use_reg_loss': ReadVal('s'),
-            'reg_l1': ReadVal('f'),
-            'reg_l2': ReadVal('f'),
             'epo': ReadVal('i'),
             'epostep': ReadVal('i'),
             'subset': ReadVal('f'),
@@ -211,139 +241,154 @@ class KeyE2N2:
 
     @staticmethod
     def info(eg, nac, soc):
-        summary = """
+        labels = ['Energy+Gradient', 'Nonadiabatic', 'Spin-orbit']
+        summary = ''
+        for n, key in enumerate((eg, nac, soc)):
+            model = key['model']
+            label = labels[n]
+            if model == 'atomic':
+                summary += """
 
-  E2N2 (GCNNP)
+  ESNNP (atomic version)
 
-  &hyperparameters            Energy+Gradient      Nonadiabatic         Spin-orbit
+  &hyperparameters            %s
 ----------------------------------------------------------------------------------------------
-  Edges:                      %-20s %-20s %-20s
-  Maxradius:                  %-20s %-20s %-20s
-  Node features:              %-20s %-20s %-20s 
-  Interaction blocks:         %-20s %-20s %-20s
-  Rotation order              %-20s %-20s %-20s
-  Irreps parity:              %-20s %-20s %-20s
-  Radial basis:               %-20s %-20s %-20s
-  Radial basis trainable:     %-20s %-20s %-20s
-  Envelop func cutoff:        %-20s %-20s %-20s
-  Radial net layers:          %-20s %-20s %-20s
-  Radial net neurons:         %-20s %-20s %-20s
-  Radial net activation:      %-20s %-20s %-20s
-  Radial net activation a:    %-20s %-20s %-20s
-  Y normalization scheme:     %-20s %-20s %-20s
-  Normalize Y:                %-20s %-20s %-20s
-  Self connection:            %-20s %-20s %-20s
-  Resnet update:              %-20s %-20s %-20s
-  Use gate activation:        %-20s %-20s %-20s
-  Even scalars activation:    %-20s %-20s %-20s
-  Odd scalars activation:     %-20s %-20s %-20s
-  Even gates activation:      %-20s %-20s %-20s
-  Odd gates activation:       %-20s %-20s %-20s
-  Initialize weight:          %-20s %-20s %-20s
-  Loss weights:               %-20s %-20s %-20s
-  Epoch:                      %-20s %-20s %-20s
-  Epoch step:                 %-20s %-20s %-20s
-  Subset:                     %-20s %-20s %-20s
-  Scaler:                     %-20s %-20s %-20s
-  Batch:                      %-20s %-20s %-20s
-  Validation batch            %-20s %-20s %-20s
-  Nbatch:                     %-20s %-20s %-20s
+  Edges:                      %-20s
+  Maxradius:                  %-20s
+  Node features:              %-20s 
+  Interaction blocks:         %-20s
+  Rotation order              %-20s
+  Irreps parity:              %-20s
+  Radial basis:               %-20s
+  Radial basis trainable:     %-20s
+  Envelop func cutoff:        %-20s
+  Radial net layers:          %-20s
+  Radial net neurons:         %-20s
+  Radial net activation:      %-20s
+  Radial net activation a:    %-20s
+  Y normalization scheme:     %-20s
+  Normalize Y:                %-20s
+  Self connection:            %-20s
+  Resnet update:              %-20s
+  Use gate activation:        %-20s
+  Even scalars activation:    %-20s
+  Odd scalars activation:     %-20s
+  Even gates activation:      %-20s
+  Odd gates activation:       %-20s
+  Initialize weight:          %-20s
+  Loss weights:               %-20s
+  Epoch:                      %-20s
+  Epoch step:                 %-20s
+  Subset:                     %-20s
+  Scaler:                     %-20s
+  Batch:                      %-20s
+  Validation batch            %-20s
+  Nbatch:                     %-20s
 ----------------------------------------------------------------------------------------------
 
     """ % (
-            eg['n_edges'],
-            nac['n_edges'],
-            soc['n_edges'],
-            eg['maxradius'],
-            nac['maxradius'],
-            soc['maxradius'],
-            eg['n_features'],
-            nac['n_features'],
-            soc['n_features'],
-            eg['n_blocks'],
-            nac['n_blocks'],
-            soc['n_blocks'],
-            eg['l_max'],
-            nac['l_max'],
-            soc['l_max'],
-            eg['parity'],
-            nac['parity'],
-            soc['parity'],
-            eg['n_rbf'],
-            nac['n_rbf'],
-            soc['n_rbf'],
-            eg['trainable_rbf'],
-            nac['trainable_rbf'],
-            soc['trainable_rbf'],
-            eg['rbf_cutoff'],
-            nac['rbf_cutoff'],
-            soc['rbf_cutoff'],
-            eg['rbf_layers'],
-            nac['rbf_layers'],
-            soc['rbf_layers'],
-            eg['rbf_neurons'],
-            nac['rbf_neurons'],
-            soc['rbf_neurons'],
-            eg['rbf_act'],
-            nac['rbf_act'],
-            soc['rbf_act'],
-            eg['rbf_act_a'],
-            nac['rbf_act_a'],
-            soc['rbf_act_a'],
-            eg['normalization_y'],
-            nac['normalization_y'],
-            soc['normalization_y'],
-            eg['normalize_y'],
-            nac['normalize_y'],
-            soc['normalize_y'],
-            eg['self_connection'],
-            nac['self_connection'],
-            soc['self_connection'],
-            eg['resnet'],
-            nac['resnet'],
-            soc['resnet'],
-            eg['gate'],
-            nac['gate'],
-            soc['gate'],
-            eg['act_scalars_e'],
-            nac['act_scalars_e'],
-            soc['act_scalars_e'],
-            eg['act_scalars_o'],
-            nac['act_scalars_o'],
-            soc['act_scalars_o'],
-            eg['act_gates_e'],
-            nac['act_gates_e'],
-            soc['act_gates_e'],
-            eg['act_gates_o'],
-            nac['act_gates_o'],
-            soc['act_gates_o'],
-            eg['initialize_weights'],
-            nac['initialize_weights'],
-            soc['initialize_weights'],
-            eg['loss_weights'],
-            '',
-            '',
-            eg['epo'],
-            nac['epo'],
-            soc['epo'],
-            eg['epostep'],
-            nac['epostep'],
-            soc['epostep'],
-            eg['subset'],
-            nac['subset'],
-            soc['subset'],
-            eg['scaler'],
-            nac['scaler'],
-            soc['scaler'],
-            eg['batch_size'],
-            nac['batch_size'],
-            soc['batch_size'],
-            eg['val_batch_size'],
-            nac['val_batch_size'],
-            soc['val_batch_size'],
-            eg['nbatch'],
-            nac['nbatch'],
-            soc['nbatch'],
-        )
+                    label,
+                    key['n_edges'],
+                    key['maxradius'],
+                    key['n_features'],
+                    key['n_blocks'],
+                    key['l_max'],
+                    key['parity'],
+                    key['n_rbf'],
+                    key['trainable_rbf'],
+                    key['rbf_cutoff'],
+                    key['rbf_layers'],
+                    key['rbf_neurons'],
+                    key['rbf_act'],
+                    key['rbf_act_a'],
+                    key['normalization_y'],
+                    key['normalize_y'],
+                    key['self_connection'],
+                    key['resnet'],
+                    key['gate'],
+                    key['act_scalars_e'],
+                    key['act_scalars_o'],
+                    key['act_gates_e'],
+                    key['act_gates_o'],
+                    key['initialize_weights'],
+                    key['loss_weights'],
+                    key['epo'],
+                    key['epostep'],
+                    key['subset'],
+                    key['scaler'],
+                    key['batch_size'],
+                    key['val_batch_size'],
+                    key['nbatch'],
+                )
+            elif model == 'distance':
+                summary += """
+
+  ESNNP (distance version)
+
+  &hyperparameters            %s
+----------------------------------------------------------------------------------------------
+  Edges:                      %-20s
+  Maxradius:                  %-20s
+  Edge features:              %-20s 
+  Interaction blocks:         %-20s
+  Rotation order              %-20s
+  Irreps parity:              %-20s
+  Radial basis:               %-20s
+  Radial basis trainable:     %-20s
+  Envelop func cutoff:        %-20s
+  Y normalization scheme:     %-20s
+  Normalize Y:                %-20s
+  MLP_activation:             %-20s
+  MLP initialization:         %-20s
+  MLP batch normalization:    %-20s
+  Edge neurons:               %-20s
+  Latent neurons:             %-20s
+  Embedding neurons:          %-20s
+  Output neurons:             %-20s
+  Resnet update:              %-20s
+  Resnet ratio                %-20s
+  Resnet trainable            %-20s
+  Loss weights:               %-20s
+  Epoch:                      %-20s
+  Epoch step:                 %-20s
+  Subset:                     %-20s
+  Scaler:                     %-20s
+  Batch:                      %-20s
+  Validation batch            %-20s
+  Nbatch:                     %-20s
+----------------------------------------------------------------------------------------------
+
+    """ % (
+                    label,
+                    key['n_edges'],
+                    key['maxradius'],
+                    key['n_features'],
+                    key['n_blocks'],
+                    key['l_max'],
+                    key['parity'],
+                    key['n_rbf'],
+                    key['trainable_rbf'],
+                    key['rbf_cutoff'],
+                    key['normalization_y'],
+                    key['normalize_y'],
+                    key['mlp_act'],
+                    key['mlp_init'],
+                    key['mlp_norm'],
+                    key['edge_neurons'],
+                    key['latent_neurons'],
+                    key['embedding_neurons'],
+                    key['output_neurons'],
+                    key['resnet'],
+                    key['resnet_ratio'],
+                    key['resnet_trainable'],
+                    key['loss_weights'],
+                    key['epo'],
+                    key['epostep'],
+                    key['subset'],
+                    key['scaler'],
+                    key['batch_size'],
+                    key['val_batch_size'],
+                    key['nbatch'],
+                )
 
         return summary

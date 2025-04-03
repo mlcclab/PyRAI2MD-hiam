@@ -1,9 +1,9 @@
 #####################################################
 #
-# PyRAI2MD 2 module for interfacing to E2N2 (gcnnp)
+# PyRAI2MD 2 module for interfacing to esnnp
 #
 # Author Jingbai Li
-# Oct 18 2022
+# Mar 24 2025
 #
 ######################################################
 
@@ -13,18 +13,18 @@ import copy
 import numpy as np
 import torch.cuda
 
-from PyRAI2MD.Machine_Learning.hyper_gcnnp import set_e2n2_hyper_eg
-from PyRAI2MD.Machine_Learning.hyper_gcnnp import set_e2n2_hyper_nac
-from PyRAI2MD.Machine_Learning.hyper_gcnnp import set_e2n2_hyper_soc
+from PyRAI2MD.Machine_Learning.hyper_esnnp import set_e2n2_hyper_eg
+from PyRAI2MD.Machine_Learning.hyper_esnnp import set_e2n2_hyper_nac
+from PyRAI2MD.Machine_Learning.hyper_esnnp import set_e2n2_hyper_soc
 from PyRAI2MD.Machine_Learning.model_helper import Multiregions
 from PyRAI2MD.Utils.timing import what_is_time
 from PyRAI2MD.Utils.timing import how_long
 
-from GCNNP.gcnnp import GCNNP
-from GCNNP.gcnnp import SetupTools
+from esnnp.esnnp import ESNNP
+from esnnp.esnnp import SetupTools
 
-class E2N2Demo:
-    """ gcnnp interface
+class E2N2:
+    """ esnnp interface
 
         Parameters:          Type:
             keywords         dict        keywords dict
@@ -233,7 +233,7 @@ class E2N2Demo:
         else:
             device = [0, 1, 2, 3, 4, 5][:len(self.hypers)]
 
-        self.model = GCNNP(self.model_path, self.hypers, node_type, device=device)
+        self.model = ESNNP(self.model_path, self.hypers, node_type, device=device)
 
     def _heading(self):
 
@@ -241,10 +241,10 @@ class E2N2Demo:
 %s
  *---------------------------------------------------*
  |                                                   |
- |                       E2N2                        |
- |      Excited-state Equivariant Neural Network     |
  |                                                   |
- |                powered by gcnnp                   |
+ |      Excited-State Neural Network Potential       |
+ |                                                   |
+ |                powered by esnnp                   |
  |                                                   |
  *---------------------------------------------------*
 
@@ -283,7 +283,7 @@ class E2N2Demo:
 
         xyz = np.concatenate((self.atoms.reshape((-1, self.natom, 1)), self.geos), axis=-1).tolist()
         self.model.build()
-        errors = self.model.train(xyz, self.y_dict, remote=True, device=self.device, retrain=self.retrain)
+        errors = self.model.train(xyz, self.y_dict, remote=True, retrain=self.retrain)
 
         if self.model_register['energy_grad']:
             eg_error = errors['energy_grad']
@@ -357,7 +357,9 @@ class E2N2Demo:
         return metrics
 
     def load(self):
-        self.model.load(device=self.device)
+        # must build before load
+        self.model.build()
+        self.model.load()
 
         return self
 
@@ -367,7 +369,7 @@ class E2N2Demo:
         return self
 
     def _high(self, traj):
-        ## run gcnnp for high level region in QM calculation
+        ## run esnnp for high level region in QM calculation
         traj = traj.apply_qmmm()
 
         atoms = self.atoms[0]
@@ -419,7 +421,7 @@ class E2N2Demo:
         return energy, gradient, nac, soc, err_e, err_g, err_n, err_s
 
     def _high_mid_low(self, traj):
-        ## run gcnnp for high level region, middle level region, and low level region in QM calculation
+        ## run esnnp for high level region, middle level region, and low level region in QM calculation
         atoms = self.atoms[0]
         coord = traj.coord
         x = [np.concatenate((atoms.reshape((-1, 1)), coord), axis=-1).tolist()]
@@ -468,7 +470,7 @@ class E2N2Demo:
         return energy, gradient, nac, soc, err_e, err_g, err_n, err_s
 
     def _predict(self, x):
-        ## run gcnnp for model testing
+        ## run esnnp for model testing
         batch = len(x)
         results = self.model.predict(x)
 
@@ -538,7 +540,7 @@ class E2N2Demo:
         return self
 
     def evaluate(self, traj):
-        ## main function to run gcnnp and communicate with other PyRAI2MD modules
+        ## main function to run esnnp and communicate with other PyRAI2MD modules
 
         if self.jobtype == 'prediction' or self.jobtype == 'predict':
             xyz = np.concatenate((self.pred_atoms.reshape((-1, self.natom, 1)), self.pred_geos), axis=-1).tolist()

@@ -33,9 +33,11 @@ class DummyModel:
         lib = {
             'mlp': 'pyNNsMD',
             'schnet': 'pyNNsMD',
-            'e2n2': 'GCNNP',
+            'e2n2_demo': 'GCNNP',
+            'e2n2': 'ESNNP',
             'dimenet': 'DimenetNAC',
-            'job_id': job_id
+            'job_id': job_id,
+
         }
 
         self.warning = '\n PyRAI2MD: You have not installed %s, %s model is not available\n' % (

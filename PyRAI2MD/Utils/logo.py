@@ -45,6 +45,7 @@ def print_logo(version):
                      OpenMolcas/Tinker interface
                      BAGEL interface
                      ORCA interface
+                     OpenQP interface
                      GFN-xTB interface
                      Adaptive sampling
                      Grid search
@@ -52,7 +53,7 @@ def print_logo(version):
                      Periodic boundary condition (coming soon)
                      Wall potential
                      QC/ML hybrid NAMD
-                     Excited-state Equivariant Neural Network
+                     Excited-State Neural Network Potentials (ESNNP)
 
     Patrick Reiser - Fully connected neural networks (pyNNsMD)
                      SchNet (pyNNsMD)

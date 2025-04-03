@@ -15,7 +15,7 @@ with open("README.md", "r") as fh:
 
 setup(
     name="PyRAI2MD",
-    version="2.4",
+    version="2.5",
     author="Jingbai Li",
     author_email="lijingbai@zspt.edu.cn",
     description="Python Rapid Artificial Intelligence Ab Initio Molecular Dynamics",
@@ -23,7 +23,7 @@ setup(
     long_description_content_type="text/markdown",
     url="",
     install_requires=[
-        'numpy>=1.20.0',
+        'numpy>=1.20.0,<2.0',
         'matplotlib>=3.5.0',
         'tensorflow>=2.3.0',
         'cython>=0.29.0',
@@ -31,7 +31,7 @@ setup(
     ],
     extras_require={
         "pyNNsMD": ["pyNNsMD>=2.0.0"],
-        # "GCNNP": ["GCNNP>=0.1.0"],
+        # "esnnp": ["esnnp>=0.1.0"],
     },
     packages=find_packages(),
     include_package_data=True,

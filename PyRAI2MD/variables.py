@@ -19,6 +19,7 @@ from PyRAI2MD.Keywords.key_grid_search import KeySearch
 from PyRAI2MD.Keywords.key_nn import KeyNN
 from PyRAI2MD.Keywords.key_mlp import KeyMLP
 from PyRAI2MD.Keywords.key_schnet import KeySchNet
+from PyRAI2MD.Keywords.key_e2n2demo import KeyE2N2Demo
 from PyRAI2MD.Keywords.key_e2n2 import KeyE2N2
 from PyRAI2MD.Keywords.key_dimenet import KeyDimeNet
 from PyRAI2MD.Keywords.key_read_file import KeyReadFile
@@ -116,6 +117,7 @@ def read_input(ld_input):
         variables_all['xtb']['xtb_project'] = variables_all['control']['title']
         variables_all['xtb']['verbose'] = variables_all['md']['verbose']
         variables_all['demo'] = variables_all['nn']
+        variables_all['e2n2_demo'] = variables_all['e2n2']
 
     # prepare starting information
     method_info_dict = {
@@ -137,6 +139,9 @@ def read_input(ld_input):
         'e2n2':
             KeyNN(nn_type='e2n2').info(variables_all['nn']) +
             KeyE2N2().info(variables_all['e2n2_eg'], variables_all['e2n2_nac'], variables_all['e2n2_soc']),
+        'e2n2_demo':
+            KeyNN(nn_type='e2n2').info(variables_all['nn']) +
+            KeyE2N2Demo().info(variables_all['e2n2_eg'], variables_all['e2n2_nac'], variables_all['e2n2_soc']),
         'dimenet':
             KeyNN(nn_type='dimenet').info(variables_all['nn']) +
             KeyDimeNet().info(variables_all['dime_nac']),

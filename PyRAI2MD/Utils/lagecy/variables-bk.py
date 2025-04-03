@@ -1156,7 +1156,7 @@ def read_input(ld_input):
         'nn': variables_nn,
         'mlp': variables_nn.copy(),
         'schnet': variables_nn.copy(),
-        'e2n2': variables_nn.copy(),
+        'library': variables_nn.copy(),
         'search': variables_search,
         'eg': variables_eg.copy(),
         'nac': variables_nac.copy(),
@@ -1184,7 +1184,7 @@ def read_input(ld_input):
         'nn': read_nn,
         'mlp': read_nn,
         'schnet': read_nn,
-        'e2n2': read_nn,
+        'library': read_nn,
         'search': read_grid_search,
         'eg': read_mlp,
         'nac': read_mlp,
@@ -1223,7 +1223,7 @@ def read_input(ld_input):
         'nn': variables_input['nn'],
         'mlp': variables_input['mlp'],
         'schnet': variables_input['schnet'],
-        'e2n2': variables_input['e2n2'],
+        'library': variables_input['library'],
         'file': variables_input['file'],
         'search': variables_input['search']
     }
@@ -1244,13 +1244,13 @@ def read_input(ld_input):
     variables_all['schnet']['sch_eg'] = variables_input['sch_eg']
     variables_all['schnet']['sch_nac'] = variables_input['sch_nac']
     variables_all['schnet']['sch_soc'] = variables_input['sch_soc']
-    variables_all['e2n2']['e2n2_eg'] = variables_input['e2n2_eg']
-    variables_all['e2n2']['e2n2_nac'] = variables_input['e2n2_nac']
-    variables_all['e2n2']['e2n2_soc'] = variables_input['e2n2_soc']
+    variables_all['library']['e2n2_eg'] = variables_input['e2n2_eg']
+    variables_all['library']['e2n2_nac'] = variables_input['e2n2_nac']
+    variables_all['library']['e2n2_soc'] = variables_input['e2n2_soc']
     variables_all['nn']['ml_seed'] = variables_all['control']['gl_seed']
     variables_all['mlp']['ml_seed'] = variables_all['control']['gl_seed']
     variables_all['schnet']['ml_seed'] = variables_all['control']['gl_seed']
-    variables_all['e2n2']['ml_seed'] = variables_all['control']['gl_seed']
+    variables_all['library']['ml_seed'] = variables_all['control']['gl_seed']
     variables_all['md']['gl_seed'] = variables_all['control']['gl_seed']
     variables_all['molcas']['molcas_project'] = variables_all['control']['title']
     variables_all['molcas']['verbose'] = variables_all['md']['verbose']
@@ -1296,7 +1296,7 @@ def start_info(variables_all):
     variables_nn = variables_all['nn']
     variables_mlp = variables_all['mlp']
     variables_schnet = variables_all['schnet']
-    variables_e2n2 = variables_all['e2n2']
+    variables_e2n2 = variables_all['library']
     variables_eg = variables_nn['eg']
     variables_nac = variables_nn['nac']
     variables_soc = variables_nn['soc']
@@ -2285,7 +2285,7 @@ def start_info(variables_all):
     )
 
     e2n2_info = """
-  &e2n2
+  &library
 -------------------------------------------------------
   Train data:                 %-10s
   Prediction data:            %-10s
@@ -2312,7 +2312,7 @@ def start_info(variables_all):
 
     e2n2_info += """
 
-  E2N2 (GCNNP)
+  E2N2 (esnnp)
 
   &hyperparameters            Energy+Gradient      Nonadiabatic         Spin-orbit
 ----------------------------------------------------------------------------------------------
@@ -2455,7 +2455,7 @@ def start_info(variables_all):
   L1:                         %-10s
   L2:                         %-10s
   Dropout:                    %-10s
-  (e2n2)
+  (library)
   n_features                  %-10s
   n_blocks                    %-10s
   l_max                       %-10s
@@ -2598,7 +2598,7 @@ def start_info(variables_all):
         'nn': nn_info,
         'mlp': mlp_info,
         'schnet': sch_info,
-        'e2n2': e2n2_info,
+        'library': e2n2_info,
         'molcas': molcas_info,
         'mlctkr': molcas_info,
         'bagel': bagel_info,

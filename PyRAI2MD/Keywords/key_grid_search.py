@@ -78,7 +78,7 @@ class KeySearch:
   L1:                         %-10s
   L2:                         %-10s
   Dropout:                    %-10s
-  (e2n2)
+  (library)
   n_features                  %-10s
   n_blocks                    %-10s
   l_max                       %-10s

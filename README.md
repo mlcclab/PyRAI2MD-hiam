@@ -25,7 +25,7 @@
     2019 – 2022      Department of Chemistry and Chemical Biology
                      Northeastern University, Boston, USA
 
-                          version:   2.4.0
+                          version:   2.5.0
                           
 
   With contribution from (in alphabetic order):
@@ -36,14 +36,15 @@
                      OpenMolcas/Tinker interface
                      BAGEL interface
                      ORCA interface
+                     OpenQP interface
                      GFN-xTB interface
                      Adaptive sampling
                      Grid search
-                     Two-layer ONIOM
+                     Multilayer ONIOM (QM:QM' and QM:QM':MM)
                      Periodic boundary condition (coming soon)
                      Wall potential
                      QC/ML hybrid NAMD
-                     Excited-state Equivariant Neural Network
+                     Excited-State Neural Network Potentials (ESNNP)
 
     Patrick Reiser - Fully connected neural networks (pyNNsMD)
                      SchNet (pyNNsMD)
@@ -92,6 +93,7 @@
   |   |--key_mlp.py                                keywords for mlp settings                        
   |   |--key_schnet.py                             keywords for schnet settings                     
   |   |--key_e2n2.py                               keywords for e2n2 settings                       
+  |   |--key_e2n2_demo.py                          keywords for e2n2 demo settings
   |   |--key_dimenet.py                            keywords for dimenet (NAC model) setting         
   |   |--key_read_file.py                          keywords for reading training data                
   |    `-key_templ.py                              keywords class template                           
@@ -122,7 +124,8 @@
   |   |--model_templ.py                            NN interface template                       
   |   |--model_helper.py                           additional tools for neural network              
   |   |--hyper_nn.py                               native neural network hyperparameter             
-  |   |--hyper_pynnsmd.py                          pyNNsMD hyperparameter                           
+  |   |--hyper_pynnsmd.py                          pyNNsMD hyperparameter
+  |   |--hyper_esnnp.py                            ESNNP hyperparameter
   |   |--hyper_gcnnp.py                            GCNNP hyperparameter                             
   |   |--hyper_dimenet.py                          DimeNet NAC model hyperparameter                 
   |   |--hyper_templ.py                            hyperparameter template                           
@@ -211,3 +214,4 @@ We are currently working on the tutorials for users manual.
 - Jingbai Li, Steven A. Lopez, “Excited-state distortions promote the reactivities and regioselectivities of photochemical 4π-electrocyclizations of fluorobenzenes”, Chem. A Eur J. 2022, 28, e202200651. DOI:10.1002/chem.202200651
 - Jingbai Li, Steven A. Lopez, “A Look Inside the Black Box of Machine Learning Photodynamics Simulations”, Acc. Chem. Res., 2022, 55, 1972–1984. DOI:10.1021/acs.accounts.2c00288
 - L. Wang, C. Salguero, S.A. Lopez, J. Li, "Machine learning photodynamics uncover blocked non-radiative mechanisms in aggregation-induced emission", Chem, 2024, 10, 2295–2310. DOI: 10.1016/j.chempr.2024.04.017
+- Z. Li, F. J. Hernández, C. Salguero, R. Crespo-Otero, S.A. Lopez, J.Li, Machine learning photodynamics decode multiple singlet fission channels in pentacene crystal.Nat Commun, 2025, 16, 1194. https://doi.org/10.1038/s41467-025-56480-y
