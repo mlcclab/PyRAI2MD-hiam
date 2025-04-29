@@ -62,11 +62,10 @@ class Xtb:
         ## add index when running in adaptive sampling
 
         if job_id is not None:
-            self.workdir = '%s/tmp_xtb-%s' % (self.workdir, job_id)
-
-        elif job_id == 'Read':
-            self.workdir = self.workdir
-
+            if job_id == 'Read':
+                self.workdir = self.workdir
+            else:
+                self.workdir = '%s/tmp_xtb-%s' % (self.workdir, job_id)
         else:
             self.workdir = '%s/tmp_xtb' % self.workdir
 

@@ -89,11 +89,10 @@ class Molcas:
         ## add index when running in adaptive sampling
 
         if job_id is not None:
-            self.calcdir = '%s/tmp_MOLCAS-%s' % (self.calcdir, job_id)
-
-        elif job_id == 'Read':
-            self.calcdir = self.calcdir
-
+            if job_id == 'Read':
+                self.calcdir = self.calcdir
+            else:
+                self.calcdir = '%s/tmp_MOLCAS-%s' % (self.calcdir, job_id)
         else:
             self.calcdir = '%s/tmp_MOLCAS' % self.calcdir
 

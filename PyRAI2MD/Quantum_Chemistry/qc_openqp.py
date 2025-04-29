@@ -82,11 +82,11 @@ class OpenQP:
         ## check calculation folder
         ## add index when running in adaptive sampling
         if job_id is not None:
-            self.workdir = '%s/tmp_OpenQP-%s' % (self.workdir, job_id)
-
-        elif job_id == 'Read':
-            self.workdir = self.workdir
-            use_hpc = 1
+            if job_id == 'Read':
+                self.workdir = self.workdir
+                use_hpc = -1
+            else:
+                self.workdir = '%s/tmp_OpenQP-%s' % (self.workdir, job_id)
         else:
             self.workdir = '%s/tmp_OpenQP' % self.workdir
 
@@ -103,7 +103,7 @@ class OpenQP:
             self._write_openqp = self._write_openqp_io
             self._run_openqp = self._run_openqp_io
             self._read_data = self._read_data_io
-        else:
+        elif use_hpc == 0:
             self._init_mem()
             self._write_openqp = self._write_openqp_mem
             self._run_openqp = self._run_openqp_mem
