@@ -23,9 +23,9 @@ setup(
     long_description_content_type="text/markdown",
     url="",
     install_requires=[
-        'numpy>=1.20.0,<2.0',
+        'numpy>=1.20.0',
         'matplotlib>=3.5.0',
-        'tensorflow>=2.3.0',
+        'tensorflow>=2.3.0,<=2.9.1',
         'cython>=0.29.0',
         'scikit-learn'
     ],
