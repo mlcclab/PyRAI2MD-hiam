@@ -41,7 +41,7 @@ class OpenQP:
             verbose          int	     print level.
             project          str	     calculation name.
             workdir          str	     OpenQP calculation folder.
-            openqp              str	     OpenQP_ROOT environment variable, executable folder.
+            openqp           str	     OpenQP_ROOT environment variable, executable folder.
             nproc            int	     number of CPUs for parallelization
             use_hpc          int	     use HPC (1) for calculation like SLURM
                                          or run calculation based on IO (0)
@@ -56,7 +56,6 @@ class OpenQP:
     """
 
     def __init__(self, keywords=None, job_id=None, runtype='qm_high_mid_low'):
-
         self.runtype = runtype
         self.nstate = 0
         self.nnac = 0
@@ -67,6 +66,7 @@ class OpenQP:
         self.nactype = keywords['md']['nactype']
         variables = keywords['openqp']
         self.guess_type = variables['guess_type']
+        self.align_mo = variables['align_mo']
         self.method = variables['method']
         self.keep_tmp = variables['keep_tmp']
         self.verbose = variables['verbose']
@@ -141,7 +141,7 @@ class OpenQP:
             if key not in input_dict.keys():
                 input_dict[key] = {}
 
-        if self.jobtype == 'md':
+        if self.jobtype == 'md' and self.align_mo:
             runtype = 'prop'
         else:
             runtype = 'data'

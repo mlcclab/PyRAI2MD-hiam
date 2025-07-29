@@ -82,6 +82,7 @@ class AIMD:
         self.restart = keywords['md']['restart']
         self.addstep = keywords['md']['addstep']
         self.nactype = keywords['md']['nactype']
+        self.addsoc = keywords['md']['addsoc']
         self.stop = 0
         self.stop_hop = 0
         self.skipstep = 0
@@ -251,6 +252,10 @@ class AIMD:
 
     def _potential_energies(self, traj):
         traj = self.QM.evaluate(traj)
+
+        # apply bias on soc
+        if len(traj.soc) > 0 and self.addsoc > 0:
+            traj.soc += self.addsoc
 
         return traj
 

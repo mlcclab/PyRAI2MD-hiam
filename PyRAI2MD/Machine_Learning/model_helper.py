@@ -36,6 +36,7 @@ class DummyModel:
             'e2n2_demo': 'GCNNP',
             'e2n2': 'ESNNP',
             'dimenet': 'DimenetNAC',
+            'openqp': 'openqp or mpi4Py',
             'job_id': job_id,
 
         }

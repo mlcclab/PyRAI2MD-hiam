@@ -94,12 +94,12 @@ class DNN:
             self.select_eg_out = np.arange(self.nstate)
 
         if 0 < len(variables['select_nac_out']) < self.nnac:
-            self.select_eg_out = variables['select__out']
+            self.select_eg_out = variables['select_nac_out']
         else:
             self.select_nac_out = np.arange(self.nnac)
 
-        if 0 < len(variables['select_eg_out']) < self.nsoc:
-            self.select_soc_out = variables['select_eg_out']
+        if 0 < len(variables['select_soc_out']) < self.nsoc:
+            self.select_soc_out = variables['select_soc_out']
         else:
             self.select_soc_out = np.arange(self.nsoc)
 
