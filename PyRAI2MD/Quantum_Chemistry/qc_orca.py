@@ -182,7 +182,7 @@ cd $ORCA_WORKDIR
         si_input = ['!engrad']
         for line in ld_input:
             if 'irootlist' in line and self.activestate == 1:
-                si_input.append('irootlist %s' % self.state)
+                si_input.append('irootlist %s' % (self.state - 1))
             else:
                 si_input.append(line)
         si_input = '\n'.join(si_input) + '\n'

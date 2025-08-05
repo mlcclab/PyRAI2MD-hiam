@@ -74,7 +74,7 @@ class QM:
                 from mpi4py import MPI
             except ModuleNotFoundError:
                 pass
-                
+
         qm_list = {
             'molcas': Molcas,
             'mlctkr': MolcasTinker,
