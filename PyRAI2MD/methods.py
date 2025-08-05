@@ -18,10 +18,6 @@ from PyRAI2MD.Machine_Learning.model_NN import DNN
 from PyRAI2MD.Machine_Learning.model_demo import Demo
 from PyRAI2MD.Machine_Learning.model_helper import DummyModel
 
-try:
-    from mpi4py import MPI
-except ModuleNotFoundError:
-    OpenQP = DummyModel
 
 try:
     from PyRAI2MD.Machine_Learning.model_pyNNsMD import MLP
@@ -72,6 +68,13 @@ class QM:
 
     def __init__(self, qm, keywords=None, job_id=None):
         # methods available for single region calculation
+
+        if qm[0] == 'openqp':
+            try:
+                from mpi4py import MPI
+            except ModuleNotFoundError:
+                pass
+                
         qm_list = {
             'molcas': Molcas,
             'mlctkr': MolcasTinker,
