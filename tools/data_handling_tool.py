@@ -116,15 +116,20 @@ def main():
             json.dump(data, outdata)
 
     print('\n    Complete\n')
+
 def check_data(file):
     with open(file, 'r') as indata:
         data = json.load(indata)
 
     natom = data['natom']
+    ncharge = data['ncharge']
     nstate = data['nstate']
     nnac = data['nnac']
     nsoc = data['nsoc']
     xyz = data['xyz']
+    cell = data['cell']
+    pbc = data['pbc']
+    charge = data['charge']
     energy = data['energy']
     grad = data['grad']
     nac = data['nac']
@@ -136,10 +141,14 @@ def check_data(file):
   ---------------------------
     data size: %s
     natom:     %s
+    ncharge    %s
     nstate:    %s
     nnac:      %s
     nsoc:      %s
     xyz:       %s
+    cell:      %s
+    pbc:       %s
+    charge:    %s
     energy:    %s
     grad:      %s
     nac:       %s
@@ -147,10 +156,14 @@ def check_data(file):
   ---------------------------
       """ % (size,
              natom,
+             ncharge,
              nstate,
              nnac,
              nsoc,
              np.array(xyz).shape,
+             np.array(cell).shape,
+             np.array(pbc).shape,
+             np.array(charge).shape,
              np.array(energy).shape,
              np.array(grad).shape,
              np.array(nac).shape,
@@ -163,10 +176,14 @@ def check_data(file):
 
 def shuffle_data(data, group):
     natom = data['natom']
+    ncharge = data['ncharge']
     nstate = data['nstate']
     nnac = data['nnac']
     nsoc = data['nsoc']
     xyz = data['xyz']
+    cell = data['cell']
+    pbc = data['pbc']
+    charge = data['charge']
     energy = data['energy']
     grad = data['grad']
     nac = data['nac']
@@ -188,6 +205,9 @@ def shuffle_data(data, group):
         np.random.shuffle(index)
 
     xyz = np.array(xyz)[index].tolist()
+    cell = np.array(cell)[index].tolist()
+    pbc = np.array(pbc)[index].tolist()
+    charge = np.array(charge)[index].tolist()
     energy = np.array(energy)[index].tolist()
     grad = np.array(grad)[index].tolist()
     nac = np.array(nac)[index].tolist()
@@ -195,10 +215,14 @@ def shuffle_data(data, group):
 
     newset = {
         'natom': natom,
+        'ncharge': ncharge,
         'nstate': nstate,
         'nnac': nnac,
         'nsoc': nsoc,
         'xyz': xyz,
+        'cell': cell,
+        'pbc': pbc,
+        'charge': charge,
         'energy': energy,
         'grad': grad,
         'nac': nac,
@@ -209,10 +233,10 @@ def shuffle_data(data, group):
 
 def split_data(data, split):
     natom = data['natom']
+    ncharge = data['ncharge']
     nstate = data['nstate']
     nnac = data['nnac']
     nsoc = data['nsoc']
-    xyz = data['xyz']
     size = len(xyz)
 
     if size > split:
@@ -224,12 +248,18 @@ def split_data(data, split):
         exit('\n    Error: Split number is larger than the total number of data\n')
 
     xyz_1 = data['xyz'][: split]
+    cell_1 = data['cell'][: split]
+    pbc_1 = data['pbc'][: split]
+    charge_1 = data['charge'][: split]
     energy_1 = data['energy'][: split]
     grad_1 = data['grad'][: split]
     nac_1 = data['nac'][: split]
     soc_1 = data['soc'][: split]
 
     xyz_2 = data['xyz'][split:]
+    cell_2 = data['cell'][split:]
+    pbc_2 = data['pbc'][split:]
+    charge_2 = data['charge'][split:]
     energy_2 = data['energy'][split:]
     grad_2 = data['grad'][split:]
     nac_2 = data['nac'][split:]
@@ -237,10 +267,14 @@ def split_data(data, split):
 
     newset_1 = {
         'natom': natom,
+        'ncharge': ncharge,
         'nstate': nstate,
         'nnac': nnac,
         'nsoc': nsoc,
         'xyz': xyz_1,
+        'cell': cell_1,
+        'pbc': pbc_1,
+        'charge': charge_1,
         'energy': energy_1,
         'grad': grad_1,
         'nac': nac_1,
@@ -249,10 +283,14 @@ def split_data(data, split):
 
     newset_2 = {
         'natom': natom,
+        'ncharge': ncharge,
         'nstate': nstate,
         'nnac': nnac,
         'nsoc': nsoc,
         'xyz': xyz_2,
+        'cell': cell_2,
+        'pbc': pbc_2,
+        'charge': charge_2,
         'energy': energy_2,
         'grad': grad_2,
         'nac': nac_2,
@@ -263,10 +301,14 @@ def split_data(data, split):
 
 def merge_data(data, merge):
     natom = data['natom']
+    ncharge = data['ncharge']
     nstate = data['nstate']
     nnac = data['nnac']
     nsoc = data['nsoc']
     xyz = data['xyz']
+    cell = data['cell']
+    pbc = data['pbc']
+    charge = data['charge']
     energy = data['energy']
     grad = data['grad']
     nac = data['nac']
@@ -274,20 +316,28 @@ def merge_data(data, merge):
 
     merge = check_data(merge)
     natom2 = merge['natom']
+    ncharge2 = merge['ncharge']
     nstate2 = merge['nstate']
     nnac2 = merge['nnac']
     nsoc2 = merge['nsoc']
     xyz2 = merge['xyz']
+    cell2 = merge['cell']
+    pbc2 = merge['pbc']
+    charge2 = merge['charge']
     energy2 = merge['energy']
     grad2 = merge['grad']
     nac2 = merge['nac']
     soc2 = merge['soc']
 
     check_natom = match_int(natom, natom2)
+    check_ncharge = match_int(ncharge, ncharge2)
     check_nstate = match_int(nstate, nstate2)
     check_nnac = match_int(nnac, nnac2)
     check_nsoc = match_int(nsoc, nsoc2)
     check_xyz = match_array(xyz, xyz2)
+    check_cell = match_array(cell, cell2)
+    check_pbc = match_array(pbc, pbc2)
+    check_charge = match_array(charge, charge2)
     check_energy = match_array(energy, energy2)
     check_grad = match_array(grad, grad2)
     check_nac = match_array(nac, nac2)
@@ -297,10 +347,14 @@ def merge_data(data, merge):
     Check data shape
   ---------------------------
     natom:     %s
+    ncharge    %s
     nstate:    %s
     nnac:      %s
     nsoc:      %s
     xyz:       %s
+    cell:      %s
+    pbc:       %s
+    charge:    %s
     energy:    %s
     grad:      %s
     nac:       %s
@@ -308,10 +362,14 @@ def merge_data(data, merge):
   ---------------------------
     """ % (
         check_natom,
+        check_ncharge,
         check_nstate,
         check_nnac,
         check_nsoc,
         check_xyz,
+        check_cell,
+        check_pbc,
+        check_charge,
         check_energy,
         check_grad,
         check_nac,
@@ -319,17 +377,22 @@ def merge_data(data, merge):
     )
 
     print(merge_info)
-    m = [check_natom, check_nstate, check_nnac, check_nsoc, check_xyz, check_energy, check_grad, check_nac, check_soc]
+    m = [check_natom, check_ncharge, check_nnac, check_nsoc, check_xyz, check_cell, check_pbc, check_charge,
+         check_energy, check_grad, check_nac, check_soc]
 
     if 'not match' in m:
         exit('\n    Error: data sets do not match\n')
 
     newset = {
         'natom': natom,
+        'ncharge': ncharge,
         'nstate': nstate,
         'nnac': nnac,
         'nsoc': nsoc,
         'xyz': xyz + xyz2,
+        'cell': cell + cell2,
+        'pbc': pbc + pbc2,
+        'charge': charge + charge2,
         'energy': energy + energy2,
         'grad': grad + grad2,
         'nac': nac + nac2,

@@ -34,10 +34,14 @@ def main():
         data = json.load(indata)
 
     natom = data['natom']
+    ncharge = data['ncharge']
     nstate = data['nstate']
     nnac = data['nnac']
     nsoc = data['nsoc']
     xyz = data['xyz']
+    cell = data['cell']
+    pbc = data['pbc']
+    charge = data['charge']
     energy = data['energy']
     grad = data['grad']
     nac = data['nac']
@@ -49,6 +53,9 @@ def main():
     np.random.shuffle(index)
 
     xyz = np.array(xyz)[index].tolist()
+    cell = np.array(cell)[index].tolist()
+    pbc = np.array(pbc)[index].tolist()
+    charge = np.array(charge)[index].tolist()
     energy = np.array(energy)[index].tolist()
     grad = np.array(grad)[index].tolist()
     nac = np.array(nac)[index].tolist()
@@ -56,10 +63,14 @@ def main():
 
     newset = {
         'natom': natom,
+        'ncharge': ncharge,
         'nstate': nstate,
         'nnac': nnac,
         'nsoc': nsoc,
         'xyz': xyz,
+        'cell': cell,
+        'pbc': pbc,
+        'charge': charge,
         'energy': energy,
         'grad': grad,
         'nac': nac,

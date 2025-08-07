@@ -54,6 +54,7 @@ def main():
 
     key = PrepKey(keywords)
     natom = key['natom']
+    ncharge = key['ncharge']
     nstate = key['nstate']
     nnac = key['nnac']
     nsoc = key['nsoc']
@@ -64,6 +65,9 @@ def main():
     pool = multiprocessing.Pool(processes=ncpu)
 
     xyz_list = [[] for _ in range(nfile)]
+    cell_list = [[] for _ in range(nfile)]
+    pbc_list = [[] for _ in range(nfile)]
+    charge_list = [[] for _ in range(nfile)]
     energy_list = [[] for _ in range(nfile)]
     grad_list = [[] for _ in range(nfile)]
     nac_list = [[] for _ in range(nfile)]
@@ -72,8 +76,11 @@ def main():
     n = 0
     for val in pool.imap_unordered(ReadData, wrapper):
         n += 1
-        id, xyz, energy, grad, nac, soc = val
+        id, xyz, cell, pbc, charge, energy, grad, nac, soc = val
         xyz_list[id] = xyz
+        cell_list[id] = cell
+        pbc_list[id] = pbc
+        charge_list[id] = charge
         energy_list[id] = energy
         grad_list[id] = grad
         nac_list[id] = nac
@@ -85,6 +92,7 @@ def main():
 
     dataset = {
         'natom': natom,
+        'ncharge': ncharge,
         'nstate': nstate,
         'nnac': nnac,
         'nsoc': nsoc,
@@ -97,11 +105,15 @@ def main():
 
     print('\n    --- Summary ---')
     print('natom:  %5d' % natom)
+    print('ncharge:%5d' % ncharge)
     print('nstate: %5d' % nstate)
     print('nnac:   %5d' % nnac)
     print('nsoc:   %5d' % nsoc)
     print('    --- Data shape ---')
     print('xyz:   %30s' % (str(np.array(xyz_list).shape)))
+    print('cell:  %30s' % (str(np.array(cell_list).shape)))
+    print('pbc:   %30s' % (str(np.array(pbc_list).shape)))
+    print('charge:%30s' % (str(np.array(charge_list).shape)))
     print('energy:%30s' % (str(np.array(energy_list).shape)))
     print('grad:  %30s' % (str(np.array(grad_list).shape)))
     print('nac:   %30s' % (str(np.array(nac_list).shape)))
@@ -114,6 +126,7 @@ def main():
 def PrepKey(key):
     qm = key['control']['qm']
     natom = key['file']['natom']
+    ncharge = key['file']['ncharge']
     ci = key['molecule']['ci']
     nstate = int(np.sum(ci))
     spin = key['molecule']['spin']
@@ -124,7 +137,7 @@ def PrepKey(key):
     for n, s in enumerate(ci):
         mt = int(spin[n] * 2 + 1)
         mult.append(mt)
-        for m in range(s):
+        for _ in range(s):
             statemult.append(mt)
 
     nac_coupling = []
@@ -144,6 +157,7 @@ def PrepKey(key):
     keywords = {
         'qm': qm,
         'natom': natom,
+        'ncharge': ncharge,
         'ci': ci,
         'nstate': nstate,
         'mult': mult,
@@ -164,6 +178,7 @@ def ReadData(var):
     qm = keywords['qm']
     ci = keywords['ci']
     natom = keywords['natom']
+    ncharge = keywords['ncharge']
     nstate = keywords['nstate']
     mult = keywords['mult']
     nac_coupling = keywords['nac_coupling']
@@ -184,9 +199,17 @@ def ReadData(var):
     data.nnac = nnac
     data.nsoc = nsoc
 
-    xyz, energy, grad, nac, soc = data.read_data(natom)
+    xyz, charge, cell, pbc, energy, grad, nac, soc = data.read_data(natom, ncharge)
 
-    return id, xyz, energy.tolist(), grad.tolist(), nac.tolist(), soc.tolist()
+    cell = cell.tolist()
+    pbc = pbc.tolist()
+    charge = charge.tolist()
+    energy = energy.tolist()
+    grad = grad.tolist()
+    nac = nac.tolist()
+    soc = soc.tolist()
+
+    return id, xyz, cell, pbc, charge, energy, grad, nac, soc
 
 
 if __name__ == '__main__':
