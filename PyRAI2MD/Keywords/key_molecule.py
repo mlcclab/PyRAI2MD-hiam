@@ -48,8 +48,9 @@ class KeyMolecule:
             'track_index': [],
             'track_thrhd': [],
             'track_stop': 0,
-            'primitive': [],
+            'cell': [],
             'lattice': [],
+            'pbc': [],
         }
 
     def default(self):
@@ -92,8 +93,9 @@ class KeyMolecule:
             'track_index': ReadIndex('g', start=1),
             'track_thrhd': ReadVal('fl'),
             'track_stop': ReadVal('i'),
-            'primitive': ReadIndex('g'),
-            'lattice': ReadIndex('s'),
+            'cell': ReadVal('fl'),
+            'lattice': ReadVal('fl'),
+            'pbc': ReadVal('il'),
         }
 
         for i in values:
@@ -145,8 +147,9 @@ class KeyMolecule:
   Track indices:              %-10s
   Track threshold:            %-10s
   Track stop task:            %-10s
-  Primitive vectors:          %-10s
+  Lattice vectors:            %-10s
   Lattice constant:           %-10s
+  Periodic boundary condition %-10s
 -------------------------------------------------------
 
         """ % (
@@ -183,8 +186,9 @@ class KeyMolecule:
             keywords['track_index'],
             keywords['track_thrhd'],
             keywords['track_stop'],
-            keywords['primitive'],
-            keywords['lattice']
+            keywords['cell'],
+            keywords['lattice'],
+            keywords['pbc'],
         )
 
         return summary

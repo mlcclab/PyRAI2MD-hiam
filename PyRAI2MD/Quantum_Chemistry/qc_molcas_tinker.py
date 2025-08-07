@@ -236,5 +236,7 @@ class MolcasTinker(Molcas):
     def read_data(self, natom):
         ## function to read the logfile
         coord, energy, gradient, nac, soc = self._read_data(natom)
-
-        return coord, energy, gradient, nac, soc
+        charge = np.zeros(0)
+        cell = np.zeros(0)
+        pbc = np.zeros(0)
+        return coord, charge, cell, pbc, energy, gradient, nac, soc

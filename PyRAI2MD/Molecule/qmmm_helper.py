@@ -12,7 +12,7 @@ import numpy as np
 from PyRAI2MD.Molecule.atom import Atom
 
 
-def auto_boundary(coord, high, pbc):
+def auto_boundary(coord, high):
     """ Auto qmmm boundary detection function
 
         Parameters:          Type:
@@ -30,7 +30,7 @@ def auto_boundary(coord, high, pbc):
 
     ## under construction ...
 
-    return link, boundary, pbc
+    return link, boundary
 
 
 def compute_hcap(atoms, coord, boundary):

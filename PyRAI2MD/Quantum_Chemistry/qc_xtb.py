@@ -1,9 +1,9 @@
 ######################################################
 #
-# PyRAI2MD 2 module for xTB 6.5.1 interface (NAC and SOC are not available)
+# PyRAI2MD 2 module for xTB 6.7.1 interface (NAC and SOC are not available)
 #
 # Author Jingbai Li
-# Sep 16 2022
+# Aug 6 2025
 #
 ######################################################
 
@@ -14,6 +14,7 @@ import shutil
 import numpy as np
 
 from PyRAI2MD.Utils.coordinates import print_coord
+from PyRAI2MD.Utils.coordinates import print_turbocoord
 from PyRAI2MD.Utils.coordinates import print_charge
 from PyRAI2MD.Utils.coordinates import orca_coord
 
@@ -56,8 +57,13 @@ class Xtb:
         self.nproc = variables['xtb_nproc']
         self.mem = variables['mem']
         self.gfnver = variables['gfnver']
+        self.gfnff_pbc = variables['gfnff_pbc']
         self.use_hpc = variables['use_hpc']
         self.charges = np.zeros(0)
+        embedding = keywords['molecule']['embedding']
+        cell = keywords['molecule']['cell']
+        lattice = keywords['molecule']['lattice']
+
         ## check calculation folder
         ## add index when running in adaptive sampling
 
@@ -117,8 +123,20 @@ cd $XTB_WORKDIR
             self.gfnver = -1
             addon = '--gfnff'
 
-        self.runscript += '$XTBHOME/bin/xtb %s --grad -I $XTB_WORKDIR/$XTB_PROJECT.inp $XTB_WORKDIR/$XTB_PROJECT.xyz ' \
-                          '> $XTB_WORKDIR/$XTB_PROJECT.out\n ' % addon
+        ## check keywords
+        if embedding == 1 and len(cell) > 0:
+            sys.exit('\n  KeywordError\n  xTB: charge embedding and pbc cannot work together!')
+
+        if len(cell) > 0 and self.gfnver > -1:
+            sys.exit('\n  KeywordError\n  xTB: GNF %s does not support pbc!' % self.gfnver)
+
+        if len(cell) > 0 or len(lattice) > 0:
+            ext = 'coord'
+        else:
+            ext = 'xyz'
+
+        self.runscript += '$XTBHOME/bin/xtb %s --grad -I $XTB_WORKDIR/$XTB_PROJECT.inp $XTB_WORKDIR/$XTB_PROJECT.%s ' \
+                          '> $XTB_WORKDIR/$XTB_PROJECT.out\n ' % (addon, ext)
 
     def _setup_hpc(self):
         ## setup calculation using HPC
@@ -135,12 +153,13 @@ cd $XTB_WORKDIR
         with open('%s/%s.sbatch' % (self.workdir, self.project), 'w') as out:
             out.write(submission)
 
-    def _setup_xtb(self, x, q=None):
+    def _setup_xtb(self, x, q=None, cell=None, pbc=None):
         ## make calculation folder and input file
         if not os.path.exists(self.workdir):
             os.makedirs(self.workdir)
 
         ## clean calculation folder
+        os.system("rm %s/gfnff_topo > /dev/null 2>&1" % self.workdir)
         os.system("rm %s/*.engrad > /dev/null 2>&1" % self.workdir)
         os.system("rm %s/*.out > /dev/null 2>&1" % self.workdir)
 
@@ -153,34 +172,41 @@ cd $XTB_WORKDIR
             self._setup_hpc()
 
         ## setup input according to dft_type
-        self._write_xtb(x, q)
+        self._write_xtb(x, q=q, cell=cell, pbc=pbc)
 
-    def _write_xtb(self, x, q=None):
-        ## write xtb input file
-        natom = len(x)
-        xyz = '%s\n\n%s' % (natom, print_coord(x))
-        charge = print_charge(q, unit='Bohr')
-
+    def _write_xtb(self, x, q=None, cell=None, pbc=None):
         ## Read input template from current directory
-        ## general dft xTb template should end with '*xyz charge mult'
+        ## general dft xTB template should end with '*xyz charge mult'
         if os.path.exists('%s.xtb' % self.project):
             with open('%s.xtb' % self.project, 'r') as template:
                 ld_input = template.read()
         else:
             ld_input = ''
 
+        ## write xtb input file
+        with open('%s/%s.inp' % (self.workdir, self.project), 'w') as out:
+            out.write(ld_input)
+
         ## insert charge section
+        charge = print_charge(q, unit='Bohr')
         if len(charge) > 0:
-            ld_input = ld_input + '$embedding\ninput=%s.pc\n$end\n' % self.project
+            ld_input += '$embedding\ninput=%s.pc\n$end\n' % self.project
             with open('%s/%s.pc' % (self.workdir, self.project), 'w') as out:
                 out.write('%s\n%s' % (len(q), charge))
 
         ## save xyz and input file
-        with open('%s/%s.xyz' % (self.workdir, self.project), 'w') as out:
+        xyz = '%s\n\n%s' % (len(x), print_coord(x))
+        xyzfile = '%s/%s.xyz' % (self.workdir, self.project)
+
+        with open(xyzfile, 'w') as out:
             out.write(xyz)
 
-        with open('%s/%s.inp' % (self.workdir, self.project), 'w') as out:
-            out.write(ld_input)
+        if len(cell) > 0:
+            xyz = '%s' % (print_turbocoord(x, cell, pbc))
+            xyzfile = '%s/%s.coord' % (self.workdir, self.project)
+
+            with open(xyzfile, 'w') as out:
+                out.write(xyz)
 
     def _run_xtb(self):
         ## run xTB calculation
@@ -245,7 +271,7 @@ cd $XTB_WORKDIR
         charge = traj.qm2_charge
 
         ## setup xTB calculation
-        self._setup_xtb(xyz, charge)
+        self._setup_xtb(xyz, q=charge)
 
         ## run xTB calculation
         self._run_xtb()
@@ -268,9 +294,11 @@ cd $XTB_WORKDIR
 
         xyz = np.concatenate((traj.qmqm2_atoms, traj.qmqm2_coord), axis=1)
         nxyz = len(xyz)
+        cell = traj.cell
+        pbc = traj.pbc
 
         ## setup xTB calculation
-        self._setup_xtb(xyz)
+        self._setup_xtb(xyz, cell=cell, pbc=pbc)
 
         ## run xTB calculation
         self._run_xtb()
@@ -289,15 +317,22 @@ cd $XTB_WORKDIR
 
         return energy, gradient, nac, soc
 
-    def _high_mid_low(self, traj):
+    def _high_mid_low(self, traj, ignore_charges=False):
         ## run xTB for high level region, middle level region, and low level region in QM or MM calculation
 
         xyz = np.concatenate((traj.atoms, traj.coord), axis=1)
         nxyz = len(xyz)
-        charge = traj.qm2_charge
+
+        cell = traj.cell
+        pbc = traj.pbc
+
+        if ignore_charges:
+            charge = np.zeross(0)
+        else:
+            charge = traj.qm2_charge
 
         ## setup xTB calculation
-        self._setup_xtb(xyz, charge)
+        self._setup_xtb(xyz, q=charge, cell=cell, pbc=pbc)
 
         ## run xTb calculation
         self._run_xtb()
@@ -333,7 +368,7 @@ cd $XTB_WORKDIR
         elif self.runtype == 'qm_high_mid_low':  # qm or qm2 calculation for h + m + l region
             energy, gradient, nac, soc = self._high_mid_low(traj)
         elif self.runtype == 'mm_high_mid_low':  # mm calculation for h + m + l region
-            energy, gradient, nac, soc = self._high_mid_low(traj)
+            energy, gradient, nac, soc = self._high_mid_low(traj, ignore_charges=True)
 
         if len(energy) == 1 and len(gradient) == 1:
             completion = 1
@@ -368,5 +403,7 @@ cd $XTB_WORKDIR
     def read_data(self, natom):
         ## function to read the logfile
         coord, energy, gradient, nac, soc = self._read_data(natom)
-
-        return coord, energy, gradient, nac, soc
+        charge = np.zeros(0)
+        cell = np.zeros(0)
+        pbc = np.zeros(0)
+        return coord, charge, cell, pbc, energy, gradient, nac, soc

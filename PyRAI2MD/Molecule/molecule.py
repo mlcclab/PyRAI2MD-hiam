@@ -13,7 +13,7 @@ import numpy as np
 from PyRAI2MD.Molecule.atom import Atom
 from PyRAI2MD.Molecule.qmmm_helper import auto_boundary
 from PyRAI2MD.Molecule.qmmm_helper import compute_hcap
-from PyRAI2MD.Molecule.pbc_helper import compute_primitives
+from PyRAI2MD.Molecule.pbc_helper import compute_cell
 from PyRAI2MD.Molecule.pbc_helper import apply_pbc
 from PyRAI2MD.Utils.coordinates import read_initcond
 from PyRAI2MD.Utils.coordinates import read_coord
@@ -104,8 +104,9 @@ class Molecule:
             record_bond      list        a list of recorded value for constrained bond
             record_angle     list        a list of recorded value for constrained angle
             record_dihedral  list        a list of recorded value for constrained dihedral
-            primitive        ndarray     primitive translation vectors in 1D 2D 3D
+            cell             ndarray     lattice vector
             lattice          ndarray     lattice constant
+            pbc              ndarray     periodic boundary condition
             status           int         molecular property calculation status
 
         Function:            Returns:
@@ -115,14 +116,14 @@ class Molecule:
     """
 
     __slots__ = ['inact', 'active', 'link', 'ninac', 'nlink', 'qmmm_key', 'qmmm_xyz', 'txyz', 'embedding',
-                 'read_charge', 'ci', 'nstate', 'spin', 'mult', 'statemult', 'coupling',
-                 'nac_coupling', 'soc_coupling', 'nnac', 'nsoc', 'natom', 'atoms', 'coord', 'atomic_number', 'mass',
+                 'read_charge', 'ci', 'nstate', 'spin', 'mult', 'statemult', 'coupling', 'nac_coupling', 'soc_coupling',
+                 'nnac', 'nsoc', 'natom', 'natom_free', 'atoms', 'coord', 'atomic_number', 'mass',
                  'velo', 'kinetic', 'energy', 'grad', 'nac', 'soc', 'err_energy', 'err_grad', 'err_nac', 'err_soc',
                  'qm_atoms', 'qm_coord', 'Hcap_atoms', 'Hcap_coord', 'Hcap_jacob', 'boundary', 'nhigh', 'nmid', 'nlow',
-                 'highlevel', 'midlevel', 'lowlevel', 'relax', 'freeze', 'constrain', 'primitive', 'lattice', 'status',
-                 'charges', 'qm1_charge', 'qm2_charge', 'qm_energy', 'qm_grad', 'qm_nac', 'qm_soc', 'qmqm2_index',
-                 'qmqm2_atoms', 'qmqm2_coord', 'energy_qm', 'energy_qm2_1', 'energy_qm2_2', 'energy_mm1', 'energy_mm2',
-                 'cavity', 'center', 'record_center', 'ext_pot', 'bond_pot', 'angle_pot', 'dihedral_pot',
+                 'highlevel', 'midlevel', 'lowlevel', 'relax', 'freeze', 'constrain', 'cell', 'lattice', 'pbc',
+                 'status', 'charges', 'qm1_charge', 'qm2_charge', 'qm_energy', 'qm_grad', 'qm_nac', 'qm_soc',
+                 'qmqm2_index', 'qmqm2_atoms', 'qmqm2_coord', 'energy_qm', 'energy_qm2_1', 'energy_qm2_2', 'energy_mm1',
+                 'energy_mm2', 'cavity', 'center', 'record_center', 'ext_pot', 'bond_pot', 'angle_pot', 'dihedral_pot',
                  'cbond', 'cangle', 'cdihedral',
                  'target_bond', 'target_angle', 'target_dihedral', 'record_bond', 'record_angle', 'record_dihedral']
 
@@ -196,8 +197,9 @@ class Molecule:
         self.read_charge = key_dict['read_charge']
         self.freeze = key_dict['freeze']
         self.constrain = key_dict['constrain']
-        self.primitive = key_dict['primitive']
-        self.lattice = key_dict['lattice']
+        self.cell = np.array(key_dict['cell'][0: 9]).reshape(-1, 3)
+        self.lattice = np.array(key_dict['lattice'][0: 6])
+        self.pbc = np.array(key_dict['pbc'][0: 3])
         self.cavity = key_dict['cavity']
         self.cbond = key_dict['cbond']
         self.cangle = key_dict['cangle']
@@ -250,6 +252,7 @@ class Molecule:
         self.atomic_number = np.array([Atom(x).name for x in self.atoms.reshape(-1)])
         self.mass = np.array([Atom(x).get_mass() * 1822.8884871474306 for x in self.atoms.reshape(-1)]).reshape((-1, 1))
         self.relax = np.setdiff1d(np.arange(self.natom), self.freeze)
+        self.natom_free = len(self.relax)
 
         ## partition atom in regions
         if len(self.highlevel) == 0:
@@ -264,7 +267,7 @@ class Molecule:
 
         ## auto generate qmmm boundary if the request has no qmmm key
         if len(self.boundary) == 0 and len(self.lowlevel) > 0:
-            self.link, self.boundary, self.primitive = auto_boundary(self.coord, self.highlevel, self.primitive)
+            self.link, self.boundary = auto_boundary(self.coord, self.highlevel)
 
         ## initialize charge and read charge from a file
         if self.embedding:
@@ -290,7 +293,7 @@ class Molecule:
         for n, s in enumerate(self.ci):
             mult = int(self.spin[n] * 2 + 1)
             self.mult.append(mult)
-            for m in range(s):
+            for _ in range(s):
                 self.statemult.append(mult)
 
         self.nac_coupling = []
@@ -308,14 +311,17 @@ class Molecule:
         self.nsoc = len(self.soc_coupling)
 
         ## initialize pbc
-        if len(self.primitive) == 0 and len(self.lattice) == 6:
-            self.primitive = compute_primitives(self.lattice)
+        if len(self.cell) == 0 and len(self.lattice) == 6:
+            self.cell = compute_cell(self.lattice)
+            if len(self.pbc) == 0:
+                self.pbc = np.array([1, 1, 1])
 
         ## apply constraints
         self.velo[self.freeze] = np.array([0., 0., 0.])
 
     def apply_pbc(self):
-        self.coord = apply_pbc(self.coord, self.primitive)
+        if len(self.cell) == 3:
+            self.coord = apply_pbc(self.coord, self.cell, self.pbc)
 
         return self
 

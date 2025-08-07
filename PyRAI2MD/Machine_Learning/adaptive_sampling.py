@@ -311,8 +311,8 @@ class AdaptiveSampling:
         qc_data = [[] for _ in range(ngeom)]
         pool = multiprocessing.Pool(processes=ncpu)
         for val in pool.imap_unordered(self._abinit_wrapper, variables_wrapper):
-            geom_id, xyz, energy, grad, nac, soc, completion = val
-            qc_data[geom_id] = [[xyz, energy, grad, nac, soc], completion]
+            geom_id, xyz, charges, cell, pbc, energy, grad, nac, soc, completion = val
+            qc_data[geom_id] = [[xyz, charges, cell, pbc, energy, grad, nac, soc], completion]
         pool.close()
 
         ## check qc results and exclude non-converged ones
@@ -336,13 +336,16 @@ class AdaptiveSampling:
         mol = qc.evaluate(mol)
 
         ## prepare qc results
+        charges = mol.qm2_charge
+        cell = mol.cell.tolist()
+        pbc = mol.pbc.tolist()
         energy = mol.energy.tolist()
         grad = mol.grad.tolist()
         nac = mol.nac
         soc = mol.soc
         completion = mol.status
 
-        return geom_id, xyz, energy, grad, nac, soc, completion
+        return geom_id, xyz, charges, cell, pbc, energy, grad, nac, soc, completion
 
     def _screen_error(self, md_traj):
         ## initialize data list
@@ -567,7 +570,7 @@ class AdaptiveSampling:
             select_geom, discard_geom, select_indx, discard_indx = self._distance_filter(allatoms, select_geom)
             select_geom = select_geom[0: self.maxsample]
             select_charge = np.array(charge)[index_tot]
-            select_charge = select_charge[select_indx][0: self.maxsample].tolist() # charge need to be in a list
+            select_charge = select_charge[select_indx][0: self.maxsample].tolist()  # charge need to be in a list
             num_select_geom = len(select_geom)
             num_discard_geom = len(discard_geom)
             ndiscard_e = 0

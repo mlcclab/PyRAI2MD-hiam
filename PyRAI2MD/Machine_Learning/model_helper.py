@@ -107,11 +107,11 @@ class Multiregions:
             warning          str         exit message
 
         Functions:           Returns:
-            partition_atoms        list        transformed atom list
-            partition_atomic_numbers list      transformed atomic number list
-            retrieve_atoms        list   transformed back atom list
-            retrieve_atomic_numbers list transformed back atomic number list
-            update_xyz          list        transformed xyz array
+            partition_atoms          list        transformed atom list
+            partition_atomic_numbers list        transformed atomic number list
+            retrieve_atoms           list        transformed back atom list
+            retrieve_atomic_numbers  list        transformed back atomic number list
+            update_xyz               list        transformed xyz array
 
     """
     def __init__(self, atoms, multiscale_list, flag=50):

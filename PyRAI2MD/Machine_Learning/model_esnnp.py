@@ -3,7 +3,7 @@
 # PyRAI2MD 2 module for interfacing to esnnp
 #
 # Author Jingbai Li
-# Mar 24 2025
+# Aug 6 2025
 #
 ######################################################
 
@@ -139,12 +139,18 @@ class E2N2:
         ## unpack data
         self.atoms = data.atoms
         self.geos = data.geos
+        self.charges = data.charges.tolist()
+        self.cell = data.cell.tolist()
+        self.pbc = data.pbc.tolist()
         self.energy = data.energy * self.f_e
         self.grad = data.grad * self.f_g
         self.nac = data.nac * self.f_n
         self.soc = data.soc
         self.pred_atoms = data.pred_atoms
         self.pred_geos = data.pred_geos
+        self.pred_charges = data.pred_charges.tolist()
+        self.pred_cell = data.pred_cell.tolist()
+        self.pred_pbc = data.pred_pbc.tolist()
         self.pred_energy = data.pred_energy
         self.pred_grad = data.pred_grad
         self.pred_nac = data.pred_nac
@@ -152,6 +158,7 @@ class E2N2:
 
         ## find node type
         if len(multiscale) > 0:
+            # to differentiate the same element in different regions
             self.mr = Multiregions(self.atoms[0], multiscale)
             atoms = self.mr.partition_atoms(self.atoms[0])
             self.atoms = np.array([atoms] * len(self.atoms))
@@ -283,7 +290,9 @@ class E2N2:
 
         xyz = np.concatenate((self.atoms.reshape((-1, self.natom, 1)), self.geos), axis=-1).tolist()
         self.model.build()
-        errors = self.model.train(xyz, self.y_dict, remote=True, retrain=self.retrain)
+        errors = self.model.train(
+            xyz, self.charges, self.cell, self.pbc, self.y_dict, remote=True, retrain=self.retrain
+        )
 
         if self.model_register['energy_grad']:
             eg_error = errors['energy_grad']
@@ -374,10 +383,12 @@ class E2N2:
 
         atoms = self.atoms[0]
         coord = traj.qm_coord
-
         x = [np.concatenate((atoms.reshape((-1, 1)), coord), axis=-1).tolist()]
+        charges = traj.qm2_charge
+        cell = traj.cell
+        pbc = traj.pbc
 
-        results = self.model.predict(x)
+        results = self.model.predict(x, charges, cell, pbc)
         if self.model_register['energy_grad']:
             pred = results['energy_grad']
             energy = np.mean([pred[0][0], pred[1][0]], axis=0) / self.f_e
@@ -425,8 +436,11 @@ class E2N2:
         atoms = self.atoms[0]
         coord = traj.coord
         x = [np.concatenate((atoms.reshape((-1, 1)), coord), axis=-1).tolist()]
+        charges = traj.qm2_charge
+        cell = traj.cell
+        pbc = traj.pbc
 
-        results = self.model.predict(x)
+        results = self.model.predict(x, charges, cell, pbc)
         if self.model_register['energy_grad']:
             pred = results['energy_grad']
             energy = np.mean([pred[0][0], pred[1][0]], axis=0) / self.f_e
@@ -469,10 +483,10 @@ class E2N2:
 
         return energy, gradient, nac, soc, err_e, err_g, err_n, err_s
 
-    def _predict(self, x):
+    def _predict(self, x, charges, cell, pbc):
         ## run esnnp for model testing
         batch = len(x)
-        results = self.model.predict(x)
+        results = self.model.predict(x, charges, cell, pbc)
 
         if self.model_register['energy_grad']:
             pred = results['energy_grad']
@@ -544,7 +558,7 @@ class E2N2:
 
         if self.jobtype == 'prediction' or self.jobtype == 'predict':
             xyz = np.concatenate((self.pred_atoms.reshape((-1, self.natom, 1)), self.pred_geos), axis=-1).tolist()
-            self._predict(xyz)
+            self._predict(xyz, self.pred_charges, self.pred_cell, self.pred_pbc)
         else:
             if self.runtype == 'qm_high':
                 energy, gradient, nac, soc, err_energy, err_grad, err_nac, err_soc = self._high(traj)

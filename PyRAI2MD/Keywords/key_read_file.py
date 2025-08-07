@@ -16,6 +16,7 @@ class KeyReadFile:
     def __init__(self):
         self.keywords = {
             'natom': 0,
+            'ncharge': 0,
             'file': None,
         }
 
@@ -27,6 +28,7 @@ class KeyReadFile:
         keywords = self.keywords.copy()
         keyfunc = {
             'natom': ReadVal('i'),
+            'ncharge': ReadVal('i'),
             'file': ReadVal('s'),
         }
 
@@ -47,10 +49,12 @@ class KeyReadFile:
   &orca
 -------------------------------------------------------
   Number of atoms:          %-10s
+  Number of charges:        %-10s
   List file                 %-10s
 -------------------------------------------------------\
         """ % (
             keywords['natom'],
+            keywords['ncharge'],
             keywords['file'],
         )
 

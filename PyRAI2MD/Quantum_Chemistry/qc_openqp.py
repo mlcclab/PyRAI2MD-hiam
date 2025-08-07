@@ -413,9 +413,9 @@ openqp ${OPENQP_PROJECT}.inp --nompi
         coord, energy, gradient, nac, soc = self._read_data(nxyz)
 
         ## project force and coupling
-        jacob = traj.Hcap_jacob
-        gradient = np.array([np.dot(x, jacob) for x in gradient])
-        nac = np.array([np.dot(x, jacob) for x in nac])
+        # jacob = traj.Hcap_jacob
+        # gradient = np.array([np.dot(x, jacob) for x in gradient])
+        # nac = np.array([np.dot(x, jacob) for x in nac])
 
         return energy, gradient, nac, soc
 
@@ -497,5 +497,7 @@ openqp ${OPENQP_PROJECT}.inp --nompi
     def read_data(self, natom):
         ## function to read the logfile
         coord, energy, gradient, nac, soc = self._read_data_io(natom)
-
-        return coord, np.array(energy), np.array(gradient), np.array(nac), np.array(soc)
+        charge = np.zeros(0)
+        cell = np.zeros(0)
+        pbc = np.zeros(0)
+        return coord, charge, cell, pbc, np.array(energy), np.array(gradient), np.array(nac), np.array(soc)

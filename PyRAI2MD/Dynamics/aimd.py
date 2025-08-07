@@ -22,6 +22,8 @@ from PyRAI2MD.Utils.timing import how_long
 from PyRAI2MD.Utils.coordinates import print_coord
 from PyRAI2MD.Utils.coordinates import print_charge
 from PyRAI2MD.Utils.coordinates import print_matrix
+from PyRAI2MD.Utils.coordinates import print_cell
+from PyRAI2MD.Utils.coordinates import print_pbc
 from PyRAI2MD.Molecule.constraint import Constraint
 from PyRAI2MD.Molecule.constraint import GeomTracker
 
@@ -202,6 +204,9 @@ class AIMD:
         ## update current kinetic energies, coordinates, and gradient
         self.traj = verlet_i(self.traj)
 
+        ## check pbc
+        self.traj.apply_pbc()
+
         if self.timing == 1:
             print('verlet', time.time())
 
@@ -309,6 +314,9 @@ class AIMD:
   Highlevel atoms:  %s
   Midlevel atoms:   %s
   Lowlevel atoms:   %s
+  
+  Lattice vector:   %s
+  Periodic X/Y/Z:   %s
 
 """ % (
             self.version,
@@ -321,7 +329,9 @@ class AIMD:
             self.traj.nlink,
             self.traj.nhigh,
             self.traj.nmid,
-            self.traj.nlow
+            self.traj.nlow,
+            print_cell(self.traj.cell),
+            print_pbc(self.traj.pbc),
         )
 
         return headline
@@ -433,7 +443,7 @@ class AIMD:
             '  Iter: %8d  Ekin = %28.16f au T = %8.2f K dt = %10d CI: %3d\n  Root chosen for geometry opt %3d\n' % (
                 self.traj.itr,
                 self.traj.kinetic,
-                self.traj.temp,
+                self.traj.kinetic * 210516.7601373366 / self.traj.natom_free,
                 self.traj.size,
                 self.traj.nstate,
                 self.traj.last_state

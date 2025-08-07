@@ -50,7 +50,7 @@ def print_logo(version):
                      Adaptive sampling
                      Grid search
                      Multilayer ONIOM (QM:QM' and QM:QM':MM)
-                     Periodic boundary condition (coming soon)
+                     Periodic boundary condition
                      Wall potential
                      QC/ML hybrid NAMD
                      Excited-State Neural Network Potentials (ESNNP)

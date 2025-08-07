@@ -27,6 +27,9 @@ class Data:
        	    nsoc             int    	 number of spin-orbit couplings
        	    info             dict        data size info dict
             xyz              ndarray     coordinates array
+            charges          ndarray     embedding charges
+            cell             ndarray     lattice vectors
+            pbc              ndarray     periodic boundary condition
             energy           ndarray     energy array
             grad             ndarray     gradient array
             nac              ndarray     nonadiabatic coupling array
@@ -36,6 +39,9 @@ class Data:
             pred_xyz         ndarray     prediction set coordinates array
             pred_atoms       list        prediction set atom list
             pred_geos        ndarray     prediction set coordinates
+            pred_charges     ndarray     prediction set embedding charges
+            pred_cell        ndarray     prediction set lattice vectors
+            pred_pbc         ndarray     prediction set periodic boundary condition
             pred_energy      ndarray     prediction set target energy
             pred_grad        ndarray     prediction set target grad
             pred_nac         ndarray     prediction set target nac
@@ -63,6 +69,9 @@ class Data:
         self.nsoc = 0
         self.info = {}
         self.xyz = np.zeros(0)
+        self.charges = np.zeros(0)
+        self.cell = np.zeros(0)
+        self.pbc = np.zeros(0)
         self.energy = np.zeros(0)
         self.grad = np.zeros(0)
         self.nac = np.zeros(0)
@@ -72,6 +81,9 @@ class Data:
         self.pred_xyz = np.zeros(0)
         self.pred_atoms = np.zeros(0)
         self.pred_geos = np.zeros(0)
+        self.pred_charges = np.zeros(0)
+        self.pred_cell = np.zeros(0)
+        self.pred_pbc = np.zeros(0)
         self.pred_energy = np.zeros(0)
         self.pred_grad = np.zeros(0)
         self.pred_nac = np.zeros(0)
@@ -126,6 +138,22 @@ class Data:
             self.grad = np.array(data['grad'])
             self.nac = np.array(data['nac'])
             self.soc = np.array(data['soc'])
+
+            try:
+                self.charges = np.array(data['charges'])
+            except KeyError:
+                pass
+
+            try:
+                self.cell = np.array(data['cell'])
+            except KeyError:
+                pass
+
+            try:
+                self.pbc = np.array(data['pbc'])
+            except KeyError:
+                pass
+
         else:
             sys.exit('\n  FileTypeError\n  PyRAI2MD: cannot recognize training data format %s' % file)
 
@@ -160,6 +188,21 @@ class Data:
             self.pred_nac = np.array(data['nac'])
             self.pred_soc = np.array(data['soc'])
 
+            try:
+                self.charges = np.array(data['charges'])
+            except KeyError:
+                pass
+
+            try:
+                self.cell = np.array(data['cell'])
+            except KeyError:
+                pass
+
+            try:
+                self.pbc = np.array(data['pbc'])
+            except KeyError:
+                pass
+
         else:
             sys.exit('\n  FileTypeError\n  PyRAI2MD: cannot recognize prediction data format %s' % file)
 
@@ -188,6 +231,9 @@ class Data:
             'nnac': self.nnac,
             'nsoc': self.nsoc,
             'xyz': self.xyz.tolist(),
+            'charges': self.charges.tolist(),
+            'cell': sefl.cell.tolist(),
+            'pbc': self.pbc.tolist(),
             'energy': self.energy.tolist(),
             'grad': self.grad.tolist(),
             'nac': self.nac.tolist(),
@@ -200,7 +246,7 @@ class Data:
         return self
 
     def append(self, newdata):
-        new_xyz, new_energy, new_grad, new_nac, new_soc = newdata
+        new_xyz, new_charges, new_cell, new_pbc, new_energy, new_grad, new_nac, new_soc = newdata
         self.xyz = np.concatenate((self.xyz, new_xyz))
         self.energy = np.concatenate((self.energy, new_energy))
         self.grad = np.concatenate((self.grad, new_grad))
@@ -208,6 +254,9 @@ class Data:
         self.soc = np.concatenate((self.soc, new_soc))
         self.atoms = np.array(self.xyz[:, :, 0]).astype(str).tolist()
         self.geos = np.array(self.xyz[:, :, 1: 4]).astype(float)
+        self.charges = np.concatenate((self.charges, new_charges))
+        self.cell = np.concatenate((self.cell, new_cell))
+        self.pbc = np.concatenate((self.pbc, new_pbc))
 
         return self
 

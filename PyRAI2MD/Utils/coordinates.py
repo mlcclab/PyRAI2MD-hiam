@@ -43,6 +43,16 @@ def openqp_coord(xyz):
 
     return coord
 
+def pmd_charge(xyz):
+    charges = []
+    for line in xyz:
+        _, q, x, y, z = line.split()[0:5]
+        charges.append([q, x, y, z])
+
+    charges = np.array(charges).astype(float)
+
+    return charges
+
 def openqp_coord2list(atoms, xyz):
     ## This function convert openqp coordinates to list
     xyz = xyz.reshape((len(atoms), 3)) * 0.52917721090299996
@@ -185,6 +195,26 @@ def read_initcond(mol):
 
     return atoms, coord, velo
 
+def print_turbocoord(xyz, cell, pbc):
+    ## This function convert a numpy array of coordinates to a formatted string
+
+    coord = '$coord\n'
+    for line in xyz:
+        e, x, y, z = line
+        coord += '%24.16f%24.16f%24.16f %-5s\n' % (
+            float(x) / 0.529177249, float(y) / 0.529177249, float(z) / 0.529177249, e
+        )
+
+    if len(cell) > 0:
+        coord += '$periodic %s\n$lattice angstrom\n' % (np.sum(pbc))
+        for line in cell[np.where(pbc != 0)]:
+            x, y, z = line
+            coord += '%24.16f%24.16f%24.16f\n' % (x, y, z)
+
+    coord += '$end\n'
+
+    return coord
+
 def print_coord(xyz):
     ## This function convert a numpy array of coordinates to a formatted string
 
@@ -223,6 +253,27 @@ def print_matrix(mat):
         matrix += ' '.join(['%24.16f' % x for x in row]) + '\n'
 
     return matrix
+
+def print_cell(cell):
+    ## This function convert a numpy array to a formatted string
+    if len(cell) == 0:
+        return 'None'
+
+    a, b, c = cell
+    out = '\n  %16.8f%16.8f%16.8f\n  %16.8f%16.8f%16.8f\n  %16.8f%16.8f%16.8f\n' % (
+        a[0], a[1], a[2], b[0], b[1], b[2], c[0], c[1], c[2]
+    )
+
+    return out
+
+def print_pbc(pbc):
+    ## This function convert a numpy array to a formatted string
+    if len(pbc) == 0:
+        return 'None'
+
+    out = '%s %s %s' % (pbc[0], pbc[1], pbc[2])
+
+    return out
 
 def mark_atom(xyz, marks):
     ## This function marks atoms for different basis set specification of Molcas

@@ -10,6 +10,7 @@
 import copy
 import numpy as np
 from PyRAI2MD.Utils.coordinates import orca_coord
+from PyRAI2MD.Utils.coordinates import pmd_charge
 from PyRAI2MD.Utils.coordinates import string2float
 
 class QMQM2:
@@ -210,13 +211,14 @@ class QMQM2:
 
         return traj
 
-    def read_data(self, natom):
+    def read_data(self, natom, ncharge=0):
         ## function to read the PyRAI2MD logfile
 
         with open('%s/%s.log' % (self.workdir, self.project), 'r') as out:
             log = out.read().splitlines()
 
         coord = []
+        charge = []
         energy = []
         gradient = []
         nac = []
@@ -224,6 +226,9 @@ class QMQM2:
         for i, line in enumerate(log):
             if '  &coordinates in Angstrom' in line:
                 coord = orca_coord(log[i + 2: i + 2 + natom])
+
+            if '&external charges' in line:
+                charge = pmd_charge(log[i + 2: i + 2 + ncharge])
 
             if '  Energy state ' in line:
                 e = float(line.split()[-1])
@@ -248,4 +253,8 @@ class QMQM2:
         nac = np.array(nac)
         soc = np.array(soc)
 
-        return coord, energy, gradient, nac, soc
+        # periodic boundary condition is excluded with charge embedding
+        cell = np.zeros(0)
+        pbc = np.zeros(0)
+
+        return coord, charge, cell, pbc, energy, gradient, nac, soc

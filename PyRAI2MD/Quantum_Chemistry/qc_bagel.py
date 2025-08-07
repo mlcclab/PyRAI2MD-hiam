@@ -305,9 +305,9 @@ cd $BAGEL_WORKDIR
         coord, energy, gradient, nac, soc = self._read_data(nxyz)
 
         ## project force and coupling
-        jacob = traj.Hcap_jacob
-        gradient = np.array([np.dot(x, jacob) for x in gradient])
-        nac = np.array([np.dot(x, jacob) for x in nac])
+        # jacob = traj.Hcap_jacob
+        # gradient = np.array([np.dot(x, jacob) for x in gradient])
+        # nac = np.array([np.dot(x, jacob) for x in nac])
 
         return energy, gradient, nac
 
@@ -385,9 +385,11 @@ cd $BAGEL_WORKDIR
 
         return self
 
-    def read_data(self, natom):
+    def read_data(self, natom, ncharge):
         ## function to read the logfile
 
         coord, energy, gradient, nac, soc = self._read_data(natom)
-
-        return coord, energy, gradient, nac, soc
+        charge = np.zeros(0)
+        cell = np.zeros(0)
+        pbc = np.zeros(0)
+        return coord, charge, cell, pbc, energy, gradient, nac, soc

@@ -26,7 +26,7 @@ def nose_hoover(traj):
 
     """
 
-    natom = traj.natom
+    natom = traj.natom_free
     kinetic = traj.kinetic
     temp = traj.temp
     size = traj.size

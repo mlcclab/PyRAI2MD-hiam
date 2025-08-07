@@ -115,7 +115,8 @@ class Trajectory(Molecule):
 
     __slots__ = ['gl_seed', 'initcond', 'excess', 'scale', 'target', 'graddesc', 'reset', 'resetstep', 'record_region',
                  'ninitcond', 'method', 'format', 'temp', 'step', 'size', 'root', 'attr', 'verbose', 'phasecheck',
-                 'popreset', 'sfhp', 'gap', 'gapsoc', 'substep', 'integrate', 'deco', 'adjust', 'reflect', 'maxh', 'delt',
+                 'popreset', 'sfhp', 'gap', 'gapsoc', 'substep', 'integrate', 'deco', 'adjust', 'reflect', 'maxh',
+                 'delt',
                  'last_state', 'state', 'last_a', 'last_h', 'last_d', 'a', 'h', 'd', 'dosoc', 'last_nac', 'last_soc',
                  'coord1', 'coord2', 'kinetic1', 'kinetic2', 'energy1', 'energy2', 'grad1', 'grad2', 'activestate',
                  'thermo', 'thermodelay', 'vs', 'itr', 'itr_x', 'hoped', 'history', 'length', 'shinfo', 'nactype',
