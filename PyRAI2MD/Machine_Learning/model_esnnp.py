@@ -384,9 +384,9 @@ class E2N2:
         atoms = self.atoms[0]
         coord = traj.qm_coord
         x = [np.concatenate((atoms.reshape((-1, 1)), coord), axis=-1).tolist()]
-        charges = traj.qm2_charge
-        cell = traj.cell
-        pbc = traj.pbc
+        charges = [traj.qm2_charge]
+        cell = [traj.cell]
+        pbc = [traj.pbc]
 
         results = self.model.predict(x, charges, cell, pbc)
         if self.model_register['energy_grad']:
@@ -436,9 +436,9 @@ class E2N2:
         atoms = self.atoms[0]
         coord = traj.coord
         x = [np.concatenate((atoms.reshape((-1, 1)), coord), axis=-1).tolist()]
-        charges = traj.qm2_charge
-        cell = traj.cell
-        pbc = traj.pbc
+        charges = [traj.qm2_charge]
+        cell = [traj.cell]
+        pbc = [traj.pbc]
 
         results = self.model.predict(x, charges, cell, pbc)
         if self.model_register['energy_grad']:
