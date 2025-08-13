@@ -140,7 +140,7 @@ class Data:
             self.soc = np.array(data['soc'])
 
             try:
-                self.charges = np.array(data['charges'])
+                self.charges = np.array(data['charge'])
             except KeyError:
                 pass
 
@@ -189,7 +189,7 @@ class Data:
             self.pred_soc = np.array(data['soc'])
 
             try:
-                self.charges = np.array(data['charges'])
+                self.charges = np.array(data['charge'])
             except KeyError:
                 pass
 
@@ -231,7 +231,7 @@ class Data:
             'nnac': self.nnac,
             'nsoc': self.nsoc,
             'xyz': self.xyz.tolist(),
-            'charges': self.charges.tolist(),
+            'charge': self.charges.tolist(),
             'cell': sefl.cell.tolist(),
             'pbc': self.pbc.tolist(),
             'energy': self.energy.tolist(),
