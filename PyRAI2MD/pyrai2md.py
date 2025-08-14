@@ -15,6 +15,12 @@ import numpy as np
 if 'TF_CPP_MIN_LOG_LEVEL' not in os.environ:
     os.environ['TF_CPP_MIN_LOG_LEVEL'] = '3'
 
+if 'NOMPI4PY' not in os.environ:
+    try:
+        from mpi4py import MPI
+    except ModuleNotFoundError:
+        pass
+
 from PyRAI2MD.Utils.extension import verify_ext
 from PyRAI2MD.variables import read_input
 from PyRAI2MD.methods import QM
