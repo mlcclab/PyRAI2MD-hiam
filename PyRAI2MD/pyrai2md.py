@@ -18,6 +18,7 @@ if 'TF_CPP_MIN_LOG_LEVEL' not in os.environ:
 if 'NOMPI4PY' not in os.environ:
     try:
         from mpi4py import MPI
+        os.environ['MPI4PY'] = ''
     except ModuleNotFoundError:
         pass
 

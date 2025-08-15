@@ -57,19 +57,14 @@ class Orca:
     """
 
     def __init__(self, keywords=None, job_id=None, runtype='qm_high_mid_low'):
-        try:
-            _ = MPI
-
+        if 'MPI4PY' in os.environ:
             sys.exit("""
               PyRAI2MD imported mpi4py, which has a conflict with the ORCA mpi module!
               Please add the following environment variable in your script, so PyRAI2MD will not import mpi4py 
 
-                 export NOMPI4PY=whatever_ever_value_is_fine
+                 export NOMPI4PY=whatever_value_is_fine
 
             """)
-
-        except NameError:
-            pass
 
         self.runtype = runtype
         self.nstate = 0
