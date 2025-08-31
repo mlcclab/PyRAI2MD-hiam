@@ -201,6 +201,10 @@ cd $XTB_WORKDIR
         with open(xyzfile, 'w') as out:
             out.write(xyz)
 
+        if cell is None:
+            cell = []
+            pbc = []
+
         if len(cell) > 0:
             xyz = '%s' % (print_turbocoord(x, cell, pbc))
             xyzfile = '%s/%s.coord' % (self.workdir, self.project)
