@@ -58,6 +58,7 @@ class Xtb:
         self.mem = variables['mem']
         self.gfnver = variables['gfnver']
         self.gfnff_pbc = variables['gfnff_pbc']
+        self.gfnff_topo = variables['gfnff_topo']
         self.use_hpc = variables['use_hpc']
         self.charges = np.zeros(0)
         embedding = keywords['molecule']['embedding']
@@ -159,7 +160,9 @@ cd $XTB_WORKDIR
             os.makedirs(self.workdir)
 
         ## clean calculation folder
-        os.system("rm %s/gfnff_topo > /dev/null 2>&1" % self.workdir)
+        if self.gfnff_topo != 1:
+            os.system("rm %s/gfnff_topo > /dev/null 2>&1" % self.workdir)
+
         os.system("rm %s/*.engrad > /dev/null 2>&1" % self.workdir)
         os.system("rm %s/*.out > /dev/null 2>&1" % self.workdir)
 
