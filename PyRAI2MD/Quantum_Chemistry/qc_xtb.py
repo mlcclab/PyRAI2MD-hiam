@@ -56,6 +56,7 @@ class Xtb:
         self.xtb = variables['xtb']
         self.nproc = variables['xtb_nproc']
         self.mem = variables['mem']
+        self.total_charges = variables['xtb_charges']
         self.gfnver = variables['gfnver']
         self.gfnff_pbc = variables['gfnff_pbc']
         self.gfnff_topo = variables['gfnff_topo']
@@ -124,6 +125,8 @@ cd $XTB_WORKDIR
             self.gfnver = -1
             addon = '--gfnff'
 
+        if self.total_charges != 0:
+            addon += ' --chrg %s ' % self.total_charges
         ## check keywords
         if embedding == 1 and len(cell) > 0:
             sys.exit('\n  KeywordError\n  xTB: charge embedding and pbc cannot work together!')

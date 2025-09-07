@@ -19,6 +19,7 @@ class KeyXtb:
             'xtb_nproc': 1,
             'xtb_project': None,
             'xtb_workdir': os.getcwd(),
+            'xtb_charges': 0,
             'gfnver': -2,
             'gfnff_pbc': 0,
             'gfnff_topo': 1,
@@ -39,6 +40,7 @@ class KeyXtb:
             'xtb_nproc': ReadVal('s'),
             'xtb_project': ReadVal('s'),
             'xtb_workdir': ReadVal('s'),
+            'xtb_charges': ReadVal('i'),
             'gfnver': ReadVal('i'),
             'gfnff_pbc': ReadVal('i'),
             'gfnff_topo': ReadVal('i'),
@@ -68,6 +70,7 @@ class KeyXtb:
   XTB_project:              %-10s
   XTB_workdir:              %-10s
   XTB version:              %-10s
+  XTB charges:              %-10s
   GFN-FF PBC:               %-10s
   GFN-FF topology file:     %-10s
   Omp_num_threads:          %-10s
@@ -79,6 +82,7 @@ class KeyXtb:
             keywords['xtb'],
             keywords['xtb_project'],
             keywords['xtb_workdir'],
+            keywords['xtb_charges'],
             keywords['gfnver'],
             keywords['gfnff_pbc'],
             keywords['gfnff_topo'],
