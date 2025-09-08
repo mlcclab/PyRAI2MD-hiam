@@ -1,0 +1,143 @@
+
+
+-------------------------------------------------------
+                       PyRAI2MD
+               _____  ____  ____  _____   
+                 |    |___  |___`   |
+                 |    |___  .___|   |
+-------------------------------------------------------
+
+
+Tests first_run            Skipped
+
+
+Tests bagel                Skipped
+
+
+Tests molcas               Skipped
+
+
+Tests molcas_tinker        Skipped
+
+
+Tests orca                 Skipped
+
+
+Tests xtb                  Skipped
+
+
+Tests qmqm2                Skipped
+
+
+Tests fssh                 Skipped
+
+
+Tests gsh                  Skipped
+
+
+Tests neural_network       Skipped
+
+
+Tests pynnsmd              Skipped
+
+
+Tests grid_search          Skipped
+
+
+Tests aimd                 Skipped
+
+
+Tests mixaimd              Skipped
+
+==Tests==> adaptive_sampling    Start:  2022-09-29 15:29:20
+
+ *---------------------------------------------------*
+ |                                                   |
+ |         Adaptive Sampling Test Calculation        |
+ |                                                   |
+ *---------------------------------------------------*
+
+ Check files and settings:
+-------------------------------------------------------
+ energy     ./adaptive_sampling/data/atod.inp
+ orbital    ./adaptive_sampling/data/atod.StrOrb
+ freq       ./adaptive_sampling/data/atod.freq.molden
+ data       ./adaptive_sampling/data/atod.json
+ input      ./adaptive_sampling/data/input
+ model      ./adaptive_sampling/data/NN-atod
+ MOLCAS     /share/apps/molcas
+
+ Copy files:
+ energy     --> /home/lijb/PyRAI2MD/test/results/adaptive_sampling/atod.inp (renamed to atod.molcas)
+ orbital    --> /home/lijb/PyRAI2MD/test/results/adaptive_sampling/atod.StrOrb
+ freq       --> /home/lijb/PyRAI2MD/test/results/adaptive_sampling/atod.freq.molden
+ data       --> /home/lijb/PyRAI2MD/test/results/adaptive_sampling/atod.json
+ model      --> /home/lijb/PyRAI2MD/test/results/adaptive_sampling/NN-atod
+ input      --> /home/lijb/PyRAI2MD/test/results/adaptive_sampling/input
+
+ Run Adaptive sampling:
+
+-------------------------------------------------------
+                Adaptive Sampling OUTPUT
+-------------------------------------------------------
+
+  Number of iterations:  2
+
+
+  &adaptive sampling progress
+  Traj(ID:      1 Step:        1 State:  2) =>Geom(Sampled:   1 Collect:   1 Discard:   0 Refine: 0) =>MaxStd(Energy:  33.1804 Gradient:   0.0144 NAC:   0.0543 SOC:   0.0000) =>Thrshd(E:   0.0100 ===   0.0100 G:   0.0100 ===   0.0100 N:   0.1500 ===   0.1500 S:   1.0000 ===   1.0000) 
+  Traj(ID:      2 Step:        1 State:  2) =>Geom(Sampled:   1 Collect:   1 Discard:   0 Refine: 0) =>MaxStd(Energy:  55.5526 Gradient:   0.0147 NAC:   0.0557 SOC:   0.0000) =>Thrshd(E:   0.0100 ===   0.0100 G:   0.0100 ===   0.0100 N:   0.1500 ===   0.1500 S:   1.0000 ===   1.0000) 
+
+
+  &adaptive sampling iter     1
+-------------------------------------------------------
+  Number of trajectories:     2         
+  Average length:             1.0       
+  Ground state:               0         
+  Completed:                  0         
+  Sampled trajectories:       2         
+  Sampled geometries          2         
+  Collected:                  2         
+  Discarded:                  0         
+  Refinement:                 0         
+
+  Metrics                     MaxStd  Threshold    Pass
+  Energy:                    55.5526     0.0100   False
+  Gradient:                   0.0147     0.0100   False
+  Non-adiabatic coupling:     0.0557     0.1500    True
+  Spin-orbit coupling:        0.0000     1.0000    True
+-------------------------------------------------------
+
+  &adaptive sampling progress
+  Traj(ID:      1 Step:        1 State:  2) =>Geom(Sampled:   1 Collect:   1 Discard:   0 Refine: 0) =>MaxStd(Energy:  48.1351 Gradient:   0.1250 NAC:   0.5192 SOC:   0.0000) =>Thrshd(E:   0.0100 ===   0.0100 G:   0.0100 ===   0.0100 N:   0.1500 ===   0.1500 S:   1.0000 ===   1.0000) 
+  Traj(ID:      2 Step:        1 State:  2) =>Geom(Sampled:   1 Collect:   1 Discard:   0 Refine: 0) =>MaxStd(Energy:  64.0990 Gradient:   0.1497 NAC:   0.6118 SOC:   0.0000) =>Thrshd(E:   0.0100 ===   0.0100 G:   0.0100 ===   0.0100 N:   0.1500 ===   0.1500 S:   1.0000 ===   1.0000) 
+
+
+  &adaptive sampling iter     2
+-------------------------------------------------------
+  Number of trajectories:     2         
+  Average length:             1.0       
+  Ground state:               0         
+  Completed:                  0         
+  Sampled trajectories:       2         
+  Sampled geometries          2         
+  Collected:                  2         
+  Discarded:                  0         
+  Refinement:                 0         
+
+  Metrics                     MaxStd  Threshold    Pass
+  Energy:                    64.0990     0.0100   False
+  Gradient:                   0.1497     0.0100   False
+  Non-adiabatic coupling:     0.6118     0.1500   False
+  Spin-orbit coupling:        0.0000     1.0000    True
+-------------------------------------------------------
+Adaptive Sampling End:  2022-09-29 15:38:17 Total:     0 days     0 hours     8 minutes    54 seconds
+ adaptive sampling done
+
+-------------------------------------------------------
+==Tests==> adaptive_sampling    End:    2022-09-29 15:38:18
+==Tests==> adaptive_sampling   Used:        0 days     0 hours     8 minutes    57 seconds
+
+
+Tests md                   Skipped
+
