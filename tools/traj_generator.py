@@ -1801,7 +1801,7 @@ def gen_lmp(cpus, ensemble, inputs, slpt, sltm, slmm, slnd, slcr, sljb, slin, to
                 in_xyz, in_velo, tolmp, shell
             ])
 
-        batch = oqp_batch(inputs, j, start, end, in_path, slcr, sljb, sltm, slpt, slmm, tolmp, shell)
+        batch = lmp_batch(inputs, j, start, end, in_path, slcr, sljb, sltm, slpt, slmm, tolmp, shell)
 
         with open('./runset-%d.sh' % (j + 1), 'w') as run:
             run.write(batch)
@@ -1850,7 +1850,7 @@ do
   export INPUT="%s-$i"
   export WORKDIR="%s/%s-$i"
   cd $WORKDIR
-  mpirun -np $SLURM_NTASKS $LAMMPS/bin/lmp $INPUT.inp > $INPUT.log &
+  mpirun -np $SLURM_NTASKS $LAMMPS/bin/lmp -in $INPUT.in > $INPUT.log &
   sleep 5
 done
 wait
@@ -1893,7 +1893,7 @@ export LAMMPS=%s
 
 
 cd $WORKDIR
-mpirun -np $SLURM_NTASKS $LAMMPS/bin/lmp $INPUT.inp > $INPUT.log
+mpirun -np $SLURM_NTASKS $LAMMPS/bin/lmp -in $INPUT.in > $INPUT.log
 
 """ % (oqppal, inputname, int(slmm * oqppal * 1.0), shell, inputname, inputpath, tolmp)
     in_temp = in_temp.splitlines()
@@ -1901,10 +1901,8 @@ mpirun -np $SLURM_NTASKS $LAMMPS/bin/lmp $INPUT.inp > $INPUT.log
         inputname, inputname, inputname
     )
     for line in in_temp:
-        if 'include ' not in line or 'read_data ' not in line:
-            new_in_temp += '%s' % line
-
-    new_in_temp = '\n'.join(new_in_temp) + '\n'
+        if 'include ' not in line and 'read_data ' not in line:
+            new_in_temp += '%s\n' % line
 
     data = in_data.splitlines()
     natom = 0
@@ -1915,7 +1913,7 @@ mpirun -np $SLURM_NTASKS $LAMMPS/bin/lmp $INPUT.inp > $INPUT.log
         if 'Atoms' in line:
             coord = data[n + 2: n + 2 + natom]
             temp = np.array([x.split() for x in coord])
-            new = np.concatenate((temp[:, 1:4], in_xyz), axis=0).tolist()
+            new = np.concatenate((temp[:, 0:4], in_xyz), axis=1).tolist()
             new_data = copy.deepcopy(data)
             new_data[n + 2: n + 2 + natom] = [' '.join(x) for x in new]
             break
