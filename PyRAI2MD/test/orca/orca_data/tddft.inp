@@ -1,6 +1,0 @@
-!pbe0 cc-pvdz
-%pal nprocs 1 end
-%tddft nroots 5
-       irootlist 0, 1, 2
-end
-* xyz 0 1
