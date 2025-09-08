@@ -875,51 +875,83 @@ def post_process_env(key_dict):
  Tips for post processing the equilibrated solvent box
     the following keyword must be set for creating solvent environment
 
-    title         name of calculation     
+    title         name of calculation
+    cpus          1   # number of CPUs for rdf analysis
+    file          a   # list of lammps trajectory file to read, optional 
     c_atom        0   # define the number of atoms in the center molecule
     v_atom        0   # define the number of atoms in the environment molecule
     radius        20  # cutoff radius to build a spherical solvent model from box
 
           ''')
     title = key_dict['title']
+    file = key_dict['file']
+    ncpus = key_dict['cpus']
     c_atom = key_dict['c_atom']
     v_atom = key_dict['v_atom']
     radius = key_dict['radius']
 
-    print(' reading environment file env.cond')
-    if not os.path.exists('env.cond'):
+    if os.path.exists(file):
+        read_list = True
+        print(' reading environment file %s' % file)
+    else:
+        read_list = False
+        print(' reading environment file env.cond')
+
+    if not os.path.exists('env.cond') and not read_list:
         exit('\n FileNotFoundError: cannot find env.cond file')
 
-    atom, cond, box = read_lmp_cond()
+    cond_list = []
+    atom = None
+    box = None
+    if read_list:
+        with open(file, 'r') as infile:
+            file = infile.read().splitlines()
 
+        for f in file:
+            atom, cond, box = read_lmp_cond(f)
+            cond_list.append(cond)
+    else:
+        atom, cond, box = read_lmp_cond('env.cond')
+        cond_list = [cond]
+
+    ntraj = len(cond_list)
+    print(' number of trajectories %s' % ntraj)
     print(' number of atoms in the center molecule %s' % c_atom)
     print(' number of atoms in the environment molecule %s' % v_atom)
     print(' checking connectivity in the box of %8.2f %8.2f %8.2f Angstrom' % (box[0], box[1], box[2]))
-    new_cond, dist_cond = reorder_mol(atom, c_atom, v_atom, [cond], np.arange(len(atom)), 1, box)
+    cond_list, dist_cond = reorder_mol(atom, c_atom, v_atom, cond_list, np.arange(len(atom)), 1, box)
 
     print(' save molecule distances > reordered_dist.txt')
     print(' save reordered molecules conditions > reordered.init')
     print(' save reordered molecules xyz > reordered.xyz')
-    cond = new_cond[0]
-    dist = dist_cond[0]
-
     print(' apply radial cutoff %8.2f Angstrom' % radius)
-    nv = len(np.where(dist < radius)[0])
-    natom = c_atom + v_atom * nv
-    atom = atom[0: natom]
-    cond = cond[0: natom]
+    nv_list = []
+    dist_list = []
+    for dist in dist_cond:
+        nv = len(np.where(dist < radius)[0])
+        nv_list.append(nv)
+        dist_list.append(dist[nv - 1])
+    mv = np.amin(nv_list)
+    natom = c_atom + v_atom * mv
 
-    print(' selected solvent molecules %8d' % nv)
-    print(' maximum distance %12.4f Angstrom' % dist[nv - 1])
-    print(' writing post processed environment > env.init')
-    print(' writing post processed environment > env.xyz')
-    output = write_init(0, atom, cond)
-    with open('env.init', 'w') as out:
-        out.write(output)
+    print(' number of solvent found %d - %d' % (mv, np.amax(nv_list)))
+    print(' selected solvent molecules %8d' % mv)
+    print(' maximum distance range %12.4f - %12.4f Angstrom' % (np.amin(dist_list), np.amax(dist_list)))
+    print(' writing post processed environment > post_env.init')
+    print(' writing post processed environment > post_env.xyz')
+    outcond = ''
+    outxyz = ''
+    for n, cond in enumerate(cond_list):
+        atom_sel = atom[0: natom]
+        cond_sel = cond[0: natom]
+        outcond += write_init(n + 1, atom_sel, cond_sel)
+        outxyz += write_xyz(n + 1, atom_sel, cond_sel)
 
-    output = write_xyz(0, atom, cond)
-    with open('env.xyz', 'w') as out:
-        out.write(output)
+    with open('post_env.init', 'w') as out:
+        out.write(outcond)
+
+    with open('post_env.xyz', 'w') as out:
+        out.write(outxyz)
 
     print(' computing radial distribution')
     print(' rdf center type:    %8s' % 'mass')
@@ -931,20 +963,34 @@ def post_process_env(key_dict):
     rdf_axis = 'xyz'
     maxrad = radius + 5
     interval = 0.5
-    groups = np.array([[1, c_atom], [nv * v_atom, 1]])
+    groups = np.array([[1, c_atom], [mv * v_atom, 1]])
     skip_groups = [1]
-    mass = np.array([Atom(x).get_mass() for x in atom]).reshape((natom, 1))
+    mass = np.array([Atom(x).get_mass() for x in atom[: natom]]).reshape((natom, 1))
     num_mol = np.sum(groups[:, 0])
     group_map, group_idx = gen_group_map(natom, groups, skip_groups)
     group_mass = np.zeros(num_mol)
     np.add.at(group_mass, group_map, mass.reshape(-1))
-    xyz = cond[:, 0: 3]
-    rdf = radial_density(
-        xyz, mass, group_mass, group_map, group_idx, center_rdf, center_type, rdf_axis, maxrad, interval
-    )
+
+    variables_wrapper = [[
+        n, cond[0: natom, 0: 3], mass, group_mass, group_map, group_idx, center_rdf, center_type, rdf_axis, maxrad,
+        interval
+    ] for n, cond in enumerate(cond_list)]
+    n = 0
+    rdf_summary = [[] for _ in cond_list]
+    ncpus = np.amin([ntraj, ncpus])
+    pool = multiprocessing.Pool(processes=ncpus)
+    for val in pool.imap_unordered(radial_density_lite_wrapper, variables_wrapper):
+        n += 1
+        idx, rdf = val
+        rdf_summary[idx] = rdf
+        sys.stdout.write('CPU: %3d computing rdf: %d/%d\r' % (ncpus, n, ntraj))
+    pool.close()
 
     print(' saving rdf data ==> %s.env.rdf' % title)
-    np.savetxt('%s.env.rdf' % title, rdf)
+    print(' saving average rdf ==> %s.menv.rdf' % title)
+
+    np.savetxt('%s.env.rdf' % title, np.array(rdf_summary))
+    np.savetxt('%s.menv.rdf' % title, np.mean(rdf_summary, axis=0))
 
     print(' COMPLETE')
     print('''
@@ -953,8 +999,8 @@ def post_process_env(key_dict):
     to do so, change mode to merge and change env_type to equsol
    ''')
 
-def read_lmp_cond():
-    with open('env.cond', 'r') as infile:
+def read_lmp_cond(f):
+    with open(f, 'r') as infile:
         cond = infile.read().splitlines()
 
     natom = int(cond[3])
@@ -1005,22 +1051,34 @@ def merge_env(key_dict):
         env_file = 'env.init'
         read_func = read_cond
 
-    print(' reading environment file %s' % env_file)
-    print(' merging %s initial condition with environment' % (len(initcond)))
-
     if not os.path.exists(env_file):
         exit('\n FileNotFoundError: cannot find %s file' % env_file)
+
+    print(' reading environment file %s' % env_file)
+    print(' found %s initial condition' % len(initcond))
 
     with open(env_file, 'r') as inxyz:
         geom_e = inxyz.read().splitlines()
 
     env_atom, env = read_func(geom_e)
 
+    print(' found %s environment' % len(env))
+
     if len(initcond) > 0:
+
+        if len(env) == 1:
+            env_idx = [0 for _ in initcond]
+        else:
+            if len(initcond) > len(env):
+                env_idx = [x for x in range(len(env))]
+            else:
+                env_idx = [x for x in range(len(initcond))]
+
+        print(' merging %s initial condition with %s environment' % (len(env_idx), env_idx[-1] + 1))
         print(' align system to the initcond mass center')
-        output = ['' for _ in initcond]
-        diff = [[] for _ in initcond]
-        variables_wrapper = [(n, env_atom, env, cond) for n, cond in enumerate(initcond)]
+        output = ['' for _ in env_idx]
+        diff = [[] for _ in env_idx]
+        variables_wrapper = [(n, env_atom, env[idx], initcond[n]) for n, idx in enumerate(env_idx)]
         cpus = np.amin([cpus, len(initcond)])
         pool = multiprocessing.Pool(processes=cpus)
         n = 0
@@ -1084,8 +1142,14 @@ def read_initcond(key_dict):
 
 def read_cond(cond):
     natom = int(cond[0].split()[2])
-    atom = np.array([x.split()[0] for x in cond[1: 1 + natom]])
-    initcond = np.array([x.split()[1:7] for x in cond[1: 1 + natom]]).astype(float)
+    initcond = []
+    atom = None
+    for n, line in enumerate(cond):
+        if 'Init' in line:
+            coord = np.array([x.split()[0:7] for x in cond[n + 1: n + 1 + natom]])
+            atom = coord[:, 0]
+            xyz = coord[:, 1: 7].astype(float)
+            initcond.append(xyz)
 
     return atom, initcond
 
@@ -1663,7 +1727,7 @@ def compute_rdf(key_dict):
 
 
 def radial_density_wrapper(var):
-    idx, file, mass, group_mass, group_map, group_idx, center_rdf, center_type, rdf_axis, maxrad, interval, snapshots = var
+    idx, file, mass, group_mass, group_map, group_idx, center_rdf, center_type, rdf_ax, maxrad, interv, snapshots = var
 
     filename = file.split('/')[-1]
     with open('%s/%s.md.xyz' % (file, filename), 'r') as infile:
@@ -1679,11 +1743,19 @@ def radial_density_wrapper(var):
                 coord = file[n + 1: n + 1 + natom]
                 xyz = np.array([x.split()[1:4] for x in coord]).astype(float)
                 rdf = radial_density(
-                    xyz, mass, group_mass, group_map, group_idx, center_rdf, center_type, rdf_axis, maxrad, interval
+                    xyz, mass, group_mass, group_map, group_idx, center_rdf, center_type, rdf_ax, maxrad, interv
                 )
                 rdf_all.append(rdf)
 
     return idx, rdf_all
+
+
+def radial_density_lite_wrapper(var):
+    idx, xyz, mass, group_mass, group_map, group_idx, center_rdf, center_type, rdf_axis, maxrad, interval = var
+    rdf = radial_density(
+        xyz, mass, group_mass, group_map, group_idx, center_rdf, center_type, rdf_axis, maxrad, interval
+    )
+    return idx, rdf
 
 
 def radial_density(xyz, mass, group_mass, group_map, group_idx, center_rdf, center_type, rdf_axis, maxrad, interval):
