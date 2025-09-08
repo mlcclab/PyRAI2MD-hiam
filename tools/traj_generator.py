@@ -6,6 +6,7 @@
 ## New version Oct 13 2022 Jingbai Li
 ## Upgrade to multiprocessing Nov 5 2022 Jingbai Li
 ## Support user-defined shell commands Nov 28 Jingbai Li
+## Support openqp and lammps Sep 8 2025 Jingbai Li
 
 import sys
 import os
@@ -13,7 +14,7 @@ import shutil
 import json
 import copy
 import multiprocessing
-
+import numpy as np
 ## import initial condition sampling module
 try:
     from PyRAI2MD.Utils.sampling import sampling
@@ -40,7 +41,7 @@ def main(argv):
       notraj        0
       input         file_name.freq.molden
       seed          -1
-      temp          298.15  
+      temp          298.15
       method        wigner
       partition     normal
       time          4-23:59:59
@@ -53,6 +54,8 @@ def main(argv):
       molcas        /path/to/Molcas
       newton        /path/to/NX-2.2-B08
       bagel         /path/to/Bagel
+      openqp        /path/to/openqp
+      lammps        /path/to/lammps
       lib_blas      /path/to/blas
       lib_lapack    /path/to/lapack
       lib_scalapack /path/to/scalapack
@@ -62,9 +65,9 @@ def main(argv):
       >shell
       additional shell commands ...
       >shell
-      
-    For more information, please see traj-generator-readme.txt 
-    
+
+    For more information, please see traj-generator-readme.txt
+
     """
 
     ## defaults parameters
@@ -83,18 +86,19 @@ def main(argv):
     sljb = 1
     slin = 1
     repeat = 0
-    tomlcs = '/share/apps/molcas-ext'
+    tomlcs = '/public/software/app/molcas'
     tontx = '/share/apps/NX-2.4-B06 '
-    tobgl = '/share/apps/bagel'
-    lbbls = '/share/apps/blas-3.10.0'
-    lblpk = '/share/apps/lapack-3.10.1'
-    lbslp = '/share/apps/scalapack-2.2.0'
-    lbbst = '/share/apps/boost_1_80_0'
-    tomkl = '/share/apps/intel/oneapi'
+    tobgl = '/public/software/app/bagel'
+    lbbls = ''
+    lblpk = ''
+    lbslp = ''
+    lbbst = ''
+    tomkl = ''
     tompi = ''
-    toxtb = '/share/apps/xtb-6.5.1/bin'
-    toorca = '/share/apps/orca_5_0_3_linux_x86-64_openmpi411'
-    tooqp = '/share/apps/openqp/'
+    toxtb = '/public/software/app/xtb-6.7.1'
+    toorca = '/public/software/app/orca_6_0_1_linux_x86-64_shared_openmpi416'
+    tooqp = '/public/software/app/openqp'
+    tolmp = '/public/software/app/lammps'
 
     if len(argv) <= 1:
         exit(usage)
@@ -170,6 +174,8 @@ def main(argv):
             toorca = line.split()[1]
         elif 'openqp' == key:
             tooqp = line.split()[1]
+        elif 'lammps' == key:
+            tolmp = line.split()[1]
 
     if inputs is not None and os.path.exists(inputs):
         print('\n>>> %s' % inputs)
@@ -299,6 +305,24 @@ def main(argv):
                 print(usage)
                 print('!!! OpenQP input not found !!!')
                 exit()
+        elif prog == 'lammps':
+            if not os.path.exists('%s.in' % inputs):
+                print('\n!!! LAMMPS input not found !!!')
+                print(usage)
+                print('!!! LAMMPS input not found !!!')
+            if not os.path.exists('%s.data' % inputs):
+                print('\n!!! LAMMPS data not found !!!')
+                print(usage)
+                print('!!! LAMMPS data not found !!!')
+                exit()
+            if not os.path.exists('%s.in.init' % inputs):
+                print('\n!!! LAMMPS in.init file not found !!!')
+                print(usage)
+                print('!!! LAMMPS in.init file not found !!!')
+            if not os.path.exists('%s.in.settings' % inputs):
+                print('\n!!! LAMMPS in.settings file not found !!!')
+                print(usage)
+                print('!!! LAMMPS in.settings file not found !!!')
         else:
             print('\n!!! Program %s not found !!!' % prog)
             print(usage)
@@ -319,7 +343,7 @@ def main(argv):
     Seed         %10d
     Method       %10s
     Trajectories %10d = %3d Nodes X %3d Jobs
-    Temperature  %10.2f    
+    Temperature  %10.2f
     """ % (iseed, dist, nesmb, slnd, sljb, temp))
 
     elif iformat in skipsample:
@@ -370,6 +394,8 @@ def main(argv):
         gen_orca(cpus, ensemble, inputs, slpt, sltm, slmm, slnd, slcr, sljb, slin, toorca, iformat, shell)
     elif prog == 'openqp':
         gen_oqp(cpus, ensemble, inputs, slpt, sltm, slmm, slnd, slcr, sljb, slin, tooqp, iformat, shell)
+    elif prog == 'lammps':
+        gen_lmp(cpus, ensemble, inputs, slpt, sltm, slmm, slnd, slcr, sljb, slin, tolmp, iformat, shell)
 
 def gen_molcas(cpus, ensemble, inputs, slpt, sltm, slmm, slnd, slcr, sljb, slin, tomlcs, iformat, shell):
     ## This function will group Molcas calculations to individual runset
@@ -1085,6 +1111,11 @@ def Unpack(ensemble, prog):
         for i in ensemble:
             xyz.append([i[0], float(i[1]), float(i[2]), float(i[3])])
             velo.append([float(i[4]), float(i[5]), float(i[6])])
+    elif prog == 'lammps':
+        xyz = []
+        velo = []
+        for i in ensemble:
+            xyz.append([str(i[1]), str(i[2]), str(i[3])])
 
     return xyz, velo
 
@@ -1643,7 +1674,8 @@ def oqp_batch(inputs, j, start, end, in_path, slcr, sljb, sltm, slpt, slmm, tooq
     batch = """#!/bin/sh
 ## script for OpenQP
 #SBATCH --nodes=1
-#SBATCH --ntasks=%d
+#SBATCH --ntasks-per-node=%s
+#SBATCH --cpus-per-task=1
 #SBATCH --time=%s
 #SBATCH --job-name=%s-%d
 #SBATCH --partition=%s
@@ -1651,7 +1683,7 @@ def oqp_batch(inputs, j, start, end, in_path, slcr, sljb, sltm, slpt, slmm, tooq
 #SBATCH --output=%%j.o.slurm
 #SBATCH --error=%%j.e.slurm
 %s
-export OMP_NUM_THREADS=%s
+export OMP_NUM_THREADS=1
 export OPENQP_ROOT=%s
 
 echo $SLURM_JOB_NAME
@@ -1661,13 +1693,13 @@ do
   export INPUT="%s-$i"
   export WORKDIR="%s/%s-$i"
   cd $WORKDIR
-  openqp $INPUT.inp &
+  mpirun -np $SLURM_NTASKS openqp $INPUT.inp &
   sleep 5
 done
 wait
 
 """ % (
-        slcr, sltm, inputs, j + 1, slpt, int(slmm * slcr * 1.0), shell, oqppal, tooqp,
+        slcr, sltm, inputs, j + 1, slpt, int(slmm * slcr * 1.0), shell, tooqp,
         start, end, inputs, in_path, inputs)
 
     return batch
@@ -1691,7 +1723,8 @@ def oqp(var):
     runscript = """#!/bin/sh
 ## backup script for OpenQP
 #SBATCH --nodes=1
-#SBATCH --ntasks=%s
+#SBATCH --ntasks-per-node=%s
+#SBATCH --cpus-per-task=1
 #SBATCH --time=23:50:00
 #SBATCH --job-name=%s
 #SBATCH --partition=normal
@@ -1702,14 +1735,14 @@ def oqp(var):
 export INPUT=%s
 export WORKDIR=%s
 
-export OMP_NUM_THREADS=%s
+export OMP_NUM_THREADS=1
 export OPENQP_ROOT=%s
 
 
 cd $WORKDIR
-openqp $INPUT.inp
+mpirun -np $SLURM_NTASKS openqp $INPUT.inp
 
-""" % (oqppal, inputname, int(slmm * oqppal * 1.0), shell, inputname, inputpath, oqppal, tooqp)
+""" % (oqppal, inputname, int(slmm * oqppal * 1.0), shell, inputname, inputpath, tooqp)
 
     new_in_temp = ''
     for line in in_temp.split():
@@ -1733,6 +1766,176 @@ openqp $INPUT.inp
 
     with open('%s/%s.velocity.xyz' % (inputpath, inputname), 'w') as out:
         out.write(in_velo)
+
+    os.system("chmod 777 %s/%s.sh" % (inputpath, inputname))
+
+
+def gen_lmp(cpus, ensemble, inputs, slpt, sltm, slmm, slnd, slcr, sljb, slin, tolmp, iformat, shell):
+    ## This function will group lammps calculations to individual runset
+    ## this function will call oqp_batch and oqp to prepare files
+
+    in_temp = open('%s.in' % inputs, 'r').read()
+    in_data = open('%s.data' % inputs, 'r').read()
+    in_init = open('%s.in.init' % inputs, 'r').read()
+    in_settings = open('%s.in.settings' % inputs, 'r').read()
+
+    in_path = os.getcwd()
+
+    runall = ''
+    variables_wrapper = []
+    for j in range(slnd):
+        runall += 'sbatch runset-%d.sh\n' % (j + 1)
+        start = slin + j * sljb
+        end = start + sljb - 1
+        for i in range(sljb):
+            if iformat != 'xz':
+                # unpack initial condition to xyz and velocity
+                in_xyz, in_velo = Unpack(ensemble[i + j * sljb], 'lammps')
+            else:
+                in_xyz, in_velo = UnpackXZ(ensemble[i + j * sljb])
+            inputname = '%s-%s' % (inputs, i + start)
+            inputpath = '%s/%s' % (in_path, inputname)
+            # prepare calculations
+            variables_wrapper.append([
+                inputs, inputname, inputpath, slcr, sljb, slmm, in_temp, in_data, in_init, in_settings,
+                in_xyz, in_velo, tolmp, shell
+            ])
+
+        batch = oqp_batch(inputs, j, start, end, in_path, slcr, sljb, sltm, slpt, slmm, tolmp, shell)
+
+        with open('./runset-%d.sh' % (j + 1), 'w') as run:
+            run.write(batch)
+
+    task = len(variables_wrapper)
+    cpus = min([task, cpus])
+    pool = multiprocessing.Pool(processes=cpus)
+    n = 0
+    for _ in pool.imap_unordered(lmp, variables_wrapper):
+        n += 1
+        sys.stdout.write('CPU: %3d generating trajectory: %d/%d\r' % (cpus, n, task))
+    pool.close()
+
+    with open('./runall.sh', 'w') as out:
+        out.write(runall)
+
+    os.system("chmod 777 runall.sh")
+
+    print('\n\n Done\n')
+
+
+def lmp_batch(inputs, j, start, end, in_path, slcr, sljb, sltm, slpt, slmm, tolmp, shell):
+    ## This function will be called by gen_lmp function
+    ## This function generates runset for lammps calculation
+    oqppal = int(slcr / sljb)
+
+    batch = """#!/bin/sh
+## script for lammps
+#SBATCH --nodes=1
+#SBATCH --ntasks-per-node=%s
+#SBATCH --cpus-per-task=1
+#SBATCH --time=%s
+#SBATCH --job-name=%s-%d
+#SBATCH --partition=%s
+#SBATCH --mem=%dmb
+#SBATCH --output=%%j.o.slurm
+#SBATCH --error=%%j.e.slurm
+%s
+export OMP_NUM_THREADS=1
+export LAMMPS=%s
+
+echo $SLURM_JOB_NAME
+
+for ((i=%d;i<=%d;i++))
+do
+  export INPUT="%s-$i"
+  export WORKDIR="%s/%s-$i"
+  cd $WORKDIR
+  mpirun -np $SLURM_NTASKS $LAMMPS/bin/lmp $INPUT.inp > $INPUT.log &
+  sleep 5
+done
+wait
+
+""" % (
+        slcr, sltm, inputs, j + 1, slpt, int(slmm * slcr * 1.0), shell, tolmp,
+        start, end, inputs, in_path, inputs)
+
+    return batch
+
+
+def lmp(var):
+    ## This function prepares lammps calculation
+    ## It generates .inp .xyz .velocity.xyz
+    ## This function generates a backup slurm batch file for each calculation
+
+    inputs, inputname, inputpath, slcr, sljb, slmm, in_temp, in_data, in_init, in_settings, in_xyz, in_velo, tolmp, shell = var
+    oqppal = int(slcr / sljb)
+
+    if not os.path.exists('%s' % inputpath):
+        os.makedirs('%s' % inputpath)
+
+    runscript = """#!/bin/sh
+## backup script for lammps
+#SBATCH --nodes=1
+#SBATCH --ntasks-per-node=%s
+#SBATCH --cpus-per-task=1
+#SBATCH --time=23:50:00
+#SBATCH --job-name=%s
+#SBATCH --partition=normal
+#SBATCH --mem=%dmb
+#SBATCH --output=%%j.o.slurm
+#SBATCH --error=%%j.e.slurm
+%s
+export INPUT=%s
+export WORKDIR=%s
+
+export OMP_NUM_THREADS=1
+export LAMMPS=%s
+
+
+cd $WORKDIR
+mpirun -np $SLURM_NTASKS $LAMMPS/bin/lmp $INPUT.inp > $INPUT.log
+
+""" % (oqppal, inputname, int(slmm * oqppal * 1.0), shell, inputname, inputpath, tolmp)
+    in_temp = in_temp.splitlines()
+    new_in_temp = ' include "%s.in.init"\n read_data "%s.data"\n include "%s.in.settings"\n\n' % (
+        inputname, inputname, inputname
+    )
+    for line in in_temp:
+        if 'include ' not in line or 'read_data ' not in line:
+            new_in_temp += '%s' % line
+
+    new_in_temp = '\n'.join(new_in_temp) + '\n'
+
+    data = in_data.splitlines()
+    natom = 0
+    new_data = []
+    for n, line in enumerate(data):
+        if 'atoms' in line:
+            natom = int(line.split()[0])
+        if 'Atoms' in line:
+            coord = data[n + 2: n + 2 + natom]
+            temp = np.array([x.split() for x in coord])
+            new = np.concatenate((temp[:, 1:4], in_xyz), axis=0).tolist()
+            new_data = copy.deepcopy(data)
+            new_data[n + 2: n + 2 + natom] = [' '.join(x) for x in new]
+            break
+
+    new_data = '\n'.join(new_data) + '\n'
+
+    with open('%s/%s.in' % (inputpath, inputname), 'w') as out:
+        out.write(new_in_temp)
+
+    with open('%s/%s.data' % (inputpath, inputname), 'w') as out:
+        out.write(new_data)
+
+    with open('%s/%s.in.init' % (inputpath, inputname), 'w') as out:
+        out.write(in_init)
+
+    with open('%s/%s.in.settings' % (inputpath, inputname), 'w') as out:
+        out.write(in_settings)
+
+    with open('%s/%s.sh' % (inputpath, inputname), 'w') as out:
+        out.write(runscript)
 
     os.system("chmod 777 %s/%s.sh" % (inputpath, inputname))
 
