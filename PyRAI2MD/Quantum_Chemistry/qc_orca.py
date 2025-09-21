@@ -507,7 +507,7 @@ cd $ORCA_WORKDIR
 
         return self
 
-    def read_data(self, natom):
+    def read_data(self, natom, ncharge):
         ## function to read the logfile
         coord, energy, gradient, nac, soc = self._read_data(natom)
         charge = np.zeros(0)
