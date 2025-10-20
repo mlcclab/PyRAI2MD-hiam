@@ -7,6 +7,7 @@
 ## Upgrade to multiprocessing Nov 5 2022 Jingbai Li
 ## Support user-defined shell commands Nov 28 Jingbai Li
 ## Support openqp and lammps Sep 8 2025 Jingbai Li
+## Support cp2k Sep 23 2025 Jingbai Li
 
 import sys
 import os
@@ -56,6 +57,7 @@ def main(argv):
       bagel         /path/to/Bagel
       openqp        /path/to/openqp
       lammps        /path/to/lammps
+      cp2k          /path/to/cp2k
       lib_blas      /path/to/blas
       lib_lapack    /path/to/lapack
       lib_scalapack /path/to/scalapack
@@ -99,6 +101,7 @@ def main(argv):
     toorca = '/public/software/app/orca_6_0_1_linux_x86-64_shared_openmpi416'
     tooqp = '/public/software/app/openqp'
     tolmp = '/public/software/app/lammps'
+    tocp2k = '/public/software/app/cp2k-2025.2/'
 
     if len(argv) <= 1:
         exit(usage)
@@ -176,6 +179,8 @@ def main(argv):
             tooqp = line.split()[1]
         elif 'lammps' == key:
             tolmp = line.split()[1]
+        elif 'cp2k' == key:
+            tocp2k = line.split()[1]
 
     if inputs is not None and os.path.exists(inputs):
         print('\n>>> %s' % inputs)
@@ -323,6 +328,12 @@ def main(argv):
                 print('\n!!! LAMMPS in.settings file not found !!!')
                 print(usage)
                 print('!!! LAMMPS in.settings file not found !!!')
+        elif prog == 'cp2k':
+            if not os.path.exists('%s.cp2k' % inputs):
+                print('\n!!! cp2k input not found !!!')
+                print(usage)
+                print('!!! cp2k input not found !!!')
+                exit()
         else:
             print('\n!!! Program %s not found !!!' % prog)
             print(usage)
@@ -396,6 +407,8 @@ def main(argv):
         gen_oqp(cpus, ensemble, inputs, slpt, sltm, slmm, slnd, slcr, sljb, slin, tooqp, iformat, shell)
     elif prog == 'lammps':
         gen_lmp(cpus, ensemble, inputs, slpt, sltm, slmm, slnd, slcr, sljb, slin, tolmp, iformat, shell)
+    elif prog == 'cp2k':
+        gen_cp2k(cpus, ensemble, inputs, slpt, sltm, slmm, slnd, slcr, sljb, slin, tocp2k, iformat, shell)
 
 def gen_molcas(cpus, ensemble, inputs, slpt, sltm, slmm, slnd, slcr, sljb, slin, tomlcs, iformat, shell):
     ## This function will group Molcas calculations to individual runset
@@ -1699,7 +1712,7 @@ done
 wait
 
 """ % (
-        slcr, sltm, inputs, j + 1, slpt, int(slmm * slcr * 1.0), shell, tooqp,
+        oqppal, sltm, inputs, j + 1, slpt, int(slmm * slcr * 1.0), shell, tooqp,
         start, end, inputs, in_path, inputs)
 
     return batch
@@ -1826,7 +1839,7 @@ def gen_lmp(cpus, ensemble, inputs, slpt, sltm, slmm, slnd, slcr, sljb, slin, to
 def lmp_batch(inputs, j, start, end, in_path, slcr, sljb, sltm, slpt, slmm, tolmp, shell):
     ## This function will be called by gen_lmp function
     ## This function generates runset for lammps calculation
-    oqppal = int(slcr / sljb)
+    lmppal = int(slcr / sljb)
 
     batch = """#!/bin/sh
 ## script for lammps
@@ -1856,7 +1869,7 @@ done
 wait
 
 """ % (
-        slcr, sltm, inputs, j + 1, slpt, int(slmm * slcr * 1.0), shell, tolmp,
+        lmppal, sltm, inputs, j + 1, slpt, int(slmm * slcr * 1.0), shell, tolmp,
         start, end, inputs, in_path, inputs)
 
     return batch
@@ -1868,7 +1881,7 @@ def lmp(var):
     ## This function generates a backup slurm batch file for each calculation
 
     inputs, inputname, inputpath, slcr, sljb, slmm, in_temp, in_data, in_init, in_settings, in_xyz, in_velo, tolmp, shell = var
-    oqppal = int(slcr / sljb)
+    lmppal = int(slcr / sljb)
 
     if not os.path.exists('%s' % inputpath):
         os.makedirs('%s' % inputpath)
@@ -1895,7 +1908,7 @@ export LAMMPS=%s
 cd $WORKDIR
 mpirun -np $SLURM_NTASKS $LAMMPS/bin/lmp -in $INPUT.in > $INPUT.log
 
-""" % (oqppal, inputname, int(slmm * oqppal * 1.0), shell, inputname, inputpath, tolmp)
+""" % (lmppal, inputname, int(slmm * lmppal * 1.0), shell, inputname, inputpath, tolmp)
     in_temp = in_temp.splitlines()
     new_in_temp = ' include "%s.in.init"\n read_data "%s.data"\n include "%s.in.settings"\n\n' % (
         inputname, inputname, inputname
@@ -1934,6 +1947,152 @@ mpirun -np $SLURM_NTASKS $LAMMPS/bin/lmp -in $INPUT.in > $INPUT.log
 
     with open('%s/%s.sh' % (inputpath, inputname), 'w') as out:
         out.write(runscript)
+
+    os.system("chmod 777 %s/%s.sh" % (inputpath, inputname))
+
+
+def gen_cp2k(cpus, ensemble, inputs, slpt, sltm, slmm, slnd, slcr, sljb, slin, tocp2k, iformat, shell):
+    ## This function will group cp2k calculations to individual runset
+    ## this function will call cp2k_batch and cp2k to prepare files
+
+    in_temp = open('%s.cp2k' % inputs, 'r').read()
+    in_path = os.getcwd()
+
+    runall = ''
+    variables_wrapper = []
+    for j in range(slnd):
+        runall += 'sbatch runset-%d.sh\n' % (j + 1)
+        start = slin + j * sljb
+        end = start + sljb - 1
+        for i in range(sljb):
+            if iformat != 'xz':
+                # unpack initial condition to xyz and velocity
+                in_xyz, in_velo = Unpack(ensemble[i + j * sljb], 'molcas')
+            else:
+                in_xyz, in_velo = UnpackXZ(ensemble[i + j * sljb])
+            inputname = '%s-%s' % (inputs, i + start)
+            inputpath = '%s/%s' % (in_path, inputname)
+            # prepare calculations
+            variables_wrapper.append([inputname, inputpath, slcr, sljb, slmm, in_temp, in_xyz, in_velo, tocp2k, shell])
+
+        batch = cp2k_batch(inputs, j, start, end, in_path, slcr, sltm, slpt, slmm, tocp2k, shell)
+
+        with open('./runset-%d.sh' % (j + 1), 'w') as run:
+            run.write(batch)
+
+    task = len(variables_wrapper)
+    cpus = min([task, cpus])
+    pool = multiprocessing.Pool(processes=cpus)
+    n = 0
+    for _ in pool.imap_unordered(cp2k, variables_wrapper):
+        n += 1
+        sys.stdout.write('CPU: %3d generating trajectory: %d/%d\r' % (cpus, n, task))
+    pool.close()
+
+    with open('./runall.sh', 'w') as out:
+        out.write(runall)
+
+    os.system("chmod 777 runall.sh")
+
+    print('\n\n Done\n')
+
+
+def cp2k_batch(inputs, j, start, end, in_path, slcr, sltm, slpt, slmm, tocp2k, shell):
+    ## This function will be called by gen_cp2k function
+    ## This function generates runset for ORCA calculation
+
+    batch = """#!/bin/sh
+## script for cp2k
+#SBATCH --nodes=1
+#SBATCH --ntasks=%d
+#SBATCH --cpus-per-task=1
+#SBATCH --time=%s
+#SBATCH --job-name=%s-%d
+#SBATCH --partition=%s
+#SBATCH --mem=%dmb
+#SBATCH --output=%%j.o.slurm
+#SBATCH --error=%%j.e.slurm
+%s
+export OMP_NUM_THREADS=1
+export CP2K_HOME=%s
+export CP2K_EXE=$CP2K_HOME/exe/local
+source $CP2K_HOME/tools/toolchain/install/setup
+
+echo $SLURM_JOB_NAME
+
+for ((i=%d;i<=%d;i++))
+do
+  export INPUT="%s-$i"
+  export WORKDIR="%s/%s-$i"
+  cd $WORKDIR
+  >$INPUT.log
+  mpirun -n $SLURM_NTASKS $CP2K_EXE/cp2k.psmp -i $INPUT.inp -o $INPUT.log &
+  sleep 5
+done
+wait
+
+""" % (
+        slcr, sltm, inputs, j + 1, slpt, int(slmm * slcr * 1.0), shell, tocp2k,
+        start, end, inputs, in_path, inputs)
+
+    return batch
+
+
+def cp2k(var):
+    ## This function prepares cp2k calculation
+    ## It generates .inp .xyz .velocity.xyz
+    ## This function generates a backup slurm batch file for each calculation
+
+    inputname, inputpath, slcr, sljb, slmm, in_temp, in_xyz, in_velo, tocp2k, shell = var
+    cp2kpal = int(slcr / sljb)
+
+    if not os.path.exists('%s' % inputpath):
+        os.makedirs('%s' % inputpath)
+
+    runscript = """#!/bin/sh
+## backup script for cp2k
+#SBATCH --nodes=1
+#SBATCH --ntasks=%s
+#SBATCH --cpus-per-task=1
+#SBATCH --time=23:50:00
+#SBATCH --job-name=%s
+#SBATCH --partition=normal
+#SBATCH --mem=%dmb
+#SBATCH --output=%%j.o.slurm
+#SBATCH --error=%%j.e.slurm
+%s
+export INPUT=%s
+export WORKDIR=%s
+
+export OMP_NUM_THREADS=1
+export CP2K_HOME=%s
+export CP2K_EXE=$CP2K_HOME/exe/local
+source $CP2K_HOME/tools/toolchain/install/setup
+
+cd $WORKDIR
+>$INPUT.log
+mpirun -n $SLURM_NTASKS $CP2K_EXE/cp2k.psmp -i $INPUT.inp -o $INPUT.log
+
+""" % (cp2kpal, inputname, int(slmm * cp2kpal * 1.0), shell, inputname, inputpath, tocp2k)
+
+    new_in_temp = ''
+    for line in in_temp.splitlines():
+        if 'COORD_FILE_NAME' in line:
+            new_in_temp += '      COORD_FILE_NAME %s.xyz\n' % inputname
+        else:
+            new_in_temp += '%s\n' % line
+
+    with open('%s/%s.inp' % (inputpath, inputname), 'w') as out:
+        out.write(new_in_temp)
+
+    with open('%s/%s.xyz' % (inputpath, inputname), 'w') as out:
+        out.write(in_xyz)
+
+    with open('%s/%s.sh' % (inputpath, inputname), 'w') as out:
+        out.write(runscript)
+
+    with open('%s/%s.velocity.xyz' % (inputpath, inputname), 'w') as out:
+        out.write(in_velo)
 
     os.system("chmod 777 %s/%s.sh" % (inputpath, inputname))
 
