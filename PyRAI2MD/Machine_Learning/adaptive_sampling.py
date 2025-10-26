@@ -316,7 +316,7 @@ class AdaptiveSampling:
         pool.close()
 
         ## check qc results and exclude non-converged ones
-        newdata = [[] for _ in range(5)]
+        newdata = [[] for _ in range(8)]
         for data, completion in qc_data:
             if completion == 1:
                 newdata[0].append(data[0])
@@ -324,6 +324,9 @@ class AdaptiveSampling:
                 newdata[2].append(data[2])
                 newdata[3].append(data[3])
                 newdata[4].append(data[4])
+                newdata[4].append(data[5])
+                newdata[4].append(data[6])
+                newdata[4].append(data[7])
 
         return newdata
 
