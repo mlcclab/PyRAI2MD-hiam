@@ -232,7 +232,7 @@ class Data:
             'nsoc': self.nsoc,
             'xyz': self.xyz.tolist(),
             'charge': self.charges.tolist(),
-            'cell': sefl.cell.tolist(),
+            'cell': self.cell.tolist(),
             'pbc': self.pbc.tolist(),
             'energy': self.energy.tolist(),
             'grad': self.grad.tolist(),
