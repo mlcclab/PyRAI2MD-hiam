@@ -487,7 +487,10 @@ class E2N2:
     def _predict(self, x, charges, cell, pbc):
         ## run esnnp for model testing
         batch = len(x)
+        t0 = time.time()
         results = self.model.predict(x, charges, cell, pbc)
+        t1 = time.time()
+        np.savetxt('%s-timing.txt' % self.name, [batch, t1 - t0])
 
         if self.model_register['energy_grad']:
             pred = results['energy_grad']
