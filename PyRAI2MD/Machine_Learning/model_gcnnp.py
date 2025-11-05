@@ -159,6 +159,7 @@ class E2N2Demo:
         else:
             self.mr = None
             self.atoms = np.array(self.atoms)
+            self.pred_atoms = np.array(self.pred_atoms)
 
         node_type = SetupTools.find_node_type([self.atoms[0].reshape((-1, 1))])
 
