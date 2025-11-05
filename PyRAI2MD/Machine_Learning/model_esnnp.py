@@ -496,7 +496,7 @@ class E2N2:
             g_pred = np.mean([pred[0][1], pred[1][1]], axis=0) / self.f_g  # [nstates, n * natoms, 3]
             g_std = np.std([pred[0][0], pred[1][0]], axis=0, ddof=1) / self.f_g
 
-            g_pred = g_pred.reshape(g_pred.shape[0], -1, len(self.pred_atoms), g_pred.shape[2])  # [states, n, atoms, 3]
+            g_pred = g_pred.reshape(g_pred.shape[0], len(self.pred_atoms), -1, g_pred.shape[2])  # [states, n, atoms, 3]
             g_pred = np.transpose(g_pred, (1, 0, 2, 3))  # [n, nstates, natoms, 3]
 
             de = np.abs(self.pred_energy - e_pred)
