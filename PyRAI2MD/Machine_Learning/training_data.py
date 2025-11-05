@@ -189,17 +189,17 @@ class Data:
             self.pred_soc = np.array(data['soc'])
 
             try:
-                self.charges = np.array(data['charge'])
+                self.pred_charges = np.array(data['charge'])
             except KeyError:
                 pass
 
             try:
-                self.cell = np.array(data['cell'])
+                self.pred_cell = np.array(data['cell'])
             except KeyError:
                 pass
 
             try:
-                self.pbc = np.array(data['pbc'])
+                self.pred_pbc = np.array(data['pbc'])
             except KeyError:
                 pass
 
