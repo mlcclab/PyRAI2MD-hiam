@@ -29,6 +29,7 @@ class KeyE2N2:
             'rbf_neurons': 64,
             'rbf_act': 'silu',
             'rbf_act_a': 0.03,
+            'trainable_atom': False,
             'normalization_y': 'component',
             'normalize_y': True,
             'self_connection': True,
@@ -79,6 +80,7 @@ class KeyE2N2:
             'rbf_neurons': 64,
             'rbf_act': 'shifted_softplus',
             'rbf_act_a': 0.03,
+            'trainable_atom': False,
             'normalization_y': 'component',
             'normalize_y': True,
             'self_connection': True,
@@ -129,6 +131,7 @@ class KeyE2N2:
             'rbf_neurons': 64,
             'rbf_act': 'shifted_softplus',
             'rbf_act_a': 0.03,
+            'trainable_atom': False,
             'normalization_y': 'component',
             'normalize_y': True,
             'self_connection': True,
@@ -194,6 +197,7 @@ class KeyE2N2:
             'rbf_neurons': ReadVal('i'),
             'rbf_act': ReadVal('s'),
             'rbf_act_a': ReadVal('f'),
+            'trainable_atom': ReadVal('b'),
             'normalization_y': ReadVal('s'),
             'normalize_y': ReadVal('b'),
             'resnet': ReadVal('b'),
@@ -266,6 +270,7 @@ class KeyE2N2:
   Radial net neurons:         %-20s
   Radial net activation:      %-20s
   Radial net activation a:    %-20s
+  Atomic scaling trainable:   %-20s
   Y normalization scheme:     %-20s
   Normalize Y:                %-20s
   Self connection:            %-20s
@@ -301,6 +306,7 @@ class KeyE2N2:
                     key['rbf_neurons'],
                     key['rbf_act'],
                     key['rbf_act_a'],
+                    key['trainable_atom'],
                     key['normalization_y'],
                     key['normalize_y'],
                     key['self_connection'],

@@ -21,7 +21,6 @@ from PyRAI2MD.Utils.timing import what_is_time
 from PyRAI2MD.Utils.timing import how_long
 
 from esnnp.esnnp import ESNNP
-from esnnp.esnnp import SetupTools
 
 class E2N2:
     """ esnnp interface
@@ -85,6 +84,7 @@ class E2N2:
         self.nstate = data.nstate
         self.nnac = data.nnac
         self.nsoc = data.nsoc
+        self.elements = 86  # hard-coded from H to Rn
 
         # set output value range
         if 0 < len(variables['select_eg_out']) < self.nstate:
@@ -139,18 +139,20 @@ class E2N2:
         ## unpack data
         self.atoms = data.atoms
         self.geos = data.geos
-        self.charges = data.charges.tolist()
-        self.cell = data.cell.tolist()
-        self.pbc = data.pbc.tolist()
+        self.xyz = data.xyz
+        self.charges = data.charges
+        self.cell = data.cell
+        self.pbc = data.pbc
         self.energy = data.energy * self.f_e
-        self.grad = data.grad * self.f_g
-        self.nac = data.nac * self.f_n
+        self.grad = [(np.array(x) * self.f_g).tolist() for x in data.grad]
+        self.nac = [(np.array(x) * self.f_n).tolist() for x in data.nac]
         self.soc = data.soc
         self.pred_atoms = data.pred_atoms
         self.pred_geos = data.pred_geos
-        self.pred_charges = data.pred_charges.tolist()
-        self.pred_cell = data.pred_cell.tolist()
-        self.pred_pbc = data.pred_pbc.tolist()
+        self.pred_xyz = data.pred_xyz
+        self.pred_charges = data.pred_charges
+        self.pred_cell = data.pred_cell
+        self.pred_pbc = data.pred_pbc
         self.pred_energy = data.pred_energy
         self.pred_grad = data.pred_grad
         self.pred_nac = data.pred_nac
@@ -167,8 +169,6 @@ class E2N2:
             self.mr = None
             self.atoms = np.array(self.atoms)
             self.pred_atoms = np.array(self.pred_atoms)
-
-        node_type = SetupTools.find_node_type([self.atoms[0].reshape((-1, 1))])
 
         ## initialize model path
         if modeldir is None or job_id not in [None, 1]:
@@ -190,7 +190,7 @@ class E2N2:
         }
 
         if nn_eg_type > 0:
-            self.y_dict['energy_grad'] = [self.energy.tolist(), self.grad.tolist()]
+            self.y_dict['energy_grad'] = [self.energy.tolist(), self.grad]
             self.model_register['energy_grad'] = True
             hyper_eg = [copy.deepcopy(hyp_dict_eg), copy.deepcopy(hyp_dict_eg)]
         else:
@@ -199,7 +199,7 @@ class E2N2:
             hyper_eg = []
 
         if nn_nac_type > 0:
-            self.y_dict['nac'] = [None, self.nac.tolist()]
+            self.y_dict['nac'] = [None, self.nac]
             self.model_register['nac'] = True
             hyper_nac = [copy.deepcopy(hyp_dict_nac), copy.deepcopy(hyp_dict_nac)]
         else:
@@ -241,7 +241,7 @@ class E2N2:
         else:
             device = [0, 1, 2, 3, 4, 5][:len(self.hypers)]
 
-        self.model = ESNNP(self.model_path, self.hypers, node_type, device=device)
+        self.model = ESNNP(self.model_path, self.hypers, self.elements, device=device, silent=self.silent)
 
     def _heading(self):
 
@@ -289,10 +289,10 @@ class E2N2:
             log.write(topline)
             log.write(runinfo)
 
-        xyz = np.concatenate((self.atoms.reshape((-1, self.natom, 1)), self.geos), axis=-1).tolist()
+        # xyz = np.concatenate((self.atoms.reshape((-1, self.natom, 1)), self.geos), axis=-1).tolist()
         self.model.build()
         errors = self.model.train(
-            xyz, self.charges, self.cell, self.pbc, self.y_dict, remote=True, retrain=self.retrain
+            self.xyz, self.charges, self.cell, self.pbc, self.y_dict, remote=True, retrain=self.retrain
         )
 
         if self.model_register['energy_grad']:
@@ -382,7 +382,7 @@ class E2N2:
         ## run esnnp for high level region in QM calculation
         traj = traj.apply_qmmm()
 
-        atoms = self.atoms[0]
+        atoms = traj.qm_atoms
         coord = traj.qm_coord
         x = [np.concatenate((atoms.reshape((-1, 1)), coord), axis=-1).tolist()]
         charges = [traj.qm2_charge]
@@ -397,7 +397,7 @@ class E2N2:
             gradient = np.mean([pred[0][1], pred[1][1]], axis=0) / self.f_g  # [nstates, n * natoms, 3]
             gradient = gradient.reshape(gradient.shape[0], -1, len(atoms), gradient.shape[2])  # [nstates, n, natoms, 3]
             gradient = np.transpose(gradient, (1, 0, 2, 3))  # [n, nstates, natoms, 3]
-            g_std = np.std([pred[0][0], pred[1][0]], axis=0, ddof=1) / self.f_g
+            g_std = np.std([pred[0][1], pred[1][1]], axis=0, ddof=1) / self.f_g
             energy = energy[0]
             gradient = gradient[0]
             err_e = np.amax(e_std)
@@ -434,7 +434,7 @@ class E2N2:
 
     def _high_mid_low(self, traj):
         ## run esnnp for high level region, middle level region, and low level region in QM calculation
-        atoms = self.atoms[0]
+        atoms = traj.atoms
         coord = traj.coord
         x = [np.concatenate((atoms.reshape((-1, 1)), coord), axis=-1).tolist()]
         charges = [traj.qm2_charge]
@@ -449,7 +449,7 @@ class E2N2:
             gradient = np.mean([pred[0][1], pred[1][1]], axis=0) / self.f_g  # [nstates, n * natoms, 3]
             gradient = gradient.reshape(gradient.shape[0], -1, len(atoms), gradient.shape[2])  # [nstates, n, natoms, 3]
             gradient = np.transpose(gradient, (1, 0, 2, 3))  # [n, nstates, natoms, 3]
-            g_std = np.std([pred[0][0], pred[1][0]], axis=0, ddof=1) / self.f_g
+            g_std = np.std([pred[0][1], pred[1][1]], axis=0, ddof=1) / self.f_g
             energy = energy[0]
             gradient = gradient[0]
             err_e = np.amax(e_std)
@@ -487,31 +487,39 @@ class E2N2:
     def _predict(self, x, charges, cell, pbc):
         ## run esnnp for model testing
         batch = len(x)
-        t0 = time.time()
-        results = self.model.predict(x, charges, cell, pbc)
-        t1 = time.time()
-        np.savetxt('%s-timing.txt' % self.name, [batch, t1 - t0])
+        if isinstance(self.pred_grad, np.ndarray):
+            batched = True
+        else:
+            batched = False
+
+        results = self.model.predict(x, charges, cell, pbc, batched=batched)
 
         if self.model_register['energy_grad']:
             pred = results['energy_grad']
             e_pred = np.mean([pred[0][0], pred[1][0]], axis=0) / self.f_e
             e_std = np.std([pred[0][0], pred[1][0]], axis=0, ddof=1) / self.f_e
             g_pred = np.mean([pred[0][1], pred[1][1]], axis=0) / self.f_g  # [nstates, n * natoms, 3]
-            g_std = np.std([pred[0][0], pred[1][0]], axis=0, ddof=1) / self.f_g
+            g_std = np.std([pred[0][1], pred[1][1]], axis=0, ddof=1) / self.f_g
 
-            g_pred = g_pred.reshape(g_pred.shape[0], len(self.pred_atoms), -1, g_pred.shape[2])  # [states, n, atoms, 3]
-            g_pred = np.transpose(g_pred, (1, 0, 2, 3))  # [n, nstates, natoms, 3]
-
+            ref_grad = np.concatenate(self.pred_grad, axis=1)  # [nbatch, nstate, natom, 3]->[nstate, nbatch * natom, 3]
             de = np.abs(self.pred_energy - e_pred)
-            dg = np.abs(self.pred_grad - g_pred)
+            dg = np.abs(ref_grad - g_pred)
             de_max = np.amax(de.reshape((batch, -1)), axis=1)
-            dg_max = np.amax(dg.reshape((batch, -1)), axis=1)
+
+            idx = 0
+            dg_max = []
+            for g in self.pred_grad:
+                start = idx
+                end = start + len(g)
+                dg_max.append(np.amax(dg[:, start:end]))
+                idx += len(g)
+
             val_out = np.concatenate((self.pred_energy.reshape((batch, -1)), e_pred.reshape((batch, -1))), axis=1)
             std_out = np.concatenate((de.reshape((batch, -1)), e_std.reshape((batch, -1))), axis=1)
             np.savetxt('%s-e.pred.txt' % self.name, np.concatenate((val_out, std_out), axis=1))
-
-            val_out = np.concatenate((self.pred_grad.reshape((batch, -1)), g_pred.reshape((batch, -1))), axis=1)
-            std_out = np.concatenate((dg.reshape((batch, -1)), g_std.reshape((batch, -1))), axis=1)
+            nb = ref_grad.shape[0]
+            val_out = np.concatenate((ref_grad.reshape(nb, -1).T, g_pred.reshape(nb, -1).T), axis=1)
+            std_out = np.concatenate((dg.reshape(nb, -1).T, g_std.reshape(nb, -1).T), axis=1)
             np.savetxt('%s-g.pred.txt' % self.name, np.concatenate((val_out, std_out), axis=1))
         else:
             de_max = np.zeros(batch)
@@ -522,14 +530,20 @@ class E2N2:
             n_pred = np.mean([pred[0][1], pred[1][1]], axis=0) / self.f_n  # [nstates, n * natoms, 3]
             n_std = np.std([pred[0][1], pred[1][1]], axis=0, ddof=1) / self.f_n
 
-            n_pred = n_pred.reshape(n_pred.shape[0], -1, len(self.pred_atoms), n_pred.shape[2])  # [nstate, n, natom, 3]
-            n_pred = np.transpose(n_pred, (1, 0, 2, 3))  # [n, nstates, natoms, 3]
+            ref_nac = np.concatenate(self.pred_nac, axis=1)  # [nbatch, nstate, natom, 3] -> [nstate, nbatch * natom, 3]
+            dn = np.abs(ref_nac - n_pred)
 
-            dn = np.abs(self.pred_nac - n_pred)
-            dn_max = np.amax(dn.reshape((batch, -1)), axis=1)
+            idx = 0
+            dn_max = []
+            for g in self.pred_nac:
+                start = idx
+                end = start + len(g)
+                dn_max.append(np.amax(dn[:, start:end]))
+                idx += len(g)
 
-            val_out = np.concatenate((self.pred_nac.reshape((batch, -1)), n_pred.reshape((batch, -1))), axis=1)
-            std_out = np.concatenate((dn.reshape((batch, -1)), n_std.reshape((batch, -1))), axis=1)
+            nb = ref_nac[0]
+            val_out = np.concatenate((ref_nac.reshape(nb, -1).T, n_pred.reshape(nb, -1).T), axis=1)
+            std_out = np.concatenate((dn.reshape(nb, -1).T, n_std.reshape(nb, -1).T), axis=1)
             np.savetxt('%s-n.pred.txt' % self.name, np.concatenate((val_out, std_out), axis=1))
         else:
             dn_max = np.zeros(batch)
@@ -561,8 +575,8 @@ class E2N2:
         ## main function to run esnnp and communicate with other PyRAI2MD modules
 
         if self.jobtype == 'prediction' or self.jobtype == 'predict':
-            xyz = np.concatenate((self.pred_atoms.reshape((-1, self.natom, 1)), self.pred_geos), axis=-1).tolist()
-            self._predict(xyz, self.pred_charges, self.pred_cell, self.pred_pbc)
+            # xyz = np.concatenate((self.pred_atoms.reshape((-1, self.natom, 1)), self.pred_geos), axis=-1).tolist()
+            self._predict(self.pred_xyz, self.pred_charges, self.pred_cell, self.pred_pbc)
         else:
             if self.runtype == 'qm_high':
                 energy, gradient, nac, soc, err_energy, err_grad, err_nac, err_soc = self._high(traj)

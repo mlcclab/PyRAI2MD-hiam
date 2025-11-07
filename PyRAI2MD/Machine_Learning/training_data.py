@@ -133,33 +133,63 @@ class Data:
             self.nstate = int(data['nstate'])
             self.nnac = int(data['nnac'])
             self.nsoc = int(data['nsoc'])
-            self.xyz = np.array(data['xyz'])
-            self.energy = np.array(data['energy'])
-            self.grad = np.array(data['grad'])
-            self.nac = np.array(data['nac'])
-            self.soc = np.array(data['soc'])
+            self.xyz = data['xyz']
 
             try:
-                self.charges = np.array(data['charge'])
+                self.energy = np.array(data['energy'])
+            except ValueError:
+                self.energy = data['energy']
+
+            try:
+                self.grad = np.array(data['grad'])
+            except ValueError:
+                self.grad = data['grad']
+
+            try:
+                self.nac = np.array(data['nac'])
+            except ValueError:
+                self.nac = data['nac']
+
+            try:
+                self.soc = np.array(data['soc'])
+            except ValueError:
+                self.soc = data['soc']
+
+            try:
+                self.charges = data['charge']
             except KeyError:
                 pass
 
             try:
-                self.cell = np.array(data['cell'])
+                self.cell = data['cell']
             except KeyError:
                 pass
 
             try:
-                self.pbc = np.array(data['pbc'])
+                self.pbc = data['pbc']
             except KeyError:
                 pass
 
         else:
             sys.exit('\n  FileTypeError\n  PyRAI2MD: cannot recognize training data format %s' % file)
 
-        self.atoms = self.xyz[:, :, 0].astype(str).tolist()
-        self.geos = self.xyz[:, :, 1: 4].astype(float)
-        self.atomic_numbers = [atomic_number(atom) for atom in self.atoms]
+        try:
+            xyz = np.array(self.xyz)
+            self.atoms = xyz[:, :, 0].astype(str).tolist()
+        except ValueError:
+            pass
+
+        try:
+            xyz = np.array(self.xyz)
+            self.geos = xyz[:, :, 1: 4].astype(float)
+        except ValueError:
+            pass
+
+        try:
+            self.atomic_numbers = [atomic_number(atom) for atom in self.atoms]
+        except ValueError:
+            pass
+
         self.info = {
             'natom': self.natom,
             'nstate': self.nstate,
@@ -182,32 +212,58 @@ class Data:
             self.pred_soc = 0
 
         elif isinstance(data, dict):  # new format
-            self.pred_xyz = np.array(data['xyz'])
-            self.pred_energy = np.array(data['energy'])
-            self.pred_grad = np.array(data['grad'])
-            self.pred_nac = np.array(data['nac'])
-            self.pred_soc = np.array(data['soc'])
+            self.pred_xyz = data['xyz']
 
             try:
-                self.pred_charges = np.array(data['charge'])
+                self.pred_energy = np.array(data['energy'])
+            except ValueError:
+                self.pred_energy = data['energy']
+
+            try:
+                self.pred_grad = np.array(data['grad'])
+            except ValueError:
+                self.pred_grad = data['grad']
+
+            try:
+                self.pred_nac = np.array(data['nac'])
+            except ValueError:
+                self.pred_nac = data['nac']
+
+            try:
+                self.pred_soc = np.array(data['soc'])
+            except ValueError:
+                self.pred_soc = data['soc']
+
+            try:
+                self.pred_charges = data['charge']
             except KeyError:
                 pass
 
             try:
-                self.pred_cell = np.array(data['cell'])
+                self.pred_cell = data['cell']
             except KeyError:
                 pass
 
             try:
-                self.pred_pbc = np.array(data['pbc'])
+                self.pred_pbc = data['pbc']
             except KeyError:
                 pass
 
         else:
             sys.exit('\n  FileTypeError\n  PyRAI2MD: cannot recognize prediction data format %s' % file)
 
-        self.pred_atoms = self.pred_xyz[:, :, 0].astype(str).tolist()
-        self.pred_geos = self.pred_xyz[:, :, 1: 4].astype(float)
+        try:
+            xyz = np.array(self.pred_xyz)
+            self.pred_atoms = xyz[:, :, 0].astype(str).tolist()
+        except ValueError:
+            pass
+
+        try:
+            xyz = np.array(self.pred_xyz)
+            self.pred_geos = xyz[:, :, 1: 4].astype(float)
+        except ValueError:
+            pass
+
         return self
 
     def load(self, file, filetype='train'):
@@ -270,20 +326,22 @@ class Data:
             self.std_energy = np.std(self.energy)
 
         if len(self.grad[0]) > 0:
-            self.max_grad = np.amax(self.grad)
-            self.min_grad = np.amin(self.grad)
+            grad_all = np.concatenate(self.grad, axis=1)  # [nbatch, nstate, natom, 3] -> [nstate, nbatch * natom, 3]
+            self.max_grad = np.amax(grad_all)
+            self.min_grad = np.amin(grad_all)
             self.mid_grad = (self.max_grad + self.min_grad) / 2
             self.dev_grad = (self.max_grad - self.min_grad) / 2
-            self.avg_grad = np.mean(self.grad)
-            self.std_grad = np.std(self.grad)
+            self.avg_grad = np.mean(grad_all)
+            self.std_grad = np.std(grad_all)
 
         if len(self.nac[0]) > 0:
-            self.max_nac = np.amax(self.nac)
-            self.min_nac = np.amin(self.nac)
+            nac_all = np.concatenate(self.nac, axis=1)  # [nbatch, nstate, natom, 3] -> [nstate, nbatch * natom, 3]
+            self.max_nac = np.amax(nac_all)
+            self.min_nac = np.amin(nac_all)
             self.mid_nac = (self.max_nac + self.min_nac) / 2
             self.dev_nac = (self.max_nac - self.min_nac) / 2
-            self.avg_nac = np.mean(self.nac)
-            self.std_nac = np.std(self.nac)
+            self.avg_nac = np.mean(nac_all)
+            self.std_nac = np.std(nac_all)
 
         if len(self.soc[0]) > 0:
             self.max_soc = np.amax(self.soc)

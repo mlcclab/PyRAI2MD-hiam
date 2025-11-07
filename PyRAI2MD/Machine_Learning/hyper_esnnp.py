@@ -47,7 +47,7 @@ def set_e2n2_hyper_eg(hyp, unit, info, splits, shuffle):
             'model_id': 0,  # index of the model
             # Properties
             'states': info['nstate'],  # number of electronic states
-            'node_info': None,  # a list of unique atom numbers
+            'elements': None,  # the largest number of elements
             'nedges': hyp['n_edges'],  # number of edges
             'maxradius': hyp['maxradius'],  # maximum atom-centered radius in Angstrom
             'atomic': {
@@ -64,6 +64,7 @@ def set_e2n2_hyper_eg(hyp, unit, info, splits, shuffle):
                 'rbf_neurons': hyp['rbf_neurons'],  # number of rbf neuron per layer
                 'rbf_act': hyp['rbf_act'],  # activation in rbf net
                 'rbf_act_a': hyp['rbf_act_a'],  # parameter for leakysoftplus function
+                'trainable_atom': hyp['trainable_atom'],  # trainable atomic scaling factor
                 'normalization_y': hyp['normalization_y'],  # normalization scheme in spherical harmonics
                 'normalize_y': hyp['normalize_y'],  # normalize edge vectors when projecting to spherical harmonics
                 # Convolution
@@ -90,6 +91,7 @@ def set_e2n2_hyper_eg(hyp, unit, info, splits, shuffle):
                 'n_rbf': hyp['n_rbf'],  # number of radial basis function
                 'trainable_rbf': hyp['trainable_rbf'],  # trainable radial basis function
                 'rbf_cutoff': hyp['rbf_cutoff'],  # rbf envelop function cutoff
+                'trainable_atom': hyp['trainable_atom'],  # trainable atomic scaling factor
                 'normalization_y': hyp['normalization_y'],
                 # normalization scheme for projecting edge vectors to spherical harmonics
                 'normalize_y': hyp['normalize_y'],  # normalize edge vectors when projecting to spherical harmonics
@@ -182,7 +184,7 @@ def set_e2n2_hyper_nac(hyp, unit, info, splits, shuffle):
             'model_id': 0,  # index of the model
             # Properties
             'states': info['nstate'],  # number of electronic states
-            'node_info': None,  # a list of unique atom numbers
+            'elements': None,  # the largest number of elements
             'nedges': hyp['n_edges'],  # number of edges
             'maxradius': hyp['maxradius'],  # maximum atom-centered radius in Angstrom
             'atomic': {
@@ -199,6 +201,7 @@ def set_e2n2_hyper_nac(hyp, unit, info, splits, shuffle):
                 'rbf_neurons': hyp['rbf_neurons'],  # number of rbf neuron per layer
                 'rbf_act': hyp['rbf_act'],  # activation in rbf net
                 'rbf_act_a': hyp['rbf_act_a'],  # parameter for leakysoftplus function
+                'trainable_atom': hyp['trainable_atom'],  # trainable atomic scaling factor
                 'normalization_y': hyp['normalization_y'],  # normalization scheme in spherical harmonics
                 'normalize_y': hyp['normalize_y'],  # normalize edge vectors when projecting to spherical harmonics
                 # Convolution
@@ -225,6 +228,7 @@ def set_e2n2_hyper_nac(hyp, unit, info, splits, shuffle):
                 'n_rbf': hyp['n_rbf'],  # number of radial basis function
                 'trainable_rbf': hyp['trainable_rbf'],  # trainable radial basis function
                 'rbf_cutoff': hyp['rbf_cutoff'],  # rbf envelop function cutoff
+                'trainable_atom': hyp['trainable_atom'],  # trainable atomic scaling factor
                 'normalization_y': hyp['normalization_y'],
                 # normalization scheme for projecting edge vectors to spherical harmonics
                 'normalize_y': hyp['normalize_y'],  # normalize edge vectors when projecting to spherical harmonics
@@ -316,7 +320,7 @@ def set_e2n2_hyper_soc(hyp, unit, info, splits, shuffle):
             'model_id': 0,  # index of the model
             # Properties
             'states': info['nstate'],  # number of electronic states
-            'node_info': None,  # a list of unique atom numbers
+            'elements': None,  # the largest number of elements
             'nedges': hyp['n_edges'],  # number of edges
             'edge_list': None,  # a list of pairwise atom indices in edges
             'maxradius': hyp['maxradius'],  # maximum atom-centered radius in Angstrom
@@ -334,6 +338,7 @@ def set_e2n2_hyper_soc(hyp, unit, info, splits, shuffle):
                 'rbf_neurons': hyp['rbf_neurons'],  # number of rbf neuron per layer
                 'rbf_act': hyp['rbf_act'],  # activation in rbf net
                 'rbf_act_a': hyp['rbf_act_a'],  # parameter for leakysoftplus function
+                'trainable_atom': hyp['trainable_atom'],  # trainable atomic scaling factor
                 'normalization_y': hyp['normalization_y'],  # normalization scheme in spherical harmonics
                 'normalize_y': hyp['normalize_y'],  # normalize edge vectors when projecting to spherical harmonics
                 # Convolution
@@ -360,6 +365,7 @@ def set_e2n2_hyper_soc(hyp, unit, info, splits, shuffle):
                 'n_rbf': hyp['n_rbf'],  # number of radial basis function
                 'trainable_rbf': hyp['trainable_rbf'],  # trainable radial basis function
                 'rbf_cutoff': hyp['rbf_cutoff'],  # rbf envelop function cutoff
+                'trainable_atom': hyp['trainable_atom'],  # trainable atomic scaling factor
                 'normalization_y': hyp['normalization_y'],
                 # normalization scheme for projecting edge vectors to spherical harmonics
                 'normalize_y': hyp['normalize_y'],  # normalize edge vectors when projecting to spherical harmonics

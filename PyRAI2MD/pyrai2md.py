@@ -46,7 +46,7 @@ class PYRAI2MD:
 
         Attribute:           Type:
             keywords         dict        keyword dictionary
-            
+
         Functions:           Returns:
             run              None        run PyRAI2MD calculation
             test             None        run PyRAI2MD testcases
@@ -91,7 +91,14 @@ class PYRAI2MD:
 
         except json.decoder.JSONDecodeError:
             with open(ld_input, 'r') as ld_file:
-                input_dict = ld_file.read().split('&')
+                input_file = ld_file.read().splitlines()
+
+            input_lines = []
+            for line in input_file:
+                code = line.split('#')[0]
+                input_lines.append(code)
+
+            input_dict = '\n'.join(input_lines).split('&')
 
         return input_dict
 

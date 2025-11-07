@@ -384,7 +384,7 @@ class E2N2Demo:
             gradient = np.mean([pred[0][1], pred[1][1]], axis=0) / self.f_g  # [n * natoms, nstates, 3]
             gradient = gradient.reshape(-1, len(atoms), gradient.shape[1], gradient.shape[2])  # [n, natoms, nstates, 3]
             gradient = np.transpose(gradient, (0, 2, 1, 3))  # [n, nstates, natoms, 3]
-            g_std = np.std([pred[0][0], pred[1][0]], axis=0, ddof=1) / self.f_g
+            g_std = np.std([pred[0][1], pred[1][1]], axis=0, ddof=1) / self.f_g
             energy = energy[0]
             gradient = gradient[0]
             err_e = np.amax(e_std)
@@ -433,7 +433,7 @@ class E2N2Demo:
             gradient = np.mean([pred[0][1], pred[1][1]], axis=0) / self.f_g  # [n * natoms, nstates, 3]
             gradient = gradient.reshape(-1, len(atoms), gradient.shape[1], gradient.shape[2])  # [n, natoms, nstates, 3]
             gradient = np.transpose(gradient, (0, 2, 1, 3))  # [n, nstates, natoms, 3]
-            g_std = np.std([pred[0][0], pred[1][0]], axis=0, ddof=1) / self.f_g
+            g_std = np.std([pred[0][1], pred[1][1]], axis=0, ddof=1) / self.f_g
             energy = energy[0]
             gradient = gradient[0]
             err_e = np.amax(e_std)
@@ -478,7 +478,7 @@ class E2N2Demo:
             e_pred = np.mean([pred[0][0], pred[1][0]], axis=0) / self.f_e
             e_std = np.std([pred[0][0], pred[1][0]], axis=0, ddof=1) / self.f_e
             g_pred = np.mean([pred[0][1], pred[1][1]], axis=0) / self.f_g  # [n * natoms, nstates, 3]
-            g_std = np.std([pred[0][0], pred[1][0]], axis=0, ddof=1) / self.f_g
+            g_std = np.std([pred[0][1], pred[1][1]], axis=0, ddof=1) / self.f_g
 
             g_pred = g_pred.reshape(-1, len(self.pred_atoms), g_pred.shape[1], g_pred.shape[2])  # [n, atoms, states, 3]
             g_pred = np.transpose(g_pred, (0, 2, 1, 3))  # [n, nstates, natoms, 3]
