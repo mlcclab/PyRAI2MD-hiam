@@ -13,6 +13,7 @@ import copy
 import numpy as np
 import torch.cuda
 
+from PyRAI2MD.Molecule.atom import Atom
 from PyRAI2MD.Machine_Learning.hyper_esnnp import set_e2n2_hyper_eg
 from PyRAI2MD.Machine_Learning.hyper_esnnp import set_e2n2_hyper_nac
 from PyRAI2MD.Machine_Learning.hyper_esnnp import set_e2n2_hyper_soc
@@ -77,6 +78,7 @@ class E2N2:
         shuffle = variables['shuffle']
         splits = variables['nsplits']
         gpu = variables['gpu']
+        elements = variables['elements']
         self.jobtype = keywords['control']['jobtype']
         self.version = keywords['version']
         self.ncpu = keywords['control']['ml_ncpu']
@@ -84,7 +86,6 @@ class E2N2:
         self.nstate = data.nstate
         self.nnac = data.nnac
         self.nsoc = data.nsoc
-        self.elements = 86  # hard-coded from H to Rn
 
         # set output value range
         if 0 < len(variables['select_eg_out']) < self.nstate:
@@ -157,6 +158,13 @@ class E2N2:
         self.pred_grad = data.pred_grad
         self.pred_nac = data.pred_nac
         self.pred_soc = data.pred_soc
+
+        if len(elements) == 0:
+            unique_atom = list(set(np.concatenate(self.atoms).tolist()))
+        else:
+            unique_atom = list(set(elements))
+
+        self.elements = sorted([Atom(x).name for x in unique_atom])
 
         ## find node type
         if len(multiscale) > 0:

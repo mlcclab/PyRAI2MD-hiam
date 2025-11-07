@@ -47,7 +47,7 @@ def set_e2n2_hyper_eg(hyp, unit, info, splits, shuffle):
             'model_id': 0,  # index of the model
             # Properties
             'states': info['nstate'],  # number of electronic states
-            'elements': None,  # the largest number of elements
+            'elements': None,  # a list of learnable of elements
             'nedges': hyp['n_edges'],  # number of edges
             'maxradius': hyp['maxradius'],  # maximum atom-centered radius in Angstrom
             'atomic': {
@@ -184,7 +184,7 @@ def set_e2n2_hyper_nac(hyp, unit, info, splits, shuffle):
             'model_id': 0,  # index of the model
             # Properties
             'states': info['nstate'],  # number of electronic states
-            'elements': None,  # the largest number of elements
+            'elements': None,  # a list of learnable of elements
             'nedges': hyp['n_edges'],  # number of edges
             'maxradius': hyp['maxradius'],  # maximum atom-centered radius in Angstrom
             'atomic': {
@@ -320,7 +320,7 @@ def set_e2n2_hyper_soc(hyp, unit, info, splits, shuffle):
             'model_id': 0,  # index of the model
             # Properties
             'states': info['nstate'],  # number of electronic states
-            'elements': None,  # the largest number of elements
+            'elements': None,  # a list of learnable of elements
             'nedges': hyp['n_edges'],  # number of edges
             'edge_list': None,  # a list of pairwise atom indices in edges
             'maxradius': hyp['maxradius'],  # maximum atom-centered radius in Angstrom

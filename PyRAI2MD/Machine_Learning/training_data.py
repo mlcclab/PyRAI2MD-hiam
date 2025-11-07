@@ -177,7 +177,13 @@ class Data:
             xyz = np.array(self.xyz)
             self.atoms = xyz[:, :, 0].astype(str).tolist()
         except ValueError:
-            pass
+            atom_list = []
+            for x in self.xyz:
+                atoms = []
+                for y in x:
+                    atoms.append(y.split()[0])
+                atom_list.append(atoms)
+            self.atoms = atom_list
 
         try:
             xyz = np.array(self.xyz)
@@ -256,7 +262,13 @@ class Data:
             xyz = np.array(self.pred_xyz)
             self.pred_atoms = xyz[:, :, 0].astype(str).tolist()
         except ValueError:
-            pass
+            atom_list = []
+            for x in self.xyz:
+                atoms = []
+                for y in x:
+                    atoms.append(y.split()[0])
+                atom_list.append(atoms)
+            self.pred_atoms = atom_list
 
         try:
             xyz = np.array(self.pred_xyz)

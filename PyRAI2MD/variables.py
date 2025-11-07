@@ -130,20 +130,20 @@ def read_input(ld_input):
             KeyMLP().info(variables_all['eg'], variables_all['nac'], variables_all['soc'], 1, nn_type='native') +
             KeyMLP().info(variables_all['eg2'], variables_all['nac2'], variables_all['soc2'], 2, nn_type='native'),
         'mlp':
-            KeyNN(nn_type='mlp').info(variables_all['nn']) +
+            KeyNN(nn_type='mlp').info(variables_all['mlp']) +
             KeyMLP().info(variables_all['eg'], variables_all['nac'], variables_all['soc'], 1, nn_type='pyNNsMD') +
             KeyMLP().info(variables_all['eg2'], variables_all['nac2'], variables_all['soc2'], 2, nn_type='pyNNsMD'),
         'schnet':
-            KeyNN(nn_type='schnet').info(variables_all['nn']) +
+            KeyNN(nn_type='schnet').info(variables_all['schnet']) +
             KeySchNet().info(variables_all['sch_eg'], variables_all['sch_nac'], variables_all['sch_soc']),
         'e2n2':
-            KeyNN(nn_type='e2n2').info(variables_all['nn']) +
+            KeyNN(nn_type='e2n2').info(variables_all['e2n2']) +
             KeyE2N2().info(variables_all['e2n2_eg'], variables_all['e2n2_nac'], variables_all['e2n2_soc']),
         'e2n2_demo':
-            KeyNN(nn_type='e2n2').info(variables_all['nn']) +
+            KeyNN(nn_type='e2n2').info(variables_all['e2n2_demo']) +
             KeyE2N2Demo().info(variables_all['e2n2_eg'], variables_all['e2n2_nac'], variables_all['e2n2_soc']),
         'dimenet':
-            KeyNN(nn_type='dimenet').info(variables_all['nn']) +
+            KeyNN(nn_type='dimenet').info(variables_all['dimenet']) +
             KeyDimeNet().info(variables_all['dime_nac']),
         'molcas': KeyMolcas().info(variables_all['molcas']),
         'mlctkr': KeyMolcas().info(variables_all['molcas']),

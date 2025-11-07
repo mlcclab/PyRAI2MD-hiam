@@ -36,6 +36,7 @@ class KeyNN:
             'ml_seed': 1,  # Caution! Not allow user to set.
             'permute_map': 'No',
             'gpu': 0,
+            'elements': [],
         }
 
         self.nn_type = nn_type
@@ -66,6 +67,7 @@ class KeyNN:
             'permute_map': ReadVal('s'),
             'gpu': ReadVal('i'),
             'silent': ReadVal('i'),
+            'elements': ReadVal('sl'),
         }
 
         for i in values:
@@ -100,6 +102,7 @@ class KeyNN:
   Select NAC output:          %-10s
   Select SOC output:          %-10s  
   Data permutation            %-10s
+  Elements                    %-10s
 -------------------------------------------------------
 
         """ % (
@@ -119,7 +122,8 @@ class KeyNN:
             keywords['select_eg_out'],
             keywords['select_nac_out'],
             keywords['select_soc_out'],
-            keywords['permute_map']
+            keywords['permute_map'],
+            ' '.join(keywords['elements']),
         )
 
         return summary
