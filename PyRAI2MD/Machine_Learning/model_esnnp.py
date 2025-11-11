@@ -167,6 +167,7 @@ class E2N2:
         self.elements = sorted([Atom(x).name for x in unique_atom])
 
         ## find node type
+        """
         if len(multiscale) > 0:
             # to differentiate the same element in different regions
             self.mr = Multiregions(self.atoms[0], multiscale)
@@ -177,7 +178,7 @@ class E2N2:
             self.mr = None
             self.atoms = np.array(self.atoms)
             self.pred_atoms = np.array(self.pred_atoms)
-
+        """
         ## initialize model path
         if modeldir is None or job_id not in [None, 1]:
             self.model_path = self.name

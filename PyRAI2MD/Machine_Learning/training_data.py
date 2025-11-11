@@ -181,7 +181,7 @@ class Data:
             for x in self.xyz:
                 atoms = []
                 for y in x:
-                    atoms.append(y.split()[0])
+                    atoms.append(y[0])
                 atom_list.append(atoms)
             self.atoms = atom_list
 
@@ -266,7 +266,7 @@ class Data:
             for x in self.xyz:
                 atoms = []
                 for y in x:
-                    atoms.append(y.split()[0])
+                    atoms.append(y[0])
                 atom_list.append(atoms)
             self.pred_atoms = atom_list
 
