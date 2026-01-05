@@ -459,11 +459,11 @@ class AdaptiveSampling:
         self.err_g = md_err_g
         self.err_n = md_err_n
         self.err_s = md_err_s
-        self.pop = md_pop
         self.max_e = md_max_e
         self.max_g = md_max_g
         self.max_n = md_max_n
         self.max_s = md_max_s
+        self.pop = md_pop
         self.dyn_e_new = md_dyn_e
         self.dyn_g_new = md_dyn_g
         self.dyn_n_new = md_dyn_n
@@ -522,17 +522,22 @@ class AdaptiveSampling:
         itr_g = self.itr_g[traj_id]
         itr_n = self.itr_n[traj_id]
         itr_s = self.itr_s[traj_id]
+        min_pop = np.amin(np.array(pop.tolist()), axis=1)  # find the minimum population in each snapshot
 
         ## find index of geometries exceeding the threshold of prediction error
         index_e = self._sort_errors(err_e, self.minenergy)
         index_g = self._sort_errors(err_g, self.mingrad)
         index_n = self._sort_errors(err_n, self.minnac)
         index_s = self._sort_errors(err_s, self.minsoc)
+        index_p1 = np.where(min_pop < -0.01)[0]  # find pop exceeding 0-1
+        index_p2 = np.where(np.isnan(min_pop) > 0)[0]  # find pop nan
+        index_p = np.concatenate((index_p1, index_p2)).astype(int)
 
         ## merge index and remove duplicate in select_geom
         index_tot = np.concatenate((index_e, index_g)).astype(int)
         index_tot = np.concatenate((index_tot, index_n)).astype(int)
         index_tot = np.concatenate((index_tot, index_s)).astype(int)
+        index_tot = np.concatenate((index_tot, index_p)).astype(int)
         index_tot = np.unique(index_tot)[::-1]  # reverse from large to small indices
         num_index_tot = len(index_tot)
 
@@ -546,6 +551,7 @@ class AdaptiveSampling:
         uncer_tot = np.concatenate((uncer_e, uncer_g)).astype(int)
         uncer_tot = np.concatenate((uncer_tot, uncer_n)).astype(int)
         uncer_tot = np.concatenate((uncer_tot, uncer_s)).astype(int)
+        uncer_tot = np.concatenate((uncer_tot, index_p)).astype(int)
         uncer_tot = np.unique(uncer_tot)
         num_uncer_tot = len(uncer_tot)
 
@@ -734,7 +740,7 @@ class AdaptiveSampling:
 
         sort_i_err = np.argsort(-err)
         sort_err = err[sort_i_err]
-        find_err = np.argwhere(sort_err > threshold)
+        find_err = np.where(sort_err > threshold)[0]
         index_err = sort_i_err[find_err]
 
         return index_err
