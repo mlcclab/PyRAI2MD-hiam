@@ -62,7 +62,7 @@
       <recent name="$PROJECT_DIR$/../github/pyoqp" />
     </key>
   </component>
-  <component name="RunManager" selected="Python.demo_distance_pbc">
+  <component name="RunManager" selected="Python.demo_atomic_eg">
     <configuration name="demo_atomic_eg" type="PythonConfigurationType" factoryName="Python" temporary="true" nameIsGenerated="true">
       <module name="E2N2" />
       <option name="INTERPRETER_OPTIONS" value="" />
@@ -155,10 +155,10 @@
     </list>
     <recent_temporary>
       <list>
+        <item itemvalue="Python.demo_atomic_eg" />
         <item itemvalue="Python.demo_distance_pbc" />
         <item itemvalue="Python.demo_distance_eg" />
         <item itemvalue="Python.demo_atomic_pbc" />
-        <item itemvalue="Python.demo_atomic_eg" />
       </list>
     </recent_temporary>
   </component>
