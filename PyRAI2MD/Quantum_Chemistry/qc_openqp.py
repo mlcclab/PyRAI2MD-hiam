@@ -44,8 +44,8 @@ class OpenQP:
             openqp           str	     OpenQP_ROOT environment variable, executable folder.
             nproc            int	     number of CPUs for parallelization
             use_hpc          int	     use HPC (1) for calculation like SLURM
-                                         or run calculation based on IO (0)
-                                         or run calculation in memory (-1)
+                                         or run calculation in memory (0)
+                                         or run calculation based on IO (-1)
 
         Functions:           Returns:
             train            self        fake function
@@ -54,6 +54,8 @@ class OpenQP:
             evaluate         self        run single point calculation
 
     """
+
+    from oqp.pyoqp import Runner
 
     def __init__(self, keywords=None, job_id=None, runtype='qm_high_mid_low'):
         self.runtype = runtype
@@ -75,7 +77,6 @@ class OpenQP:
         self.openqp = variables['openqp']
         self.nproc = variables['threads']
         self.activestate = 0
-        self.pyoqp = None
         self.back_door_data = None
         use_hpc = variables['use_hpc']
 
@@ -84,7 +85,6 @@ class OpenQP:
         if job_id is not None:
             if job_id == 'Read':
                 self.workdir = self.workdir
-                use_hpc = -1
             else:
                 self.workdir = '%s/tmp_OpenQP-%s' % (self.workdir, job_id)
         else:
@@ -99,15 +99,20 @@ class OpenQP:
 
         ## set openqp run functions
         if use_hpc == 1:
-            self._init_io()
+            self._init_hpc()
             self._write_openqp = self._write_openqp_io
-            self._run_openqp = self._run_openqp_io
+            self._run_openqp = self._run_openqp_hpc
             self._read_data = self._read_data_io
         elif use_hpc == 0:
             self._init_mem()
             self._write_openqp = self._write_openqp_mem
             self._run_openqp = self._run_openqp_mem
             self._read_data = self._read_data_mem
+        elif use_hpc == -1:
+            self._init_io()
+            self._write_openqp = self._write_openqp_io
+            self._run_openqp = self._run_openqp_io
+            self._read_data = self._read_data_io
 
     def _read_openqp(self):
         # read openqp input file as dictf
@@ -165,7 +170,7 @@ class OpenQP:
 
         return input_dict
 
-    def _init_io(self):
+    def _init_hpc(self):
         ## read slurm template from .slurm files
         if os.path.exists('%s.slurm' % self.project):
             with open('%s.slurm' % self.project, 'r') as template:
@@ -196,13 +201,33 @@ openqp ${OPENQP_PROJECT}.inp --nompi
         with open('%s/%s.sbatch' % (self.workdir, self.project), 'w') as out:
             out.write(self.runscript)
 
+    def _init_io(self):
+
+        self.runscript = """
+export OPENQP_PROJECT=%s
+export OPENQP_WORKDIR=%s
+export OPENQP_ROOT=%s
+export OMP_NUM_THREADS=%s
+
+cd $OPENQP_WORKDIR
+
+openqp ${OPENQP_PROJECT}.inp --nompi
+
+""" % (
+            self.project,
+            self.workdir,
+            self.openqp,
+            self.nproc,
+        )
+
+        ## write io runscript
+        with open('%s/%s.sh' % (self.workdir, self.project), 'w') as out:
+            out.write(self.runscript)
+
     def _init_mem(self):
         ## initialize openqp in memory for local calculation
         os.environ['OPENQP_ROOT'] = self.openqp
         os.environ['OMP_NUM_THREADS'] = str(self.nproc)
-
-        from oqp.pyoqp import Runner
-        self.pyoqp = Runner
         self.input_dict['properties']['back_door'] = 'true'
 
     def _setup_openqp(self, x, q=None):
@@ -263,26 +288,37 @@ openqp ${OPENQP_PROJECT}.inp --nompi
     def _write_openqp_mem(self, x, q=None):
         ## prepare openqp input dict for in-memory calculation
         self._write_openqp_io(x, q)
-        self.runner = self.pyoqp(project=self.project,
-                                 input_file='%s/%s.inp' % (self.workdir, self.project),
-                                 input_dict=self.input_dict,
-                                 log='%s/%s.log' % (self.workdir, self.project),
-                                 silent=1,
-                                 usempi=False)
 
-    def _run_openqp_io(self):
-        ## run openqp via I/O
+    def _run_openqp_hpc(self):
+        ## run openqp via HPC
         maindir = os.getcwd()
         os.chdir(self.workdir)
         subprocess.run(['sbatch', '-W', '%s/%s.sbatch' % (self.workdir, self.project)])
         os.chdir(maindir)
 
+    def _run_openqp_io(self):
+        ## run openqp via I/O
+        maindir = os.getcwd()
+        os.chdir(self.workdir)
+        subprocess.run(['bash', '%s/%s.sh' % (self.workdir, self.project)])
+        os.chdir(maindir)
+
     def _run_openqp_mem(self):
+        ## initialize pyoqp if not initialized
+
+        pyoqp = self.Runner(project=self.project,
+                            input_file='%s/%s.inp' % (self.workdir, self.project),
+                            input_dict=self.input_dict,
+                            log='%s/%s.log' % (self.workdir, self.project),
+                            silent=1,
+                            usempi=False)
+
         ## run openqp in memory
         maindir = os.getcwd()
         os.chdir(self.workdir)
-        self.runner.back_door(self.back_door_data)
-        self.runner.run()
+        pyoqp.back_door(self.back_door_data)
+        pyoqp.run()
+        self.results = pyoqp.results()
         os.chdir(maindir)
 
     def _read_data_io(self, natom):
@@ -355,7 +391,7 @@ openqp ${OPENQP_PROJECT}.inp --nompi
         return coord, energy, gradient, nac, soc
 
     def _read_data_mem(self, natom):
-        results = self.runner.results()
+        results = self.results
         atoms = results['atoms']
         system = results['system']
         coord = openqp_coord2list(atoms, system)
@@ -389,7 +425,11 @@ openqp ${OPENQP_PROJECT}.inp --nompi
             nac = np.zeros(0)
 
         soc = np.array(results['soc'])
-        self.back_door_data = (system, results['data'])
+
+        if self.align_mo:
+            self.back_door_data = (system, results['data'])
+
+        self.results = None
 
         return coord, energy, gradient, nac, soc
 

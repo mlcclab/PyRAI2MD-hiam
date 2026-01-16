@@ -21,7 +21,7 @@ class KeyOpenQP:
             'openqp_workdir': os.getcwd(),
             'threads': 1,
             'guess_type': 'auto',
-            'align_mo': 'true',
+            'align_mo': False,
             'method': 'tdhf',
             'use_hpc': 0,
             'keep_tmp': 1,
