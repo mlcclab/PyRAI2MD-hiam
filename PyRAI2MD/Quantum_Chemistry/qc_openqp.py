@@ -55,7 +55,7 @@ class OpenQP:
 
     """
 
-    from oqp.pyoqp import Runner
+    Runner = None
 
     def __init__(self, keywords=None, job_id=None, runtype='qm_high_mid_low'):
         self.runtype = runtype
@@ -305,6 +305,9 @@ openqp ${OPENQP_PROJECT}.inp --nompi
 
     def _run_openqp_mem(self):
         ## initialize pyoqp if not initialized
+        if self.Runner is None:
+            from oqp.pyoqp import Runner
+            self.__class__.Runner = Runner
 
         pyoqp = self.Runner(project=self.project,
                             input_file='%s/%s.inp' % (self.workdir, self.project),
