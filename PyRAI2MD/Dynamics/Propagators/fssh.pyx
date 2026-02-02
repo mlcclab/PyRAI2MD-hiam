@@ -190,7 +190,7 @@ cpdef FSSH(dict traj):
     ## initialize nac matrix
     if nactype == 'dcm':
         Dt = N.astype(complex) / (delt*substep)
-        N = np.zeros()
+        N = np.zeros(0)
     else:
         if iter > 2:
             for n, pair in enumerate(nac_coupling):
