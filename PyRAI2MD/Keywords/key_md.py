@@ -197,7 +197,7 @@ class KeyMD:
             keywords['phasecheck'],
             keywords['popreset'],
             keywords['substep'],
-            keywards['rk4'],
+            keywords['rk4'],
             keywords['integrate'],
             keywords['deco'],
             keywords['adjust'],
