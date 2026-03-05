@@ -52,6 +52,7 @@ class Trajectory(Molecule):
             gapsoc           float       energy gap threshold for Zhu-Nakamura intersystem crossing
             delt             float       step size for fewest switches surface hopping 
             substep          int         number of substeps for fewest switches surface hopping
+            rk4              str         use Runge-Kutta 4th Order Method in FSSH
             integrate        int         integrate surface hopping probability in accumulation scheme (Not recommended)
             deco             float       decoherence correction in Hartree
             adjust           int         adjust velocity at surface hopping
@@ -116,7 +117,7 @@ class Trajectory(Molecule):
     __slots__ = ['gl_seed', 'initcond', 'excess', 'scale', 'target', 'graddesc', 'reset', 'resetstep', 'record_region',
                  'ninitcond', 'method', 'format', 'temp', 'step', 'size', 'root', 'attr', 'verbose', 'phasecheck',
                  'popreset', 'sfhp', 'gap', 'gapsoc', 'substep', 'integrate', 'deco', 'adjust', 'reflect', 'maxh',
-                 'delt',
+                 'delt', 'rk4',
                  'last_state', 'state', 'last_a', 'last_h', 'last_d', 'a', 'h', 'd', 'dosoc', 'last_nac', 'last_soc',
                  'coord1', 'coord2', 'kinetic1', 'kinetic2', 'energy1', 'energy2', 'grad1', 'grad2', 'activestate',
                  'thermo', 'thermodelay', 'vs', 'itr', 'itr_x', 'hoped', 'history', 'length', 'shinfo', 'nactype',
@@ -151,6 +152,7 @@ class Trajectory(Molecule):
         self.gap = key_dict['gap']
         self.gapsoc = key_dict['gapsoc']
         self.substep = key_dict['substep']
+        self.rk4 = key_dict['rk4']
         self.integrate = key_dict['integrate']
         self.deco = key_dict['deco']
         self.adjust = key_dict['adjust']

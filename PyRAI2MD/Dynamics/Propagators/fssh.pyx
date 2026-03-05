@@ -72,6 +72,17 @@ cdef dPdt(np.ndarray A, np.ndarray H, np.ndarray D):
 
     return dA
 
+cpdef RK4dPdt(A, H, D, dHdt, dDdt, delt):
+    # A, H, and D are from the previous step
+    # dHdt and dDdt are linearly interpolated between D and H at t and t+dt, where t is the previus step, t+dt is the current step
+    # delt is the sub-step size
+    k1 = dPdt(A, H, D)
+    k2 = dPdt(A + k1 * delt/2, H + dHdt/2, D + dDdt/2)
+    k3 = dPdt(A + k2 * delt/2, H + dHdt/2, D + dDdt/2)
+    k4 = dPdt(A + k3 * delt, H + dHdt, D + dDdt)
+    dAdt = (k1 + k2 * 2 + k3 * 2 + k4) / 6
+    return dAdt
+
 cdef matB(np.ndarray A, np.ndarray H, np.ndarray D):
     """ Computing the B matrix for FSSH
     The algorithm is based on Tully's method.John C. Tully, J. Chem. Phys. 93, 1061 (1990)
@@ -158,6 +169,7 @@ cpdef FSSH(dict traj):
     cdef int        new_state    = traj['state']
     cdef int        integrate    = traj['integrate']
     cdef str        nactype      = traj['nactype']
+    cdef str        rk4          = traj['rk4']
     cdef np.ndarray V            = traj['velo']
     cdef np.ndarray M            = traj['mass']
     cdef np.ndarray E            = traj['energy']
@@ -253,7 +265,11 @@ cpdef FSSH(dict traj):
             H += dHdt
             D += dDdt
 
-            dAdt = dPdt(A, H, D)
+            if rk4 == '0':
+                dAdt = dPdt(A, H, D)
+            else:
+                dAdt = RK4dPdt(A, H, D, dHdt, dDdt, delt)
+
             dAdt *= delt
             A += dAdt
 

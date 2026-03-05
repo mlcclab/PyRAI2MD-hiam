@@ -40,6 +40,7 @@ class KeyMD:
             'gapsoc': 0.5,
             'addsoc': 0,
             'substep': 20,
+            'rk4': '0',
             'integrate': 0,
             'deco': '0.1',
             'adjust': 1,
@@ -96,6 +97,7 @@ class KeyMD:
             'gapsoc': ReadVal('f'),
             'addsoc': ReadVal('f'),
             'substep': ReadVal('i'),
+            'rk4': ReadVal('s'),
             'integrate': ReadVal('i'),
             'deco': ReadVal('s'),
             'adjust': ReadVal('i'),
@@ -163,6 +165,7 @@ class KeyMD:
   Phase correction            %-10s
   Population reset            %-10s
   Substep:                    %-10s
+  Runge-Kutta 4th Order:      %-10s
   Integrate probability       %-10s
   Decoherence:                %-10s
   Adjust velocity:            %-10s
@@ -194,6 +197,7 @@ class KeyMD:
             keywords['phasecheck'],
             keywords['popreset'],
             keywords['substep'],
+            keywards['rk4'],
             keywords['integrate'],
             keywords['deco'],
             keywords['adjust'],
