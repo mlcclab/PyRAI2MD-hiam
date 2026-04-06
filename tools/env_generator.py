@@ -74,6 +74,7 @@ def main(argv):
       expand        1  # expand the environment molecules from center toward the center of mass
       c_atom        0  # define the number of atoms in the center molecule
       v_atom        0  # define the number of atoms in the environment molecule
+      nsol          0  # define the number of solvent to build environment
       combine       yes  # combine the initial velocity with the corresponding atoms in the final condition
       read_init     filename  # name of a .init or .init.xyz file
       init_to_xyz   1  # convert a init file to xyz
@@ -115,6 +116,7 @@ def main(argv):
     density = None
     mass = None
     packmol = None
+    solbox = None
 
     cell = None
     nmol = None
@@ -146,6 +148,7 @@ def main(argv):
     expand = 1
     c_atom = 0
     v_atom = 0
+    nsol = 0
     init_to_xyz = 0
     scale = 1
     edit_atom = []
@@ -198,6 +201,8 @@ def main(argv):
             solvent = line.split()[1]
         elif 'nshell' == key:
             nshell = float(line.split()[1])
+        elif 'solbox' == key:
+            solbox = float(line.split()[1])
         elif 'density' == key:
             density = float(line.split()[1])
         elif 'mass' == key:
@@ -260,6 +265,8 @@ def main(argv):
             c_atom = int(line.split()[1].lower())
         elif 'v_atom' == key:
             v_atom = int(line.split()[1].lower())
+        elif 'nsol' == key:
+            nsol = int(line.split()[1].lower())
         elif 'init_to_xyz' == key:
             init_to_xyz = int(line.split()[1])
         elif 'scale' == key:
@@ -340,6 +347,7 @@ def main(argv):
         'solute': solute,
         'solvent': solvent,
         'nshell': nshell,
+        'solbox': solbox,
         'density': density,
         'mass': mass,
         'packmol': packmol,
@@ -369,6 +377,7 @@ def main(argv):
         'read_init': read_init,
         'reorder': reorder,
         'expand': expand,
+        'nsol': nsol,
         'c_atom': c_atom,
         'v_atom': v_atom,
         'init_to_xyz': init_to_xyz,
@@ -531,6 +540,7 @@ def read_xyz(xyz):
 
     return atom, coord
 
+
 def read_xyz_list(xyz):
     natom = int(xyz[0])
     nline = natom + 2
@@ -540,6 +550,7 @@ def read_xyz_list(xyz):
     xyz_list = np.array([x.split()[1: 4] for x in xyz_list]).astype(float).reshape((nxyz, natom, 3))
 
     return atom, xyz_list
+
 
 def find_rad_in(xyz):
     # compute the radius of the inner core for solute molecule
@@ -564,6 +575,7 @@ filetype xyz
 
 structure %s
 number 1
+center
 fixed 0. 0. 0. 0. 0. 0.
 end structure
 
@@ -573,6 +585,31 @@ inside sphere 0. 0. 0. %8.2f
 outside sphere 0. 0. 0. %8.2f
 end structure
 """ % (core, sol, num, rad_out, rad_in)
+
+    with open('sol.pkm', 'w') as out:
+        out.write(output)
+
+    return None
+
+
+def write_packmol_box(core, sol, num, rad_in, box):
+    d = box - 1
+    output = """tolerance 2.5
+output env.xyz
+filetype xyz
+
+structure %s
+center
+number 1
+fixed %8.2f %8.2f %8.2f 0. 0. 0.
+end structure
+
+structure %s
+number %8.0f
+inside box 0. 0. 0. %8.2f %8.2f %8.2f
+outside sphere %8.2f %8.2f %8.2f %8.2f
+end structure
+""" % (core, d/2, d/2, d/2, sol, num, d, d, d, d/2, d/2, d/2, rad_in)
 
     with open('sol.pkm', 'w') as out:
         out.write(output)
@@ -609,7 +646,7 @@ def create_equsol(key_dict):
 
     solute = in_dict['solute']
     solvent = in_dict['solvent']
-    nshell = in_dict['nshell']
+    solbox = in_dict['solbox']
     density = in_dict['density']
     mass = in_dict['mass']
     packmol = in_dict['packmol']
@@ -625,32 +662,20 @@ def create_equsol(key_dict):
     fsphere = 4 / 3 * 3.1415926  # spherical volume factor
 
     unit_den = density / cm_to_a ** 3 / mass * avg
-    unit_rad = (1 / unit_den / fsphere) ** (1 / 3)
-    rad_out = rad_in + unit_rad * nshell
-    vol = fsphere * (rad_out ** 3 - rad_in ** 3)
+    vol = solbox ** 3 - fsphere * (rad_in + 2) ** 3
     num = vol * unit_den
 
+    print(' solvent box %8.2f' % solbox)
     print(' computing inner radius %8.2f' % rad_in)
-    print(' computing solvent unit radius %8.2f' % unit_rad)
-    print(' creating %s layer of spherical shell from %8.2f to %8.2f Angstrom' % (nshell, rad_in, rad_out))
     print(' total mass is %16.8f g/mol' % (mass * int(num)))
     print(' total volume is %16.8f Angstrom^3' % vol)
     print(' total number of solvent molecule is %8.0f' % num)
     print(' writing packmol input > sol.pkm')
-    write_packmol(solute, solvent, num, rad_in, rad_out)
+    write_packmol_box(solute, solvent, num, rad_in, solbox)
     print(' running packmol\n')
     subprocess.run('%s/bin/packmol < sol.pkm > sol.log' % packmol, shell=True)
     print(' writing environment > env.xyz')
 
-    with open('env.xyz', 'r') as inxyz:
-        geom_s = inxyz.read().splitlines()
-
-    _, geom_s = read_xyz(geom_s)
-    rad_s = find_rad_in(geom_s)
-    print(' checking constraining potential parameters')
-    print(' radius of the solvent model is %8.2f Angstrom' % rad_s)
-    print(' suggested constraining radius is %8.2f Angstrom' % (rad_s * 1.1))
-    print(' compression ratio is 0.90909091')
     print(' COMPLETE')
 
     print('''
@@ -783,6 +808,7 @@ def create_aggregate(key_dict):
 
     print(' building supercell')
     print(' cutting aggregate')
+    print(' selecting %s molecule' % len(supercell))
     print(' aligning cell to %s' % align)
     print(' computing aggregate max radius ', maxrad)
     print(' writing center molecule > mol.xyz')
@@ -881,6 +907,7 @@ def post_process_env(key_dict):
     c_atom        0   # define the number of atoms in the center molecule
     v_atom        0   # define the number of atoms in the environment molecule
     radius        20  # cutoff radius to build a spherical solvent model from box
+    nsol          0   # optional, define the number of solvent to build a spherical solvent model, overwrite radius
 
           ''')
     title = key_dict['title']
@@ -889,6 +916,7 @@ def post_process_env(key_dict):
     c_atom = key_dict['c_atom']
     v_atom = key_dict['v_atom']
     radius = key_dict['radius']
+    nsol = key_dict['nsol']
 
     if os.path.exists(file):
         read_list = True
@@ -928,15 +956,23 @@ def post_process_env(key_dict):
     nv_list = []
     dist_list = []
     for dist in dist_cond:
-        nv = len(np.where(dist < radius)[0])
+        if nsol == 0:
+            nv = len(np.where(dist < radius)[0])
+        else:
+            nv = nsol
+
         nv_list.append(nv)
         dist_list.append(dist[nv - 1])
     mv = np.amin(nv_list)
+    mind = np.amin(dist_list)
+    maxd = np.amax(dist_list)
     natom = c_atom + v_atom * mv
 
+    if nsol > 0:
+        print(' requested number of solvent: %d' % nsol)
     print(' number of solvent found %d - %d' % (mv, np.amax(nv_list)))
     print(' selected solvent molecules %8d' % mv)
-    print(' maximum distance range %12.4f - %12.4f Angstrom' % (np.amin(dist_list), np.amax(dist_list)))
+    print(' maximum distance range %12.4f - %12.4f Angstrom' % (mind, maxd))
     print(' writing post processed environment > post_env.init')
     print(' writing post processed environment > post_env.xyz')
     outcond = ''
@@ -998,6 +1034,7 @@ def post_process_env(key_dict):
     you might want to merge the post processed environment with the initial conditions
     to do so, change mode to merge and change env_type to equsol
    ''')
+
 
 def read_lmp_cond(f):
     with open(f, 'r') as infile:
@@ -1152,6 +1189,7 @@ def read_cond(cond):
             initcond.append(xyz)
 
     return atom, initcond
+
 
 def sample_initcond(key_dict):
     print('''
@@ -1574,7 +1612,7 @@ def check_connectivity(box, mol):
     # mol in [nsol, natom, 6]
     a0 = mol[:, 0:1, 0:3]
     a1 = mol[:, :, 0:3]
-    dist = box/2
+    dist = box / 2
     f = np.abs(a1 - a0) > dist
     s = np.sign(a1 - a0)
     mol[:, :, 0:3] -= f * s * box
@@ -1807,7 +1845,7 @@ def radial_density(xyz, mass, group_mass, group_map, group_idx, center_rdf, cent
         f = 1  # g/mol/A2
     else:
         vol = 4 / 3 * np.pi * (r1 ** 3 - r0 ** 3)
-        f = (10/6.022)  # g/mol/A3 to g/cm3
+        f = (10 / 6.022)  # g/mol/A3 to g/cm3
 
     # compute shell density
     rdf = np.zeros(points)
@@ -1951,7 +1989,7 @@ def compute_den(key_dict):
         pool.close()
 
         vol = np.sum(in_points) / points * v
-        den = mass / vol * (10/6.022)
+        den = mass / vol * (10 / 6.022)
         den_summary.append([vol, den])
         print(' mol: %4s vol: %16.4f dens: %8.4f                      ' % (nmol + 1, vol, den))
 
@@ -1969,9 +2007,9 @@ def get_probe_points(box, points, probe, probe_rad, nbatch):
 
     pxyz = np.stack((x, y, z)).T * probe_rad
 
-    bx = np.random.uniform(-box/2, box/2, points)
-    by = np.random.uniform(-box/2, box/2, points)
-    bz = np.random.uniform(-box/2, box/2, points)
+    bx = np.random.uniform(-box / 2, box / 2, points)
+    by = np.random.uniform(-box / 2, box / 2, points)
+    bz = np.random.uniform(-box / 2, box / 2, points)
 
     bxyz = np.stack((bx, by, bz)).T
 
@@ -1982,6 +2020,7 @@ def get_probe_points(box, points, probe, probe_rad, nbatch):
     probe_points = probe_points.reshape((nbatch, size, 3))
 
     return probe_points
+
 
 def den_wrapper(var):
     idx, coord, probe_points, points, probe, vdw_rad = var
