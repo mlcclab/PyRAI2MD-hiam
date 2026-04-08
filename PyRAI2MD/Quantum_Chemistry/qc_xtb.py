@@ -337,7 +337,7 @@ cd $XTB_WORKDIR
         pbc = traj.pbc
 
         if ignore_charges:
-            charge = np.zeross(0)
+            charge = np.zeros(0)
         else:
             charge = traj.qm2_charge
 
