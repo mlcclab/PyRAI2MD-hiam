@@ -25,8 +25,9 @@
     2019 – 2022      Department of Chemistry and Chemical Biology
                      Northeastern University, Boston, USA
 
-                          version:   2.5.0
-                          
+                          version:   2.6.0
+
+  IMPORTANT  ---->   This is the last version of PyRAI2MD
 
   With contribution from (in alphabetic order):
     Jingbai Li     - Fewest switches surface hopping
@@ -38,10 +39,11 @@
                      ORCA interface
                      OpenQP interface
                      GFN-xTB interface
+                     LAMMPS interface
                      Adaptive sampling
                      Grid search
                      Multilayer ONIOM (QM:QM' and QM:QM':MM)
-                     Periodic boundary condition (coming soon)
+                     Periodic boundary condition
                      Wall potential
                      QC/ML hybrid NAMD
                      Excited-State Neural Network Potentials (ESNNP)
@@ -115,6 +117,9 @@
   |   |--qc_xtb                                    GFN-xTB interface                                
   |    `-qmqm2                                     Multiscale calculation interface                 
   |
+  |--Molecular_Mechanics
+  |    `-mm_lammps.py                              LAMMPS interface
+  | 
   |--Machine_Learning                              machine learning library interface folder
   |   |--model_demo.py                             demo version neural network                      
   |   |--model_NN.py                               native neural network interface                  
