@@ -1,11 +1,13 @@
 ## ----------------------
-## Chemical environment generator - a script to automatically create solvent or aggregate environment
+## Multiscale model generator - a script to automatically create solvent or aggregate environment and prepare MM files
 ## ----------------------
 ##
-## New version Apr 29 2024 Jingbai Li
+## Apr 7 2026 Jingbai Li
 
 import os
 import sys
+import yaml
+import shutil
 import subprocess
 import multiprocessing
 import numpy as np
@@ -37,69 +39,75 @@ def main(argv):
 
     a creation file contains the following parameters
 
-      title         name of calculation
-      cpus          1 # number of CPUs for merging and reading initial conditions
-      mode          create  # run mode, create, merge, read, edit, rdf, or den
-      env_type      solvent  # type of environment, solvent or aggregate 
-      solute        solute.xyz  # solute molecule xyz file
-      solvent       solvent.xyz  # solvent molecule xyz file
-      nshell        2  # number of solvent shell
-      density       1  # solvent density in g/cm**-3
-      solbox        60  # length of the solvent box in Angstrom
-      mass          18  # molar mass of solvent in g/mol
-      packmol       /path/to/packmol  # the path to packmol
-      cell          cell.xyz  # unit cell molecule xyz file
-      nmol          2  # number of molecules in the unit cell
-      center        1  # the index of the molecule in the unit cell that will be used as the center in the aggregate
-      a             1  # a distance
-      b             1  # b distance
-      c             1  # c distance
-      alpha         90  # alpha angle 
-      beta          90  # beta angle
-      gamma         90  # gamma angle
-      na            3  # number of translation in a direction, the order is 0, +1, -1, +2, -2, +3, -3,...
-      nb            3  # number of translation in b direction
-      nc            3  # number of translation in c direction
-      radius        14  # cutoff radius to build aggregate
-      align         file.xyz  # align the orientation toward target xyz
-      method        wigner  # initial condition sampling method
-      ninitcond     1  # number of sampled initial condition
-      seed          1  # random seed for sampling
-      format        xyz  # frequency file format
-      temp          298.15  # sampling temperature
-      read          list.txt  # a list of path to read the finally equilibrated conditions
-      skip          10  # number of MD step to be skipped before reading conditions
-      freq          1  # frequency of reading conditions in each trajectory from the last snapshot
-      reorder       0  # reorder environment molecules from the closest one to the farthest one.
-      expand        1  # expand the environment molecules from center toward the center of mass
-      c_atom        0  # define the number of atoms in the center molecule
-      v_atom        0  # define the number of atoms in the environment molecule
-      nsol          0  # define the number of solvent to build environment
-      combine       yes  # combine the initial velocity with the corresponding atoms in the final condition
-      read_init     filename  # name of a .init or .init.xyz file
-      init_to_xyz   1  # convert a init file to xyz
-      scale         1  # scale the kinetic energy
-      edit_atom     []  # edit initial conditions for the selected atoms
-      append_init   filename  # name of the second .init or .init.xyz file
-      remove_init   []  # initial condition indices to remove from the original .init or init.xyz file
-      file          filename  # name of the list file for trajectory folders
-      check_box     []  # define the a, b, c of the box to correct the coordinates for molecule cross the box
-      center_rdf    []  # define the center of atoms to compute rdf
-      center_type   xyz  # set the type of center to compute rdf
-      rdf_axis      xyz  # choose the axis to compute rdf
-      maxrad        10  # set the maximum distance to compute rdf
-      interval      0.1  # set the interval to compute rdf
-      groups        []  # define groups of molecules to compute center of mass
-      skip_groups   []  # set the index to skip the group in rdf calculation
-      snapshots     1  # set the snapshots to compute rdf
-      xyz_file      filename  # name of a xyz file
-      box           60  # define a length of the box in Angstrom for Monte Carlo calculations
-      points        10000  # define the number of points for Monte Carlo calculations
-      batch_size    100  # define the batch size for Monte Carlo calculations
-      probe         100  # define the number of points on the probe sphere
-      probe_rad     1.0  # define the radius of the probe sphere in Angstrom
-      select_atom   []  # compute density for selected atoms, defaults is all
-    
+        title         name of calculation
+        cpus          1 # number of CPUs for merging and reading initial conditions
+        mode          create  # run mode, create, merge, read, edit, rdf, den, or mm
+        env_type      solvent  # type of environment, solvent or aggregate 
+        solute        solute.xyz  # solute molecule xyz file
+        solvent       solvent.xyz  # solvent molecule xyz file
+        nshell        2  # number of solvent shell
+        density       1  # solvent density in g/cm**-3
+        solbox        60  # length of the solvent box in Angstrom
+        mass          18  # molar mass of solvent in g/mol
+        packmol       /path/to/packmol  # the path to packmol
+        cell          cell.xyz  # unit cell molecule xyz file
+        nmol          2  # number of molecules in the unit cell
+        center        1  # the index of the molecule in the unit cell that will be used as the center in the aggregate
+        a             1  # a distance
+        b             1  # b distance
+        c             1  # c distance
+        alpha         90  # alpha angle 
+        beta          90  # beta angle
+        gamma         90  # gamma angle
+        na            3  # number of translation in a direction, the order is 0, +1, -1, +2, -2, +3, -3,...
+        nb            3  # number of translation in b direction
+        nc            3  # number of translation in c direction
+        radius        14  # cutoff radius to build aggregate
+        align         file.xyz  # align the orientation toward target xyz
+        method        wigner  # initial condition sampling method
+        ninitcond     1  # number of sampled initial condition
+        seed          1  # random seed for sampling
+        format        xyz  # frequency file format
+        temp          298.15  # sampling temperature
+        read          list.txt  # a list of path to read the finally equilibrated conditions
+        skip          10  # number of MD step to be skipped before reading conditions
+        freq          1  # frequency of reading conditions in each trajectory from the last snapshot
+        reorder       0  # reorder environment molecules from the closest one to the farthest one.
+        expand        1  # expand the environment molecules from center toward the center of mass
+        c_atom        0  # define the number of atoms in the center molecule
+        v_atom        0  # define the number of atoms in the environment molecule
+        nsol          0  # define the number of solvent to build environment
+        combine       yes  # combine the initial velocity with the corresponding atoms in the final condition
+        read_init     filename  # name of a .init or .init.xyz file
+        init_to_xyz   1  # convert a init file to xyz
+        scale         1  # scale the kinetic energy
+        edit_atom     []  # edit initial conditions for the selected atoms
+        append_init   filename  # name of the second .init or .init.xyz file
+        remove_init   []  # initial condition indices to remove from the original .init or init.xyz file
+        file          filename  # name of the list file for trajectory folders
+        check_box     []  # define the a, b, c of the box to correct the coordinates for molecule cross the box
+        center_rdf    []  # define the center of atoms to compute rdf
+        center_type   xyz  # set the type of center to compute rdf
+        rdf_axis      xyz  # choose the axis to compute rdf
+        maxrad        10  # set the maximum distance to compute rdf
+        interval      0.1  # set the interval to compute rdf
+        groups        []  # define groups of molecules to compute center of mass
+        skip_groups   []  # set the index to skip the group in rdf calculation
+        snapshots     1  # set the snapshots to compute rdf
+        xyz_file      filename  # name of a xyz file
+        box           60  # define a length of the box in Angstrom for Monte Carlo calculations
+        points        10000  # define the number of points for Monte Carlo calculations
+        batch_size    100  # define the batch size for Monte Carlo calculations
+        probe         100  # define the number of points on the probe sphere
+        probe_rad     1.0  # define the radius of the probe sphere in Angstrom
+        select_atom   []  # compute density for selected atoms, defaults is all
+        model_files    filename # a list of the path to molecule files for multiscale model preparation, the format is mol1.xyz nmol1, mol2.xyz nmol2, ...
+        core_files     filename # a list of the path to core molecule files for multiscale model preparation, the default is None, which means no core molecule
+        fix_atoms      int # fix the first n atoms in the multiscale model for the subsequent MD simulation, the default is 0, which means no atom is fixed
+        orca_path      str # path to orca root folder
+        force          int  # prepare force calculation template files for the model, default is 1
+        md             str  # a list file for MD calculation settings
+          
     Running this script will print more information about the requisite keywords
 
     """
@@ -173,6 +181,13 @@ def main(argv):
     probe = 100
     probe_rad = 1.0
     select_atom = []
+
+    model_files = None
+    core_files = None
+    fix_atoms = 0
+    orca_path = None
+    force = 1
+    md = None
 
     if len(argv) <= 1:
         exit(usage)
@@ -311,6 +326,18 @@ def main(argv):
             probe_rad = float(line.split()[1])
         elif 'select_atom' == key:
             select_atom = line.split()[1:]
+        elif 'model_files' == key:
+            model_files = line.split()[1]
+        elif 'core_files' == key:
+            core_files = line.split()[1]
+        elif 'fix_atoms' == key:
+            fix_atoms = int(line.split()[1])
+        elif 'orca_path' == key:
+            orca_path = line.split()[1]
+        elif 'force' == key:
+            force = int(line.split()[1])
+        elif 'md' == key:
+            md = line.split()[1]
 
     if len(edit_atom) > 0:
         edit_atom = getindex(edit_atom)
@@ -402,6 +429,12 @@ def main(argv):
         'probe': probe,
         'probe_rad': probe_rad,
         'select_atom': select_atom,
+        'model_files': model_files,
+        'core_files': core_files,
+        'fix_atoms': fix_atoms,
+        'orca_path': orca_path,
+        'force': force,
+        'md': md,
     }
 
     if mode == 'create':
@@ -418,6 +451,8 @@ def main(argv):
         compute_rdf(key_dict)
     elif mode == 'den':
         compute_den(key_dict)
+    elif mode == 'mm':
+        prepare_mm(key_dict)
     else:
         exit('\n KeywordError: unrecognized mode %s\n' % mode)
 
@@ -593,6 +628,7 @@ end structure
 
 
 def write_packmol_box(core, sol, num, rad_in, box):
+    r = box / 2
     d = box - 1
     output = """tolerance 2.5
 output env.xyz
@@ -606,10 +642,9 @@ end structure
 
 structure %s
 number %8.0f
-inside box 0. 0. 0. %8.2f %8.2f %8.2f
-outside sphere %8.2f %8.2f %8.2f %8.2f
+inside box 1. 1. 1. %8.2f %8.2f %8.2f
 end structure
-""" % (core, d/2, d/2, d/2, sol, num, d, d, d, d/2, d/2, d/2, rad_in)
+""" % (core, r, r, r, sol, num, d, d, d)
 
     with open('sol.pkm', 'w') as out:
         out.write(output)
@@ -655,19 +690,19 @@ def create_equsol(key_dict):
         geom_c = inxyz.read().splitlines()
 
     _, geom_c = read_xyz(geom_c)
-    rad_in = find_rad_in(geom_c)
+    rad_in = find_rad_in(geom_c) + 1.9
 
     cm_to_a = 1e8  # angstrom to cm
     avg = 6.022 * 1e23  # avogadro's number
     fsphere = 4 / 3 * 3.1415926  # spherical volume factor
 
     unit_den = density / cm_to_a ** 3 / mass * avg
-    vol = solbox ** 3 - fsphere * (rad_in + 2) ** 3
-    num = vol * unit_den
+    vol = solbox ** 3 - fsphere * (rad_in) ** 3
+    num = int(vol * unit_den)
 
     print(' solvent box %8.2f' % solbox)
     print(' computing inner radius %8.2f' % rad_in)
-    print(' total mass is %16.8f g/mol' % (mass * int(num)))
+    print(' total mass is %16.8f g/mol' % (mass * num))
     print(' total volume is %16.8f Angstrom^3' % vol)
     print(' total number of solvent molecule is %8.0f' % num)
     print(' writing packmol input > sol.pkm')
@@ -1099,6 +1134,10 @@ def merge_env(key_dict):
 
     env_atom, env = read_func(geom_e)
 
+    # add an extra dimension to env if only one environment is found
+    if env_file == 'env.xyz':
+        env = [env]
+
     print(' found %s environment' % len(env))
 
     if len(initcond) > 0:
@@ -1249,7 +1288,7 @@ def merge(env_atom, env, xyz):
     atom = env_atom[:len(xyz)]
     cm_env = get_mass_center(atom, env[:len(xyz), 0: 3])
     cm_xyz = get_mass_center(atom, xyz[:, 0: 3])
-    env[:, 0: 3] = env[:, 0: 3] - cm_env + cm_xyz
+    xyz[:, 0: 3] = xyz[:, 0: 3] - cm_xyz + cm_env # align the mass center of the initial condition to the mass center of the environment
     rmsd = trans_rmsd(env[:len(xyz), 0: 3], xyz[:, 0: 3])
 
     shell = env[len(xyz):]
@@ -1561,12 +1600,14 @@ def reorder_mol(atom, c_atom, v_atom, initcond, edit_atom, expand, check_box):
     v_mass = np.array([Atom(x).get_mass() for x in atom[c_atom:c_atom + v_atom]]).reshape((1, v_atom, 1))
 
     for idx, cond in enumerate(initcond):
+        new_mol = cond.copy()
         c_mol = cond[edit_atom][:c_atom]
         v_mol = cond[edit_atom][c_atom:]
         lv = len(v_mol)
         nv = int(lv / v_atom)
         v_mol = v_mol.reshape((nv, v_atom, -1))
         v_mol = check_connectivity(check_box, v_mol)
+        # calculate the distance between the center molecule and the environment molecules
         c_m = np.sum(c_mol[:, 0: 3] * c_mass, axis=0) / np.sum(c_mass)
         v_m = np.sum(v_mol[:, :, 0: 3] * v_mass, axis=1) / np.sum(v_mass)
         v = v_m - c_m
@@ -1581,8 +1622,11 @@ def reorder_mol(atom, c_atom, v_atom, initcond, edit_atom, expand, check_box):
         order = np.argsort(d)
         dist += 'Init %5s' % (idx + 1) + ''.join(['%8.2f' % x for x in d[order]]) + '\n'
         new_v = v_mol[order].reshape((lv, -1))
-        new_mol = np.concatenate((c_mol, new_v), axis=0)
+        # reorder the environment molecules in the new_mol
+        new_mol[edit_atom] = np.concatenate((c_mol, new_v), axis=0)
+        # save the reordered environment molecules
         new_cond.append(new_mol)
+        # save the distance of the reordered environment molecules
         dist_cond.append(d[order])
 
         natom = len(cond)
@@ -2039,6 +2083,352 @@ def den_wrapper(var):
 
     return idx, inside
 
+
+def prepare_mm(key_dict):
+    print('''
+    Tips for preparing multiscale model 
+        the following keyword are required
+
+        title          str  # name of the project, will be used to find the system coordinate file
+        core_files     filename # a list of  path to molecule files to prepare the core model
+        model_files    filename # a list of  path to molecule files to prepare the multiscale model
+        fix_atoms      int  # fix the first n atoms in the whole system if the MM calculations
+        orca_path      str  # path to the orca executable for preparing the RESP charges
+        box            float  # define a length of the box in Angstrom for preparing the model
+        force          int  # prepare force calculation template files for the model, default is 1
+        md             str  # a list file for MD calculation settings
+        seed           int  # set the random seed for preparing the model, default is 0
+          
+        Tips for core_files and model_files:
+        - core_files only has the core part, which should have smaller number of molecules than model_files
+        - core_files and model_files should be a list of path to molecule files,
+          each line is a path followed by the number of the molecule in the multiscale model and the charge of each molecule, e.g.
+            /path/to/mol1.xyz 5 0
+            /path/to/mol2.xyz 10 0
+        
+        - you can omit core_files if you only want to prepare the whole model
+        - you can omit the charge if your molecule is neutral
+          
+        Note that the folder of the xyz file should also include the 
+        orca gbw, density, and densityinfo files.
+        
+        It is recommended to use ORCA>=6.1.0, as old version may fail in RESP charge fitting.
+        You might need to recompute the ORCA density if you used an old version.
+        
+        Tips for md:
+        - md file has multiple lines, each line specify the MD settings
+        - the format follows job name, ensemble, simulation time, time step, temperature and pressure
+          supported ensembles are nve, langevin, nvt, and npt, langevin is nve with stochastic thermostat.
+        - for temparature and pressure 298.15 is constant, 298.15-398.15 is a range
+          temparature ramp and pressure ramp are 100 and 1000, modified the generated files if you want to change them
+          example of md file:
+              initialization langevin 10000 1 298.15
+              cooldown nvt 10000 1 900-298.15
+              equilibration nvt 100000 1 298.15
+          
+        Note that the first job in the md file will be considered as the initialization step, which will create initail velocities
+        the following jobs should start with the data obtained from the first job.
+        ''')
+
+    title = key_dict['title']
+    model_files = key_dict['model_files']
+    core_files = key_dict['core_files']
+    fix_atoms = key_dict['fix_atoms']
+    orca_path = key_dict['orca_path']
+    force = key_dict['force']
+    md = key_dict['md']
+    box = key_dict['box']
+    iseed = key_dict['iseed']
+
+    in_dict = {
+        'title': title,
+        'model_files': model_files,
+        'fix_atoms': fix_atoms,
+        'orca_path': orca_path,
+        'box': box,
+    }
+
+    for key in in_dict.keys():
+        if in_dict[key] is None:
+            exit('\n KeyError: missing keyword in env_file: %s\n' % key)
+    
+    configs = {
+        'job': [],
+    }
+
+    if force == 1:
+        force_configs = {
+            'force':{
+                'force': None,
+                'nofix': True,
+            },
+            'job':['force'],
+        }
+        configs['force'] = force_configs['force']
+        configs['job'].append('force')
+
+    if md is not None:
+        configs = prepare_md_configs(configs, md, fix_atoms, iseed)
+
+    box = [box, box, box]
+    model_xyz = '%s.xyz' % title
+    model_config, mol_counts = prepare_configs('model', configs, model_xyz, model_files, box, orca_path)
+    check_model('model', model_xyz, model_xyz, mol_counts)
+    model_info = generate_lammps('model', title, model_config)
+
+    if force == 1 and core_files is not None:
+        core_xyz = '%s_core.xyz' % title
+        core_config, core_counts = prepare_configs('core', force_configs, core_xyz, core_files, box, orca_path)
+        check_model('core', model_xyz, core_xyz, core_counts)
+        core_info = generate_lammps('core', title, core_config)
+
+
+    print('\nbox size for preparing model: %s' % box)
+    print('preparing multiscale model for %s.xyz' % title)
+    print('reading model molecule list: %s' % model_files)
+    print('number of molecule in the model: %s' % mol_counts)
+
+    if md is not None:
+        print('\nsave MD calculation template files:\n')
+        for job in configs['job']:
+            if job == 'force':
+                continue
+            print('save %s file: ./lammps/%s' % (job, job))
+
+    print('\nsave force calculation template files:\n')
+    print('save data file: %s' % model_info['dst_data_file'])
+    print('save in file: %s' % model_info['dst_in_file'])
+    print('save init file: %s' % model_info['dst_init_file'])
+    print('save setting file: %s' % model_info['dst_setting_file'])
+
+    if force == 1 and core_files is not None:
+        print('\npreparing core model for %s_core.xyz\n' % title)
+        print('reading core molecule list: %s' % core_files)
+        print('number of molecule in the core: %s' % core_counts)
+        print('\nsave force calculation template files:\n')
+        print('save data file: %s' % core_info['dst_data_file'])
+        print('save in file: %s' % core_info['dst_in_file'])
+        print('save init file: %s' % core_info['dst_init_file'])
+        print('save setting file: %s' % core_info['dst_setting_file'])
+    print('\nCOMPLETE')
+
+    return 0
+
+def prepare_md_configs(configs, md, fix_atoms, seed):
+    configs['fixed'] = [{
+        'name': 'system',
+        'fix': fix_atoms,
+        }]
+    n = 0
+    with open(md, 'r') as infile:
+        file = infile.read().splitlines()
+        for line in file:
+            settings = line.split()
+            if len(settings) < 2:
+                continue
+            else:
+                n += 1
+
+            if n == 1:
+                initial_job = True
+            else:
+                initial_job = False
+
+            job = {
+                'temperature': 298.15,
+                'pressure': 1,
+                'time': 10000,
+                'step': 1,
+                'seed': seed,
+                'initialization': initial_job
+                }
+
+            if len(settings) == 2:
+                name = settings[0]
+                job['ensemble'] = settings[1]
+
+            elif len(settings) == 3:
+                name = settings[0]
+                job['ensemble'] = settings[1]
+                job['time'] = int(settings[2])
+            elif len(settings) == 4:
+                name = settings[0]
+                job['ensemble'] = settings[1]
+                job['time'] = int(settings[2])
+                job['step'] = int(settings[3])
+            elif len(settings) == 5:
+                name = settings[0]
+                job['ensemble'] = settings[1]
+                job['time'] = int(settings[2])
+                job['step'] = int(settings[3])
+                temp_1, temp_2 = prepare_range(settings[4])
+                job['temperature'] = [temp_1, temp_2]
+            elif len(settings) >= 6:
+                name = settings[0]
+                job['ensemble'] = settings[1]
+                job['time'] = int(settings[2])
+                job['step'] = int(settings[3])
+                temp_1, temp_2 = prepare_range(settings[4])
+                job['temperature'] = [temp_1, temp_2]
+                press_1, press_2 = prepare_range(settings[5])
+                job['pressure'] = [press_1, press_2]
+
+            configs[name] = job
+            configs['job'].append(name)
+
+    return configs
+
+def prepare_range(value):
+    if '-' in value:
+        val_1, val_2 = value.split('-')
+    else:
+        val_1 = value
+        val_2 = value
+
+    return float(val_1), float(val_2)
+
+def generate_lammps(name, title, mol_config):
+
+    with open('%s.yaml' % name, 'w') as out:
+        yaml_string = yaml.dump(mol_config)
+        out.write(yaml_string)
+
+    results = subprocess.run(['which', 'ffa'], stderr=subprocess.PIPE, stdout=subprocess.PIPE)
+    if results.returncode != 0:
+        exit('\n ValueError: ffa command not found, please make sure ffa is installed and in the PATH!\n')
+
+    subprocess.run(['ffa', '%s.yaml' % name, 'silent'])
+
+    src_dir = './lammps/force'
+    src_data_file = '%s/%s.data' % (src_dir, name)
+    src_in_file = '%s/%s.in' % (src_dir, name)
+    src_init_file = '%s/%s.in.init' % (src_dir, name)
+    src_setting_file = '%s/%s.in.settings' % (src_dir, name)
+
+    dst_dir = '.'
+    dst_data_file = '%s/%s.%s.data' % (dst_dir, title, name)
+    dst_in_file = '%s/%s.%s.in' % (dst_dir, title, name)
+    dst_init_file = '%s/%s.%s.in.init' % (dst_dir, title, name)
+    dst_setting_file = '%s/%s.%s.in.settings' % (dst_dir, title, name)
+
+    shutil.copy(src_data_file, dst_data_file)
+    shutil.copy(src_in_file, dst_in_file)
+    shutil.copy(src_init_file, dst_init_file)
+    shutil.copy(src_setting_file, dst_setting_file)
+
+    dir_info = {
+        'dst_data_file': dst_data_file,
+        'dst_in_file': dst_in_file,
+        'dst_init_file': dst_init_file,
+        'dst_setting_file': dst_setting_file,
+    }
+
+    return dir_info
+
+def check_model(title, in_xyz, out_xyz, mol_counts):
+    # check the number of atoms in the model and core xyz files, and save the core xyz file if check_type is core
+    if not os.path.exists(in_xyz):
+        exit('\nfile %s not found!\n' % in_xyz)
+
+    with open(in_xyz, 'r') as infile:
+        file = infile.read().splitlines()
+
+    natom = int(file[0])
+    total = np.sum([x[0] * x[1] for x in mol_counts])
+
+    if title == 'model':
+        if natom != total:
+            exit('\n ValueError: number of atoms in %s does not match the sum of molecule counts in %s_files!\n' % (in_xyz, title))
+    elif title == 'core':
+        if natom < total:
+            exit('\n ValueError: number of atoms in %s is smaller than the sum of molecule counts in %s_files!\n' % (in_xyz, title))
+        else:
+            output = '%s\n\n' % total
+            output += '\n'.join(file[2: 2 + natom][: total]) + '\n'
+            with open(out_xyz, 'w') as out:
+                out.write(output)
+    else:
+        exit('\n ValueError: check title should be either model or core!\n')
+
+def prepare_configs(title, configs, model_xyz, model_files, box, orca_path):
+    # prepare ffa config
+    configs['project_name'] = title
+    configs['forcefield'] = 'gaff2'
+    configs['layer1'] = {
+        'type': 'molecule',
+        'build': [],
+        'file': model_xyz,
+    }
+    configs['system'] = {
+        'box': box,
+        'build': ['layer1'],
+        'noz': False,
+    }
+    configs['resp'] = {
+        'orca_path': orca_path,
+    }
+    configs['moltemplate'] = {
+        'forcedrewrite': False,
+    }
+
+    mol_counts = []
+    with open(model_files, 'r') as infile:
+        file = infile.read().splitlines()
+        for f in file:
+            if len(f) > 0:
+                name, info, count = prepare_mol_info(f)
+                configs[name] = info
+                configs['layer1']['build'].append(name)
+                mol_counts.append(count)
+
+    return configs, mol_counts
+
+
+def prepare_mol_info(file_text):
+    # check the molecule files and prepare the molecule information for ffa config
+    if len(file_text.split()) == 1:
+        xyz_file = file_text.split()[0]
+        num = 1
+    elif len(file_text.split()) == 2:
+         xyz_file, num = file_text.split()
+         num = int(num)
+         charge = 0
+    else:
+        xyz_file, num, charges = file_text.split()
+        num = int(num)
+        charge = int(charges)
+
+    xyz_file = os.path.expanduser(xyz_file)
+    file_name = xyz_file.split('/')[-1].split('.')[0]
+    file_path = '/'.join(xyz_file.split('/')[:-1])
+    inp_file  = '%s/%s.inp' % (file_path, file_name)
+    gbw_file  = '%s/%s.gbw' % (file_path, file_name)
+    density_file = '%s/%s.densities' % (file_path, file_name)
+    densityinfo_file = '%s/%s.densitiesinfo' % (file_path, file_name)
+
+    for f in [inp_file, gbw_file, density_file, densityinfo_file]:
+        if not os.path.exists(f):
+            exit('\nfile %s not found!\n' % f)
+    
+    natom = 0
+    with open(xyz_file, 'r') as infile:
+        file = infile.read().splitlines()
+        natom = int(file[0])
+
+    mol_info = {
+        'name': file_name,
+        'file': xyz_file,
+        'charges': charge,
+        'num': num,
+        'resp': {
+            'file': file_name,
+            'path': file_path,
+            },
+        }
+    
+    mol_counts = [natom, num]
+
+    return file_name, mol_info, mol_counts
 
 if __name__ == '__main__':
     main(sys.argv)

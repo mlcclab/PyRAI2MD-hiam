@@ -1126,9 +1126,12 @@ def Unpack(ensemble, prog):
             velo.append([float(i[4]), float(i[5]), float(i[6])])
     elif prog == 'lammps':
         xyz = []
-        velo = []
-        for i in ensemble:
+        velo = ''
+        f = 1/0.04571028438199123
+        for n, i in enumerate(ensemble):
             xyz.append([str(i[1]), str(i[2]), str(i[3])])
+            velo += '%d %30.16f%30.16f%30.16f\n' % (n + 1, float(i[4]) * f, float(i[5]) * f, float(i[6]) * f)
+
 
     return xyz, velo
 
@@ -1926,12 +1929,13 @@ mpirun -np $SLURM_NTASKS $LAMMPS/bin/lmp -in $INPUT.in > $INPUT.log
         if 'Atoms' in line:
             coord = data[n + 2: n + 2 + natom]
             temp = np.array([x.split() for x in coord])
-            new = np.concatenate((temp[:, 0:4], in_xyz), axis=1).tolist()
+            index = temp[: 0]
+            new = np.concatenate((temp[:, 0:4], np.array(in_xyz)[index]), axis=1).tolist()
             new_data = copy.deepcopy(data)
             new_data[n + 2: n + 2 + natom] = [' '.join(x) for x in new]
             break
 
-    new_data = '\n'.join(new_data) + '\n'
+    new_data = '\n'.join(new_data) + '\n' + '\nVelocities\n\n' + in_velo
 
     with open('%s/%s.in' % (inputpath, inputname), 'w') as out:
         out.write(new_in_temp)
