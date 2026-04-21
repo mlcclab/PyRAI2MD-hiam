@@ -14,6 +14,7 @@ from PyRAI2MD.Keywords.key_bagel import KeyBagel
 from PyRAI2MD.Keywords.key_orca import KeyOrca
 from PyRAI2MD.Keywords.key_openqp import KeyOpenQP
 from PyRAI2MD.Keywords.key_xtb import KeyXtb
+from PyRAI2MD.Keywords.key_lammps import KeyLAMMPS
 from PyRAI2MD.Keywords.key_md import KeyMD
 from PyRAI2MD.Keywords.key_grid_search import KeySearch
 from PyRAI2MD.Keywords.key_nn import KeyNN
@@ -37,6 +38,7 @@ def read_input(ld_input):
         'orca': KeyOrca(),
         'openqp': KeyOpenQP(),
         'xtb': KeyXtb(),
+        'lammps': KeyLAMMPS(),
         'md': KeyMD(),
         'nn': KeyNN(nn_type='nn'),
         'mlp': KeyNN(nn_type='mlp'),
@@ -116,6 +118,8 @@ def read_input(ld_input):
         variables_all['openqp']['verbose'] = variables_all['md']['verbose']
         variables_all['xtb']['xtb_project'] = variables_all['control']['title']
         variables_all['xtb']['verbose'] = variables_all['md']['verbose']
+        variables_all['lammps']['lammps_project'] = variables_all['control']['title']
+        variables_all['lammps']['verbose'] = variables_all['md']['verbose']
         variables_all['demo'] = variables_all['nn']
         variables_all['e2n2_demo'] = variables_all['e2n2']
 
@@ -151,6 +155,7 @@ def read_input(ld_input):
         'orca': KeyOrca().info(variables_all['orca']),
         'openqp': KeyOpenQP().info(variables_all['openqp']),
         'xtb': KeyXtb().info(variables_all['xtb']),
+        'lammps': KeyLAMMPS().info(variables_all['lammps']),
     }
 
     qm = variables_all['control']['qm']

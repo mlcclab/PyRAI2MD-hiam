@@ -166,6 +166,24 @@ def read_charge(mol):
 
     return charges
 
+def lammps_charges(data):
+    ## This function read point charges from lammps data file
+    if not os.path.exists(data):
+        sys.exit('\n  FileNotFoundError\n  PyRAI2MD: looking for lammps data file %s' % data)
+
+    with open(data, 'r') as data_file:
+        file = data_file.read().splitlines()
+
+    charges = np.zeros((0, 4))
+    for n, line in enumerate(file):
+        if 'atoms' in line:
+            natom = int(line.split()[0])
+        if 'Atoms' in line:
+            charges = np.array([x.split()[3] for x in file[n + 2: n + 2 + natom]]).astype(float)
+            break
+
+    return charges
+
 def read_initcond(mol):
     ## This function read xyz and velo from initial condition list
     natom = len(mol)

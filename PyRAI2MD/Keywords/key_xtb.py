@@ -24,6 +24,7 @@ class KeyXtb:
             'gfnff_pbc': 0,
             'gfnff_topo': 1,
             'mem': '1000',
+            'no_pbc': 0,
             'use_hpc': 0,
             'keep_tmp': 1,
             'verbose': 0,
@@ -44,6 +45,7 @@ class KeyXtb:
             'gfnver': ReadVal('i'),
             'gfnff_pbc': ReadVal('i'),
             'gfnff_topo': ReadVal('i'),
+            'no_pbc': ReadVal('i'),
             'use_hpc': ReadVal('i'),
             'mem': ReadVal('s'),
             'keep_tmp': ReadVal('i'),
@@ -73,6 +75,7 @@ class KeyXtb:
   XTB charges:              %-10s
   GFN-FF PBC:               %-10s
   GFN-FF topology file:     %-10s
+  Enfored PBC OFF:          %-10s
   Omp_num_threads:          %-10s
   Omp_stacksize:            %-10s
   Keep tmp_xtb:             %-10s
@@ -86,6 +89,7 @@ class KeyXtb:
             keywords['xtb_charges'],
             keywords['gfnff_pbc'],
             keywords['gfnff_topo'],
+            keywords['no_pbc'],
             keywords['xtb_nproc'],
             keywords['mem'],
             keywords['keep_tmp'],

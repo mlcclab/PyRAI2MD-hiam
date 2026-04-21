@@ -12,18 +12,17 @@ def print_logo(version):
     credit = """
   -------------------------------------------------------------------
                               /\\
-   |\\    /|                  /++\\
-   ||\\  /||                 /++++\\
-   || \\/ || ||             /++++++\\
-   ||    || ||            /PyRAI2MD\\
-   ||    || ||           /++++++++++\\                    __
-            ||          /++++++++++++\\    |\\ |  /\\  |\\/| | \\
-            ||__ __    *==============*   | \\| /--\\ |  | |_/
+   |\\    /|                 /++\\
+   ||\\  /||                /++++\\
+   || \\/ || ||            /++++++\\
+   ||     || ||           /PyRAI2MD\\
+   ||     || ||          /++++++++++\\                       __
+             ||         /++++++++++++\\    |\\ |  /\\  |\\/| | \\
+             ||__ __   *==============*    | \\| /--\\ |   | |_/
 
                           Python Rapid
                      Artificial Intelligence
                   Ab Initio Molecular Dynamics
-
 
 
                       Author @Jingbai Li
@@ -37,6 +36,8 @@ def print_logo(version):
 
                           version:   %s
 
+  IMPORTANT  ---->   This is the last version of PyRAI2MD
+
   With contributions from (in alphabetic order):
     Jingbai Li     - Fewest switches surface hopping
                      Zhu-Nakamura surface hopping
@@ -47,6 +48,7 @@ def print_logo(version):
                      ORCA interface
                      OpenQP interface
                      GFN-xTB interface
+                     LAMMPS interface
                      Adaptive sampling
                      Grid search
                      Multilayer ONIOM (QM:QM' and QM:QM':MM)

@@ -204,6 +204,9 @@ class AIMD:
         ## update current kinetic energies, coordinates, and gradient
         self.traj = verlet_i(self.traj)
 
+        # apply shake before pbc, which will wrap the coordinates
+        # self.traj = self._apply_shake(self.traj)
+
         ## check pbc
         self.traj.apply_pbc()
 
@@ -225,8 +228,11 @@ class AIMD:
         if self.timing == 1:
             print('compute_egn', time.time())
 
-        ## update current velocity
+        # update current velocity
         self.traj = verlet_ii(self.traj)
+
+        # apply rattle
+        # self.traj = self._apply_rattle(self.traj)
 
         if self.timing == 1:
             print('verlet_2', time.time())

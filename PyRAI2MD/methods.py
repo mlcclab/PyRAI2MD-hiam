@@ -13,6 +13,7 @@ from PyRAI2MD.Quantum_Chemistry.qc_molcas_tinker import MolcasTinker
 from PyRAI2MD.Quantum_Chemistry.qc_orca import Orca
 from PyRAI2MD.Quantum_Chemistry.qc_openqp import OpenQP
 from PyRAI2MD.Quantum_Chemistry.qc_xtb import Xtb
+from PyRAI2MD.Molecular_Mechanics.mm_lammps import LAMMPS
 from PyRAI2MD.Quantum_Chemistry.qmqm2 import QMQM2
 from PyRAI2MD.Machine_Learning.model_NN import DNN
 from PyRAI2MD.Machine_Learning.model_demo import Demo
@@ -74,6 +75,7 @@ class QM:
             'orca': Orca,
             'openqp': OpenQP,
             'xtb': Xtb,
+            'lammps': LAMMPS,
             'nn': DNN,
             'demo': Demo,
             'mlp': MLP,
@@ -91,6 +93,7 @@ class QM:
             'openqp': OpenQP,
             'xtb': Xtb,
             'nn': DNN,
+            'lammps': LAMMPS,
             'demo': Demo,
             'mlp': MLP,
             'schnet': Schnet,
@@ -102,11 +105,13 @@ class QM:
         # methods available for QM 2 region calculation
         qm2_list = {
             'xtb': Xtb,
+            'lammps': LAMMPS,
         }
 
         # methods available for MM calculation
         mm_list = {
             'xtb': Xtb,
+            'lammps': LAMMPS,
         }
 
         if len(qm) == 1:
