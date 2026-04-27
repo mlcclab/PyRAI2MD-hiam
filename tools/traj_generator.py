@@ -1268,6 +1268,31 @@ def pyrai2md(var):
     if os.path.exists('%s.basis' % inputs) and not os.path.exists('%s/%s.basis' % (inputpath, inputs)):
         shutil.copy2('%s.basis' % inputs, '%s/%s.basis' % (inputpath, inputname))
 
+    # copy lammps file
+    if os.path.exists('%s.core.in' % inputs) and not os.path.exists('%s/%s.core.in' % (inputpath, inputs)):
+        shutil.copy2('%s.core.in' % inputs, '%s/%s.core.in' % (inputpath, inputname))
+
+    if os.path.exists('%s.core.in.init' % inputs) and not os.path.exists('%s/%s.core.in.init' % (inputpath, inputs)):
+        shutil.copy2('%s.core.in.init' % inputs, '%s/%s.core.in.init' % (inputpath, inputname))
+
+    if os.path.exists('%s.core.in.settings' % inputs) and not os.path.exists('%s/%s.core.in.settings' % (inputpath, inputs)):
+        shutil.copy2('%s.core.in.settings' % inputs, '%s/%s.core.in.settings' % (inputpath, inputname))
+
+    if os.path.exists('%s.core.data' % inputs) and not os.path.exists('%s/%s.core.data' % (inputpath, inputs)):
+        shutil.copy2('%s.core.data' % inputs, '%s/%s.core.data' % (inputpath, inputname))
+
+    if os.path.exists('%s.model.in' % inputs) and not os.path.exists('%s/%s.model.in' % (inputpath, inputs)):
+        shutil.copy2('%s.model.in' % inputs, '%s/%s.model.in' % (inputpath, inputname))
+
+    if os.path.exists('%s.model.in.init' % inputs) and not os.path.exists('%s/%s.model.in.init' % (inputpath, inputs)):
+        shutil.copy2('%s.model.in.init' % inputs, '%s/%s.model.in.init' % (inputpath, inputname))
+
+    if os.path.exists('%s.model.in.settings' % inputs) and not os.path.exists('%s/%s.model.in.settings' % (inputpath, inputs)):
+        shutil.copy2('%s.model.in.settings' % inputs, '%s/%s.model.in.settings' % (inputpath, inputname))
+
+    if os.path.exists('%s.model.data' % inputs) and not os.path.exists('%s/%s.model.data' % (inputpath, inputs)):
+        shutil.copy2('%s.model.data' % inputs, '%s/%s.model.data' % (inputpath, inputname))
+
     runscript = """#!/bin/sh
 ## script for PyRAI2MD
 #SBATCH --nodes=1
