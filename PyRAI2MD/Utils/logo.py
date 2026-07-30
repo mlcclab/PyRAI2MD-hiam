@@ -28,7 +28,7 @@ def print_logo(version):
                       Author @Jingbai Li
                       
                       
-    2022 – present   Hoffmann Institute of Advanced Materials
+    2022 – 2026      Hoffmann Institute of Advanced Materials
                      Shenzhen Polytechnic, Shenzhen, China    
                                 
     2019 – 2022      Department of Chemistry and Chemical Biology
