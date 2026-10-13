@@ -1,6 +1,6 @@
 ######################################################
 #
-# PyRAI2MD 2 module for OpenQP interface (SOC are not available)
+# PyRAI2MD 2 module for OpenQP interface (SOC are available with use_hpc = -1 or 1)
 #
 # Author Jingbai Li
 # Apr 22 2024
@@ -62,6 +62,10 @@ class OpenQP:
         self.nstate = 0
         self.nnac = 0
         self.nac_coupling = []
+        self.ci = []
+        self.mult = []
+        self.nsoc = 0
+        self.soc_coupling = []
         self.state = 0
         self.activestate = 0
         self.jobtype = keywords['control']['jobtype']
@@ -79,6 +83,7 @@ class OpenQP:
         self.activestate = 0
         self.back_door_data = None
         use_hpc = variables['use_hpc']
+        self.use_hpc = use_hpc
 
         ## check calculation folder
         ## add index when running in adaptive sampling
@@ -235,12 +240,15 @@ openqp ${OPENQP_PROJECT}.inp --nompi
         os.system("rm %s/*.log > /dev/null 2>&1" % self.workdir)
         # os.system("rm %s/*.json > /dev/null 2>&1" % self.workdir)
         os.system("rm %s/energies > /dev/null 2>&1" % self.workdir)
+        os.system("rm %s/energies_s > /dev/null 2>&1" % self.workdir)
+        os.system("rm %s/energies_t > /dev/null 2>&1" % self.workdir)
         os.system("rm %s/grad_* > /dev/null 2>&1" % self.workdir)
         os.system("rm %s/grad_* > /dev/null 2>&1" % self.workdir)
         os.system("rm %s/nacme > /dev/null 2>&1" % self.workdir)
         os.system("rm %s/dcme > /dev/null 2>&1" % self.workdir)
         os.system("rm %s/nac_* > /dev/null 2>&1" % self.workdir)
         os.system("rm %s/soc_* > /dev/null 2>&1" % self.workdir)
+        os.system("rm %s/socme > /dev/null 2>&1" % self.workdir)
 
         ## setup input
         self._write_openqp(x, q)
@@ -256,6 +264,28 @@ openqp ${OPENQP_PROJECT}.inp --nompi
 
         if self.method == 'hf':
             self.input_dict['properties']['grad'] = '0'
+
+        elif len(self.ci) > 1:
+            ## a two-ladder run publishes the singlet and the triplet manifold side by side,
+            ## so the selectors are grad_s and grad_t, and grad carries no state. Left empty,
+            ## because a run with no selector of its own takes the states of grad as its own.
+            self.input_dict['properties']['grad'] = ''
+
+            if self.activestate == 1:
+                sin_grad = '%s' % self.state if self.state <= self.ci[0] else ''
+                tri_grad = '%s' % (self.state - self.ci[0]) if self.state > self.ci[0] else ''
+
+                if self.nsoc == 0:
+                    ## a ladder without a request is not solved, and its energies are not published
+                    sin_grad = sin_grad if sin_grad else '1'
+                    tri_grad = tri_grad if tri_grad else '1'
+            else:
+                sin_grad = ','.join(['%s' % (x + 1) for x in range(self.ci[0])])
+                tri_grad = ','.join(['%s' % (x + 1) for x in range(self.ci[1])])
+
+            self.input_dict['properties']['grad_s'] = sin_grad
+            self.input_dict['properties']['grad_t'] = tri_grad
+            self.input_dict['properties']['soc'] = 'true' if self.nsoc > 0 else 'false'
 
         if self.nactype == 'nac':
             self.input_dict['nac']['states'] = ','.join(['%s %s' % (x[0] + 1, x[1] + 1) for x in self.nac_coupling])
@@ -355,17 +385,37 @@ openqp ${OPENQP_PROJECT}.inp --nompi
             gradient.append(g)
 
         else:
-            if os.path.exists('%s/energies' % self.workdir):
-                energy = np.loadtxt('%s/energies' % self.workdir).reshape(-1)[1: self.nstate + 1]  # skip the reference
+            if len(self.ci) > 1:
+                ## pack energy and force per spin ladder, each file holds the reference state first
+                for spin in range(len(self.ci)):
+                    label = 's' if spin == 0 else 't'
 
-            ## pack force
-            for i in range(self.nstate):
-                if os.path.exists('%s/grad_%s' % (self.workdir, i + 1)):
-                    g = np.loadtxt('%s/grad_%s' % (self.workdir, i + 1))
-                else:
-                    g = [[0, 0, 0] for _ in range(natom)]
+                    if os.path.exists('%s/energies_%s' % (self.workdir, label)):
+                        e = np.loadtxt('%s/energies_%s' % (self.workdir, label)).reshape(-1)
+                        energy += list(e[1: self.ci[spin] + 1])  # skip the reference
 
-                gradient.append(g)
+                    for i in range(self.ci[spin]):
+                        if os.path.exists('%s/grad_%s_%s' % (self.workdir, label, i + 1)):
+                            g = np.loadtxt('%s/grad_%s_%s' % (self.workdir, label, i + 1))
+                        else:
+                            g = [[0, 0, 0] for _ in range(natom)]
+
+                        gradient.append(g)
+
+                energy = np.array(energy)
+
+            else:
+                if os.path.exists('%s/energies' % self.workdir):
+                    energy = np.loadtxt('%s/energies' % self.workdir).reshape(-1)[1: self.nstate + 1]  # skip the reference
+
+                ## pack force
+                for i in range(self.nstate):
+                    if os.path.exists('%s/grad_%s' % (self.workdir, i + 1)):
+                        g = np.loadtxt('%s/grad_%s' % (self.workdir, i + 1))
+                    else:
+                        g = [[0, 0, 0] for _ in range(natom)]
+
+                    gradient.append(g)
 
             gradient = np.array(gradient)
 
@@ -389,7 +439,18 @@ openqp ${OPENQP_PROJECT}.inp --nompi
                     nac[pa, pb] = dcm[pa, pb]
                     nac[pb, pa] = dcm[pb, pa]
 
-        soc = np.zeros(0)
+        ## pack soc
+        soc = []
+        if len(self.soc_coupling) > 0 and os.path.exists('%s/socme' % self.workdir):
+            table = np.loadtxt('%s/socme' % self.workdir, usecols=(0, 1, 5), ndmin=2)
+            for pair in self.soc_coupling:
+                s1, s2 = pair
+                # assume low spin is in front of high spin (maybe generalize later)
+                mask = np.logical_and(table[:, 0] == s1, table[:, 1] == s2 - self.ci[0])
+                socme = float(np.sum(table[mask, 2] ** 2) ** 0.5)  # Ms = -1, 0, +1
+                soc.append(socme)
+
+        soc = np.array(soc)
 
         return coord, energy, gradient, nac, soc
 
@@ -489,11 +550,24 @@ openqp ${OPENQP_PROJECT}.inp --nompi
         ## main function to run ORCA calculation and communicate with other PyRAI2MD modules
 
         ## load trajectory info
+        self.ci = traj.ci
+        self.mult = traj.mult
+        self.nsoc = traj.nsoc
+        self.soc_coupling = traj.soc_coupling
         self.nstate = traj.nstate
         self.nnac = traj.nnac
         self.nac_coupling = traj.nac_coupling
         self.state = traj.state
         self.activestate = traj.activestate
+
+        if len(self.ci) > 1:
+            ## the in-memory results carry the last solved manifold only
+            if self.use_hpc == 0:
+                sys.exit('\n  KeywordError\n  OpenQP: a two-ladder calculation requires use_hpc = -1 or 1!')
+
+            ## the couplings of a manifold are published as dcme_s and dcme_t, which are not read
+            if self.nactype == 'nac' or (self.nactype == 'dcm' and self.nnac > 0):
+                sys.exit('\n  KeywordError\n  OpenQP: a two-ladder calculation does not read the non-adiabatic couplings!')
 
         ## compute properties
         energy = []
@@ -507,7 +581,10 @@ openqp ${OPENQP_PROJECT}.inp --nompi
         elif self.runtype == 'qm_high':
             energy, gradient, nac, soc = self._high(traj)
 
-        if len(energy) >= self.nstate and len(gradient) >= self.nstate and len(nac) >= self.nnac:
+        if len(energy) >= self.nstate and \
+                len(gradient) >= self.nstate and \
+                len(nac) >= self.nnac and \
+                len(soc) >= self.nsoc:
             completion = 1
 
         ## clean up
